@@ -17,7 +17,7 @@ export default function HomePage() {
       onLogout={handleLogout}
     >
       <div>
-				<h1>Gato</h1>
+        <h1>Gato</h1>
       </div>
     </Layout>
   );
