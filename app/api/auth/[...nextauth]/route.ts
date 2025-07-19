@@ -1,6 +1,6 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import jwt from 'jsonwebtoken';
+import { decode, sign } from 'jsonwebtoken';
 
 // Mock de usuários para simular o backend
 const mockUsers = [
@@ -56,7 +56,7 @@ async function mockLoginAPI(username: string, password: string) {
   }
 
   // Simular token JWT
-  const token = jwt.sign(
+  const token = sign(
     {
       id: user.id,
       username: user.username,
@@ -125,7 +125,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account }: any) {
       if (account && user) {
-        const decodedToken = jwt.decode(user.token) as any;
+        const decodedToken = decode(user.token) as any;
         
         return {
           ...token,
