@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import {
   Card,
   CardHeader,
@@ -12,17 +14,33 @@ import { Label } from "@/app/components/ui/label";
 import { Button } from "@/app/components/ui/button";
 import { User, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "@/app/hooks/useAuth";
+import { loginSchema, type LoginFormData } from "@/app/schemas/loginSchema";
 
 const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const { login, loading, error } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<LoginFormData>({
+    resolver: yupResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
 
-    await login({ username, password });
+  const onSubmit = async (data: LoginFormData) => {
+    const success = await login(data);
+
+    if (success) {
+      reset(); // Limpar formulário após sucesso
+    }
   };
+
+  const isLoading = loading || isSubmitting;
 
   return (
     <Card className="w-full max-w-md lg:border lg:border-gray-300">
@@ -32,7 +50,7 @@ const Login = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <div>
               <Label htmlFor="username">Usuário</Label>
@@ -42,13 +60,16 @@ const Login = () => {
                   id="username"
                   type="text"
                   placeholder="Digite seu usuário"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="pl-10"
-                  required
-                  disabled={loading}
+                  className={`pl-10 ${errors.username ? "border-red-500" : ""}`}
+                  disabled={isLoading}
+                  {...register("username")}
                 />
               </div>
+              {errors.username && (
+                <span className="text-sm text-red-500 mt-1">
+                  {errors.username.message}
+                </span>
+              )}
             </div>
 
             <div>
@@ -59,13 +80,16 @@ const Login = () => {
                   id="password"
                   type="password"
                   placeholder="Digite sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                  disabled={loading}
+                  className={`pl-10 ${errors.password ? "border-red-500" : ""}`}
+                  disabled={isLoading}
+                  {...register("password")}
                 />
               </div>
+              {errors.password && (
+                <span className="text-sm text-red-500 mt-1">
+                  {errors.password.message}
+                </span>
+              )}
             </div>
           </div>
 
@@ -76,8 +100,8 @@ const Login = () => {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Entrando..." : "Entrar"}
           </Button>
         </form>
       </CardContent>
