@@ -1,23 +1,21 @@
 "use client";
 
 import { useAuth } from "@/app/hooks/useAuth";
+import { useUserData } from "@/app/hooks/useUserData";
 import Layout from "../layout/index";
 
 export default function HomePage() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const { user, userName, userRole, userId } = useUserData();
 
   const handleLogout = () => {
     logout();
   };
 
   return (
-    <Layout
-      userName={user?.name || "Usuário"}
-      userRole={user?.role || "User"}
-      onLogout={handleLogout}
-    >
+    <Layout userName={userName} userRole={userRole} onLogout={handleLogout}>
       <div>
-        <h1 className="text-3xl font-bold mb-6">Bem-vindo, {user?.name}!</h1>
+        <h1 className="text-3xl font-bold mb-6">Bem-vindo, {userName}!</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="p-6 border rounded-lg bg-card">
@@ -26,18 +24,29 @@ export default function HomePage() {
             </h3>
             <div className="space-y-2 text-sm">
               <p>
-                <strong>Nome:</strong> {user?.name}
+                <strong>Username:</strong> {userName}
               </p>
               <p>
-                <strong>Email:</strong> {user?.email}
+                <strong>Role:</strong> {userRole}
               </p>
               <p>
-                <strong>Role:</strong> {user?.role}
-              </p>
-              <p>
-                <strong>ID:</strong> {user?.id}
+                <strong>ID:</strong> {userId}
               </p>
             </div>
+          </div>
+
+          <div className="p-6 border rounded-lg bg-card">
+            <h3 className="text-lg font-semibold mb-2">Reservas Rápidas</h3>
+            <p className="text-muted-foreground">
+              Faça reservas de assentos de forma simples e rápida.
+            </p>
+          </div>
+
+          <div className="p-6 border rounded-lg bg-card">
+            <h3 className="text-lg font-semibold mb-2">Gestão Inteligente</h3>
+            <p className="text-muted-foreground">
+              Sistema inteligente para otimizar o uso dos espaços.
+            </p>
           </div>
         </div>
       </div>

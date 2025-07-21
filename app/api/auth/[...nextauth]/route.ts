@@ -59,12 +59,16 @@ export const authOptions: NextAuthOptions = {
         try {
           const result = await loginAPI(credentials.username, credentials.password)
 
+          console.log(result);
           if (result.token) {
+            // Decodificar o token para extrair as informações do usuário
+            const decodedToken = decode(result.token) as any;
+            console.log('Decoded token:', decodedToken);
+            
             return {
-              id: result.user?.id?.toString() || '1',
-              name: result.user?.name || credentials.username,
-              email: result.user?.email || `${credentials.username}@vibeseat.com`,
-              role: result.user?.role || 'User',
+              id: decodedToken.id?.toString() || '1',
+              username: decodedToken.username || credentials.username,
+              role: decodedToken.role || 'User',
               token: result.token
             };
           }
@@ -94,8 +98,8 @@ export const authOptions: NextAuthOptions = {
           ...token,
           accessToken: user.token,
           id: user.id,
-          role: user.role,
           username: user.username,
+          role: user.role,
           exp: decodedToken.exp
         };
       }
@@ -107,7 +111,7 @@ export const authOptions: NextAuthOptions = {
       session.accessToken = token.accessToken;
       session.expires = token.exp * 1000;
       session.expiresFormatted = new Date(token.exp * 1000).toLocaleString('pt-BR');
-      session.user.email = token.username;
+      session.user.username = token.username;
       session.user.role = token.role;
       session.user.id = token.id;
 

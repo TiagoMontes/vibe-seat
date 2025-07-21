@@ -7,17 +7,14 @@ declare module "next-auth" {
     expiresFormatted?: string
     user: {
       id?: string
-      name?: string | null
-      email?: string | null
-      image?: string | null
+      username?: string
       role?: string
     }
   }
 
   interface User {
     id: string
-    name: string
-    email: string
+    username: string
     role: string
     token: string
   }

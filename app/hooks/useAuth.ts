@@ -2,7 +2,9 @@
 
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAtom } from 'jotai';
+import { userAtom, isAuthenticatedAtom, type UserData } from '@/app/atoms/userAtoms';
 
 interface LoginData {
   username: string;
@@ -11,9 +13,25 @@ interface LoginData {
 
 export function useAuth() {
   const { data: session, status } = useSession();
+  const [user, setUser] = useAtom(userAtom);
+  const [isAuthenticated] = useAtom(isAuthenticatedAtom);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  // Sincronizar dados da sessão NextAuth com o atom do Jotai
+  useEffect(() => {
+    if (session?.user && status === 'authenticated') {
+      const userData: UserData = {
+        id: session.user.id || '',
+        username: session.user.username || '',
+        role: session.user.role || 'User',
+      };
+      setUser(userData);
+    } else if (status === 'unauthenticated') {
+      setUser(null);
+    }
+  }, [session, status, setUser]);
 
   const login = async (loginData: LoginData): Promise<boolean> => {
     setLoading(true);
@@ -47,18 +65,19 @@ export function useAuth() {
   };
 
   const logout = async () => {
+    setUser(null); // Limpar atom antes do signOut
     await signOut({ redirect: false });
     router.push('/');
   };
 
   return {
-    user: session?.user,
+    user,
     session,
     loading: loading || status === 'loading',
     error,
     login,
     logout,
-    isAuthenticated: status === 'authenticated',
+    isAuthenticated: isAuthenticated && status === 'authenticated',
     status,
   };
 } 
