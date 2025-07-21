@@ -1,81 +1,44 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { decode, sign } from 'jsonwebtoken';
+import { decode } from 'jsonwebtoken';
 
-// Mock de usuários para simular o backend
-const mockUsers = [
-  {
-    id: 1,
-    username: 'admin',
-    password: 'admin123',
-    name: 'Administrador',
-    role: 'Admin',
-    email: 'admin@vibeseat.com'
-  },
-  {
-    id: 2,
-    username: 'user',
-    password: 'user123',
-    name: 'Usuário Padrão',
-    role: 'User',
-    email: 'user@vibeseat.com'
-  },
-  {
-    id: 3,
-    username: 'manager',
-    password: 'manager123',
-    name: 'Gerente',
-    role: 'Manager',
-    email: 'manager@vibeseat.com'
-  }
-];
-
-// Mock da API de login
-async function mockLoginAPI(username: string, password: string) {
-  // Simular delay de rede
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  // Simular diferentes cenários de erro
-  if (username === 'error') {
-    throw new Error('Erro interno do servidor');
+async function loginAPI(username: string, password: string) {
+  const apiUrl = process.env.API_BACKEND;
+  
+  if (!apiUrl) {
+    throw new Error('API_BACKEND não configurado no .env');
   }
 
-  if (username === 'blocked') {
-    throw new Error('Usuário bloqueado. Entre em contato com o suporte.');
-  }
+  try {
+    const response = await fetch(`${apiUrl}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': '*'
+      },
+      body: JSON.stringify({
+        username,
+        password
+      })
+    });
 
-  if (username === 'invalid') {
-    throw new Error('Credenciais inválidas');
-  }
-
-  // Buscar usuário mockado
-  const user = mockUsers.find(u => u.username === username && u.password === password);
-
-  if (!user) {
-    throw new Error('Username ou senha incorretos');
-  }
-
-  // Simular token JWT
-  const token = sign(
-    {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 horas
-    },
-    process.env.JWT_SECRET || 'your-secret-key'
-  );
-
-  return {
-    token,
-    user: {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      role: user.role,
-      email: user.email
+    if (!response.ok) {
+      throw new Error(`Erro na autenticação: ${response.status}`);
     }
-  };
+
+    const data = await response.json();
+
+    if (!data.token) {
+      throw new Error('Token não recebido do servidor');
+    }
+
+    return data;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Erro de conexão com o servidor');
+  }
 }
 
 export const authOptions: NextAuthOptions = {
@@ -94,14 +57,14 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const result = await mockLoginAPI(credentials.username, credentials.password);
+          const result = await loginAPI(credentials.username, credentials.password)
 
           if (result.token) {
             return {
-              id: result.user.id.toString(),
-              name: result.user.name,
-              email: result.user.email,
-              role: result.user.role,
+              id: result.user?.id?.toString() || '1',
+              name: result.user?.name || credentials.username,
+              email: result.user?.email || `${credentials.username}@vibeseat.com`,
+              role: result.user?.role || 'User',
               token: result.token
             };
           }
@@ -132,7 +95,7 @@ export const authOptions: NextAuthOptions = {
           accessToken: user.token,
           id: user.id,
           role: user.role,
-          username: user.email, // Usando email como username
+          username: user.username,
           exp: decodedToken.exp
         };
       }

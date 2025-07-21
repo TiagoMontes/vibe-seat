@@ -80,36 +80,6 @@ const Login = () => {
             {loading ? "Entrando..." : "Entrar"}
           </Button>
         </form>
-
-        <div className="mt-4 text-center text-sm text-gray-600">
-          <p className="mb-2 font-medium">Usuários de teste:</p>
-          <div className="space-y-1 text-xs">
-            <p>
-              <strong>Admin:</strong> admin / admin123
-            </p>
-            <p>
-              <strong>User:</strong> user / user123
-            </p>
-            <p>
-              <strong>Manager:</strong> manager / manager123
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 text-center text-sm text-gray-600">
-          <p className="mb-2 font-medium">Cenários de erro:</p>
-          <div className="space-y-1 text-xs">
-            <p>
-              <strong>Erro 500</strong>
-            </p>
-            <p>
-              <strong>Usuário bloqueado</strong>
-            </p>
-            <p>
-              <strong>Credenciais inválidas</strong>
-            </p>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
