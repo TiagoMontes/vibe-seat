@@ -60,7 +60,7 @@ const Login = () => {
                   id="username"
                   type="text"
                   placeholder="Digite seu usuário"
-                  className={`pl-10 ${errors.username ? "border-red-500" : ""}`}
+                  className={`pl-10 bg-white ${errors.username ? "border-red-500" : ""}`}
                   disabled={isLoading}
                   {...register("username")}
                 />
@@ -80,7 +80,7 @@ const Login = () => {
                   id="password"
                   type="password"
                   placeholder="Digite sua senha"
-                  className={`pl-10 ${errors.password ? "border-red-500" : ""}`}
+                  className={`pl-10 bg-white ${errors.password ? "border-red-500" : ""}`}
                   disabled={isLoading}
                   {...register("password")}
                 />

@@ -2,11 +2,13 @@
 
 import { useAuth } from "./hooks/useAuth";
 import Login from "./components/Login";
-import { useEffect } from "react";
+import Register from "./components/Register";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const { isAuthenticated, status } = useAuth();
+  const [showRegister, setShowRegister] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -15,20 +17,36 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
+  // Mostrar loading enquanto verifica a autenticação
   if (status === "loading") {
     return (
       <div className="flex justify-center items-center h-screen w-full">
-        <div className="text-center flex flex-col gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
-          <p className="text-gray-600">Carregando...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex justify-center items-center h-screen w-full">
-      <Login />
+    <div className="flex justify-center text-black items-center h-screen w-full bg-gray-50">
+      {showRegister ? (
+        <Register onBackToLogin={() => setShowRegister(false)} />
+      ) : (
+        <div className="flex flex-col items-center gap-4 w-full">
+          <Login />
+          <p className="text-sm text-gray-600">
+            Não tem uma conta?{" "}
+            <button
+              onClick={() => setShowRegister(true)}
+              className="text-blue-600 hover:text-blue-800 font-medium underline"
+            >
+              Criar conta
+            </button>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
