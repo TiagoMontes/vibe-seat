@@ -74,18 +74,18 @@ const Layout: React.FC<LayoutProps> = ({
         <nav className="flex-1 p-4">
           <div className="space-y-2">
             {tabs.map((tab) => (
-              <button
+              <Button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                  "w-full bg-white text-black text-left px-3 py-2 text-sm font-medium rounded-md transition-colors",
                   activeTab === tab.key
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-accent hover:text-accent-foreground"
+                    ? "bg-black text-white"
+                    : "hover:bg-black/5"
                 )}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
         </nav>

@@ -5,6 +5,7 @@ import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Users, Clock, UserCheck } from "lucide-react";
+import { cn } from "@/app/lib/utils";
 import PendingApprovals from "./PendingApprovals";
 import RegisteredUsers from "./RegisteredUsers";
 import {
@@ -30,7 +31,6 @@ const UserManagement = () => {
       icon: Clock,
       count: pendingCount,
       component: <PendingApprovals />,
-      color: "blue",
     },
     {
       key: "users" as TabType,
@@ -38,20 +38,8 @@ const UserManagement = () => {
       icon: UserCheck,
       count: totalUsersCount,
       component: <RegisteredUsers />,
-      color: "blue",
     },
   ];
-
-  const getTabButtonClass = (tab: (typeof tabs)[0], isActive: boolean) => {
-    const baseClass =
-      "flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors";
-
-    if (isActive) {
-      return `${baseClass} bg-${tab.color}-600 text-white shadow-sm`;
-    }
-
-    return `${baseClass} text-gray-600 hover:text-gray-900 hover:bg-gray-100`;
-  };
 
   const activeTabData = tabs.find((tab) => tab.key === activeTab);
 
@@ -59,9 +47,9 @@ const UserManagement = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Users className="h-8 w-8 text-blue-600" />
+        <Users className="h-8 w-8 text-black" />
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-black">
             Gerenciamento de Usuários
           </h1>
           <p className="text-gray-600">
@@ -82,21 +70,21 @@ const UserManagement = () => {
                 <Button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  variant="ghost"
-                  className={getTabButtonClass(tab, isActive)}
+                  className={cn(
+                    "flex items-center gap-2 bg-white text-black px-4 py-3 rounded-md font-medium transition-colors",
+                    isActive ? "bg-black text-white" : "hover:bg-black/5"
+                  )}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{tab.label}</span>
                   {tab.count > 0 && (
                     <span
-                      className={`
-                      px-2 py-1 rounded-full text-xs font-medium
-                      ${
+                      className={cn(
+                        "px-2 py-1 rounded-full text-xs font-medium",
                         isActive
                           ? "bg-white/20 text-white"
-                          : `bg-${tab.color}-100 text-${tab.color}-800`
-                      }
-                    `}
+                          : "bg-black/10 text-black"
+                      )}
                     >
                       {tab.count}
                     </span>
