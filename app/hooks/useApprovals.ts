@@ -1,39 +1,25 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useAtom } from 'jotai';
 import { toast } from 'react-toastify';
-
-export interface User {
-  id: number;
-  username: string;
-  password: string;
-  status: 'pending' | 'approved' | 'rejected';
-  roleId: number;
-}
-
-export interface Role {
-  id: number;
-  name: string;
-}
-
-export interface Approval {
-  id: number;
-  userId: number;
-  requestedRoleId: number;
-  approvedById: number | null;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-  user: User;
-  requestedRole: Role;
-}
+import { 
+  approvalsAtom, 
+  approvalsLoadingAtom, 
+  approvalsErrorAtom,
+  pendingCountAtom,
+  type Approval 
+} from '@/app/atoms/userManagementAtoms';
 
 export type ApprovalStatus = 'all' | 'pending' | 'approved' | 'rejected';
 
 export function useApprovals() {
-  const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [approvals, setApprovals] = useAtom(approvalsAtom);
+  const [loading, setLoading] = useAtom(approvalsLoadingAtom);
+  const [error, setError] = useAtom(approvalsErrorAtom);
+  const [pendingCount] = useAtom(pendingCountAtom);
+  
   const [filteredApprovals, setFilteredApprovals] = useState<Approval[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<ApprovalStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -121,9 +107,6 @@ export function useApprovals() {
   useEffect(() => {
     fetchApprovals();
   }, []);
-
-  // Contar aprovações pendentes
-  const pendingCount = approvals.filter(approval => approval.status === 'pending').length;
 
   return {
     approvals: filteredApprovals,

@@ -186,7 +186,7 @@ const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
         <Button
           variant="outline"
           onClick={onBackToLogin}
-          className="w-full mt-2 text-white"
+          className="w-full mt-2 "
         >
           Voltar ao Login
         </Button>
