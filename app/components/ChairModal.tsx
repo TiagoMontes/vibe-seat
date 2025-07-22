@@ -33,6 +33,8 @@ import {
   chairUpdateSchema,
   ChairFormData,
   ChairUpdateFormData,
+  getStatusOptions,
+  getStatusLabel,
 } from "@/app/schemas/chairSchema";
 
 const ChairModal = () => {
@@ -103,15 +105,11 @@ const ChairModal = () => {
     }
   };
 
-  const statusOptions = [
-    { value: "ACTIVE", label: "Ativa" },
-    { value: "MAINTENANCE", label: "Manutenção" },
-    { value: "INACTIVE", label: "Inativa" },
-  ];
+  const statusOptions = getStatusOptions();
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="relative">
+      <DialogContent className="relative w-full max-w-[400px] min-w-[350px] sm:min-w-[400px]">
         <DialogClose onClose={handleClose} />
 
         <DialogHeader>
@@ -125,7 +123,7 @@ const ChairModal = () => {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
           {/* Nome */}
           <div className="space-y-2">
             <Label htmlFor="name">Nome *</Label>
@@ -180,7 +178,11 @@ const ChairModal = () => {
               }
             >
               <SelectTrigger className={errors.status ? "border-red-500" : ""}>
-                <SelectValue placeholder="Selecione o status" />
+                <span>
+                  {watchedStatus
+                    ? getStatusLabel(watchedStatus)
+                    : "Selecione o status"}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {statusOptions.map((option) => (

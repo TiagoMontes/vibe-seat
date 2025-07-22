@@ -33,7 +33,12 @@ import {
   selectedChairAtom,
   computedChairStatsAtom,
 } from "@/app/atoms/chairAtoms";
-import { Chair } from "@/app/schemas/chairSchema";
+import {
+  Chair,
+  getStatusLabel,
+  getStatusColor,
+  getStatusOptions,
+} from "@/app/schemas/chairSchema";
 import ChairModal from "./ChairModal";
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc";
@@ -146,13 +151,14 @@ const ChairManagement = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
+  const getStatusColorClass = (status: string) => {
+    const colorName = getStatusColor(status as any);
+    switch (colorName) {
+      case "green":
         return "bg-green-100 text-green-800";
-      case "MAINTENANCE":
+      case "yellow":
         return "bg-yellow-100 text-yellow-800";
-      case "INACTIVE":
+      case "red":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -160,16 +166,7 @@ const ChairManagement = () => {
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "Ativa";
-      case "MAINTENANCE":
-        return "Manutenção";
-      case "INACTIVE":
-        return "Inativa";
-      default:
-        return status;
-    }
+    return getStatusLabel(status as any);
   };
 
   const getStatusIcon = (status: string) => {
@@ -198,6 +195,11 @@ const ChairManagement = () => {
       default:
         return "";
     }
+  };
+
+  const getStatusFilterText = (status: StatusFilter) => {
+    if (status === "all") return "Todos";
+    return getStatusLabel(status as any);
   };
 
   const hasActiveFilters =
@@ -238,7 +240,7 @@ const ChairManagement = () => {
           },
           {
             key: "active",
-            label: "Ativas",
+            label: getStatusLabel("ACTIVE"),
             value: chairStats.active,
             icon: Activity,
             valueColor: "text-green-600",
@@ -246,7 +248,7 @@ const ChairManagement = () => {
           },
           {
             key: "maintenance",
-            label: "Manutenção",
+            label: getStatusLabel("MAINTENANCE"),
             value: chairStats.maintenance,
             icon: Wrench,
             valueColor: "text-yellow-600",
@@ -254,7 +256,7 @@ const ChairManagement = () => {
           },
           {
             key: "inactive",
-            label: "Inativas",
+            label: getStatusLabel("INACTIVE"),
             value: chairStats.inactive,
             icon: XCircle,
             valueColor: "text-red-600",
@@ -326,13 +328,15 @@ const ChairManagement = () => {
                 }
               >
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
+                  <span>{getStatusFilterText(statusInput)}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="ACTIVE">Ativas</SelectItem>
-                  <SelectItem value="MAINTENANCE">Manutenção</SelectItem>
-                  <SelectItem value="INACTIVE">Inativas</SelectItem>
+                  {getStatusOptions().map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -345,7 +349,7 @@ const ChairManagement = () => {
                 onValueChange={(value) => handleSortChange(value as SortOption)}
               >
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Ordenar" />
+                  <span>{getSortText(sortInput)}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="newest">Mais recentes</SelectItem>
@@ -426,7 +430,7 @@ const ChairManagement = () => {
                           </h3>
                         </div>
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColorClass(
                             chair.status
                           )}`}
                         >

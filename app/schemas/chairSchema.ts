@@ -79,4 +79,41 @@ export interface ChairFilters {
   search: string;
   status: "all" | "ACTIVE" | "MAINTENANCE" | "INACTIVE";
   sortBy: "newest" | "oldest" | "name-asc" | "name-desc";
-} 
+}
+
+// Status mapping system
+export const ChairStatusMap = {
+  ACTIVE: {
+    value: "ACTIVE",
+    label: "Ativa",
+    color: "green",
+  },
+  MAINTENANCE: {
+    value: "MAINTENANCE", 
+    label: "Manutenção",
+    color: "yellow",
+  },
+  INACTIVE: {
+    value: "INACTIVE",
+    label: "Inativa", 
+    color: "red",
+  },
+} as const;
+
+export type ChairStatusKey = keyof typeof ChairStatusMap;
+
+// Helper functions
+export const getStatusLabel = (status: ChairStatusKey): string => {
+  return ChairStatusMap[status]?.label || status;
+};
+
+export const getStatusColor = (status: ChairStatusKey): string => {
+  return ChairStatusMap[status]?.color || "gray";
+};
+
+export const getStatusOptions = () => {
+  return Object.values(ChairStatusMap).map(status => ({
+    value: status.value,
+    label: status.label,
+  }));
+}; 
