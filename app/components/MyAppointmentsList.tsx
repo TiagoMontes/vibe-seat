@@ -21,7 +21,13 @@ import {
 } from "lucide-react";
 import { useMyAppointments } from "@/app/hooks/useMyAppointments";
 
-export const MyAppointmentsList = () => {
+interface MyAppointmentsListProps {
+  onAppointmentChange?: () => void;
+}
+
+export const MyAppointmentsList = ({
+  onAppointmentChange,
+}: MyAppointmentsListProps) => {
   const {
     appointments,
     loading,
@@ -54,6 +60,8 @@ export const MyAppointmentsList = () => {
       if (success) {
         // Recarregar a lista para garantir sincronização
         await fetchMyAppointments();
+        // Notificar o componente pai sobre a mudança
+        onAppointmentChange?.();
       }
       setCancellingId(null);
     }

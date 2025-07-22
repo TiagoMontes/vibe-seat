@@ -1,4 +1,7 @@
 import { useCallback, useState, useEffect } from "react";
+import { useAtom } from "jotai";
+import { appointmentsAtom } from "@/app/atoms/appointmentAtoms";
+import { Appointment } from "@/app/schemas/appointmentSchema";
 
 interface User {
   id: number;
@@ -57,6 +60,9 @@ export const useScheduledAppointments = () => {
     status: "all" as "all" | "SCHEDULED" | "CONFIRMED" | "CANCELLED" | "COMPLETED",
   });
 
+  // Estado global de appointments para sincronização
+  const [globalAppointments, setGlobalAppointments] = useAtom(appointmentsAtom);
+
   const fetchScheduledAppointments = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -81,6 +87,13 @@ export const useScheduledAppointments = () => {
       // Não filtrar mais - mostrar todos os status
       setAppointments(data.appointments);
       
+      // Atualizar também o estado global (convertendo para o formato correto)
+      const globalAppointmentsData = data.appointments.map(apt => ({
+        ...apt,
+        status: apt.status as any, // Converter para o tipo correto
+      }));
+      setGlobalAppointments(globalAppointmentsData);
+      
       // Calcular paginação baseada nos agendamentos retornados
       const totalPages = Math.ceil(data.total / filters.limit);
       setPagination({
@@ -96,7 +109,7 @@ export const useScheduledAppointments = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, setGlobalAppointments]);
 
   const confirmAppointment = useCallback(async (id: number) => {
     try {
@@ -114,12 +127,17 @@ export const useScheduledAppointments = () => {
         prev.map(apt => apt.id === id ? { ...apt, status: "CONFIRMED" } : apt)
       );
 
+      // Atualizar também o estado global
+      setGlobalAppointments(prev => 
+        prev.map(apt => apt.id === id ? { ...apt, status: "CONFIRMED" } : apt)
+      );
+
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       return false;
     }
-  }, []);
+  }, [setGlobalAppointments]);
 
   const cancelAppointment = useCallback(async (id: number) => {
     try {
@@ -137,12 +155,17 @@ export const useScheduledAppointments = () => {
         prev.map(apt => apt.id === id ? { ...apt, status: "CANCELLED" } : apt)
       );
 
+      // Atualizar também o estado global
+      setGlobalAppointments(prev => 
+        prev.map(apt => apt.id === id ? { ...apt, status: "CANCELLED" } : apt)
+      );
+
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       return false;
     }
-  }, []);
+  }, [setGlobalAppointments]);
 
   const getStatusLabel = useCallback((status: string) => {
     switch (status) {

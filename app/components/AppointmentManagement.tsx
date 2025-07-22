@@ -432,6 +432,14 @@ export const AppointmentManagement = () => {
     }
   }, [selectedDate, hasAvailableSchedules, fetchAvailableChairs]);
 
+  // Sincronizar estado quando mudar de seção
+  useEffect(() => {
+    // Sempre atualizar agendamentos quando mudar para a seção "schedule"
+    if (activeSection === "schedule") {
+      fetchAppointments();
+    }
+  }, [activeSection, fetchAppointments]);
+
   // Paginate available chairs for display
   const totalDisplayPages = Math.ceil(
     availableChairsData.length / itemsPerPage
@@ -465,8 +473,10 @@ export const AppointmentManagement = () => {
     );
   };
 
-  const handleDateSelect = (date: string) => {
+  const handleDateSelect = async (date: string) => {
     setSelectedDate(date);
+    // Atualizar agendamentos quando selecionar uma data para garantir dados atualizados
+    await fetchAppointments();
   };
 
   const handleTimeSelect = async (chairId: number, time: string) => {
@@ -503,6 +513,26 @@ export const AppointmentManagement = () => {
         pagination.currentPage + 1,
         true
       );
+    }
+  };
+
+  // Função para atualizar tudo quando clicar no botão atualizar
+  const handleRefresh = async () => {
+    await Promise.all([fetchChairs(), fetchSchedules(), fetchAppointments()]);
+
+    // Se há uma data selecionada, atualizar também as cadeiras disponíveis
+    if (selectedDate) {
+      await fetchAvailableChairs(selectedDate, 1, false);
+    }
+  };
+
+  // Função para atualizar agendamentos quando houver mudanças em outras seções
+  const handleAppointmentChange = async () => {
+    await fetchAppointments();
+
+    // Se há uma data selecionada, atualizar também as cadeiras disponíveis
+    if (selectedDate) {
+      await fetchAvailableChairs(selectedDate, 1, false);
     }
   };
 
@@ -560,10 +590,7 @@ export const AppointmentManagement = () => {
           {activeSection === "schedule" && (
             <Button
               variant="outline"
-              onClick={() => {
-                fetchChairs();
-                fetchSchedules();
-              }}
+              onClick={handleRefresh}
               disabled={isLoading}
               className="flex items-center gap-2"
             >
@@ -726,9 +753,11 @@ export const AppointmentManagement = () => {
           />
         </>
       ) : activeSection === "my-appointments" ? (
-        <MyAppointmentsList />
+        <MyAppointmentsList onAppointmentChange={handleAppointmentChange} />
       ) : (
-        <ScheduledAppointmentsList />
+        <ScheduledAppointmentsList
+          onAppointmentChange={handleAppointmentChange}
+        />
       )}
     </div>
   );

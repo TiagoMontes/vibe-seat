@@ -22,7 +22,13 @@ import {
 } from "lucide-react";
 import { useScheduledAppointments } from "@/app/hooks/useScheduledAppointments";
 
-export const ScheduledAppointmentsList = () => {
+interface ScheduledAppointmentsListProps {
+  onAppointmentChange?: () => void;
+}
+
+export const ScheduledAppointmentsList = ({
+  onAppointmentChange,
+}: ScheduledAppointmentsListProps) => {
   const {
     appointments,
     loading,
@@ -57,6 +63,8 @@ export const ScheduledAppointmentsList = () => {
       if (success) {
         // Recarregar a lista para garantir sincronização
         await fetchScheduledAppointments();
+        // Notificar o componente pai sobre a mudança
+        onAppointmentChange?.();
       }
       setConfirmingId(null);
     }
@@ -69,6 +77,8 @@ export const ScheduledAppointmentsList = () => {
       if (success) {
         // Recarregar a lista para garantir sincronização
         await fetchScheduledAppointments();
+        // Notificar o componente pai sobre a mudança
+        onAppointmentChange?.();
       }
       setCancellingId(null);
     }

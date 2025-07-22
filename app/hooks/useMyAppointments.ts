@@ -1,21 +1,12 @@
 import { useCallback, useState, useEffect } from "react";
+import { useAtom } from "jotai";
+import { appointmentsAtom } from "@/app/atoms/appointmentAtoms";
+import { Appointment } from "@/app/schemas/appointmentSchema";
 
 interface Chair {
   id: number;
   name: string;
   location: string;
-}
-
-interface Appointment {
-  id: number;
-  userId: number;
-  chairId: number;
-  datetimeStart: string;
-  datetimeEnd: string;
-  status: string;
-  presenceConfirmed: boolean;
-  createdAt: string;
-  chair: Chair;
 }
 
 interface MyAppointmentsResponse {
@@ -51,6 +42,9 @@ export const useMyAppointments = () => {
     limit: 10,
   });
 
+  // Estado global de appointments para sincronização
+  const [globalAppointments, setGlobalAppointments] = useAtom(appointmentsAtom);
+
   const fetchMyAppointments = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -73,6 +67,9 @@ export const useMyAppointments = () => {
       const data: MyAppointmentsResponse = await response.json();
       setAppointments(data.appointments);
       
+      // Atualizar também o estado global
+      setGlobalAppointments(data.appointments);
+      
       // Calcular paginação
       const totalPages = Math.ceil(data.total / filters.limit);
       setPagination({
@@ -88,7 +85,7 @@ export const useMyAppointments = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, setGlobalAppointments]);
 
   const cancelAppointment = useCallback(async (id: number) => {
     try {
@@ -106,12 +103,17 @@ export const useMyAppointments = () => {
         prev.map(apt => apt.id === id ? { ...apt, status: "CANCELLED" } : apt)
       );
 
+      // Atualizar também o estado global
+      setGlobalAppointments(prev => 
+        prev.map(apt => apt.id === id ? { ...apt, status: "CANCELLED" } : apt)
+      );
+
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       return false;
     }
-  }, []);
+  }, [setGlobalAppointments]);
 
   const getStatusLabel = useCallback((status: string) => {
     switch (status) {
