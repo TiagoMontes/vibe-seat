@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -22,17 +22,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    // Pegar parâmetros de query para paginação
+    const { searchParams } = new URL(request.url);
+    const page = searchParams.get("page") || "1";
+    const limit = searchParams.get("limit") || "10";
+    const status = searchParams.get("status") || "all";
 
-    console.log(body);
-    const response = await fetch(`${apiUrl}/appointments/`, {
-      method: "POST",
+    const queryParams = new URLSearchParams();
+    queryParams.set("page", page);
+    queryParams.set("limit", limit);
+    if (status !== "all") {
+      queryParams.set("status", status);
+    }
+
+    const response = await fetch(`${apiUrl}/appointments/my-appointments?${queryParams.toString()}`, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
         "User-Agent": "*"
       },
-      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -45,15 +54,15 @@ export async function POST(request: NextRequest) {
       
       const errorData = await response.json();
       return NextResponse.json(
-        { error: errorData.message || "Erro ao criar agendamento" },
+        { error: errorData.message || "Erro ao buscar agendamentos" },
         { status: response.status }
       );
     }
 
-    const appointment = await response.json();
-    return NextResponse.json(appointment, { status: 201 });
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error("Erro ao criar agendamento:", error);
+    console.error("Erro ao buscar agendamentos do usuário:", error);
     return NextResponse.json(
       { error: "Erro de conexão com o servidor" },
       { status: 500 }

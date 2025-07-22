@@ -99,6 +99,28 @@ export const useAppointments = () => {
     setSuccessMessage("");
 
     try {
+      // Verificar se o usuário já tem um agendamento ativo
+      const hasActiveAppointment = appointments.some(appointment => {
+        // Exclui explicitamente agendamentos cancelados
+        if (appointment.status === 'CANCELLED') return false;
+        
+        // Considera agendamentos SCHEDULED, CONFIRMED e COMPLETED como ativos
+        const isActiveStatus = ['SCHEDULED', 'CONFIRMED', 'COMPLETED'].includes(appointment.status);
+        
+        if (!isActiveStatus) return false;
+        
+        // Verifica se o agendamento é futuro (incluindo hoje)
+        const appointmentDate = new Date(appointment.datetimeStart);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Remove horário para comparar apenas a data
+        
+        return appointmentDate >= today;
+      });
+
+      if (hasActiveAppointment) {
+        throw new Error("Você já possui um agendamento ativo. Só é possível fazer um novo agendamento após a conclusão do atual.");
+      }
+
       const response = await fetch("/api/appointments/create", {
         method: "POST",
         headers: {
@@ -129,7 +151,7 @@ export const useAppointments = () => {
     } finally {
       setCreateLoading(false);
     }
-  }, [setCreateLoading, setError, setSuccessMessage, setAppointments, setSelectedChairId, setSelectedDate, setSelectedTime, setModalOpen, fetchAppointments]);
+  }, [appointments, setCreateLoading, setError, setSuccessMessage, setAppointments, setSelectedChairId, setSelectedDate, setSelectedTime, setModalOpen, fetchAppointments]);
 
   const cancelAppointment = useCallback(async (id: number) => {
     setCancelLoading(true);
@@ -137,7 +159,7 @@ export const useAppointments = () => {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(`/api/appointments/cancel/${id}`, {
+      const response = await fetch(`/api/appointments/${id}/cancel`, {
         method: "PATCH",
       });
 
@@ -212,6 +234,24 @@ export const useAppointments = () => {
     setSuccessMessage("");
   }, [setError, setSuccessMessage]);
 
+  // Verifica se o usuário pode fazer um novo agendamento
+  const canCreateAppointment = useCallback(() => {
+    return !appointments.some(appointment => {
+      // Exclui explicitamente agendamentos cancelados
+      if (appointment.status === 'CANCELLED') return false;
+      
+      const isActiveStatus = ['SCHEDULED', 'CONFIRMED', 'COMPLETED'].includes(appointment.status);
+      
+      if (!isActiveStatus) return false;
+      
+      const appointmentDate = new Date(appointment.datetimeStart);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      return appointmentDate >= today;
+    });
+  }, [appointments]);
+
   return {
     // Data
     appointments,
@@ -243,6 +283,7 @@ export const useAppointments = () => {
     createAppointment,
     cancelAppointment,
     confirmAppointment,
+    canCreateAppointment,
     
     // UI actions
     openModal,

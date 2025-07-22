@@ -21,6 +21,8 @@ import { useChairs } from "@/app/hooks/useChairs";
 import { useSchedules } from "@/app/hooks/useSchedules";
 import { useAuth } from "@/app/hooks/useAuth";
 import { Chair } from "@/app/schemas/chairSchema";
+import { MyAppointmentsList } from "@/app/components/MyAppointmentsList";
+import { ScheduledAppointmentsList } from "@/app/components/ScheduledAppointmentsList";
 import {
   CalendarIcon,
   ClockIcon,
@@ -31,6 +33,8 @@ import {
   RefreshCwIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ListIcon,
+  UsersIcon,
 } from "lucide-react";
 
 interface ChairCardProps {
@@ -302,11 +306,15 @@ export const AppointmentManagement = () => {
     error,
     successMessage,
     clearMessages,
+    fetchAppointments,
   } = useAppointments();
 
   // Local state
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<
+    "schedule" | "my-appointments" | "scheduled-list"
+  >("schedule");
   const [availableChairsData, setAvailableChairsData] = useState<
     Array<{
       chairId: number;
@@ -381,7 +389,8 @@ export const AppointmentManagement = () => {
   useEffect(() => {
     fetchChairs();
     fetchSchedules();
-  }, [fetchChairs, fetchSchedules]);
+    fetchAppointments(); // Carrega os agendamentos do usuário
+  }, [fetchChairs, fetchSchedules, fetchAppointments]);
 
   // Auto-clear messages
   useEffect(() => {
@@ -473,12 +482,10 @@ export const AppointmentManagement = () => {
     } para ${new Date(selectedDate).toLocaleDateString("pt-BR")} às ${time}?`;
 
     if (window.confirm(confirmMessage)) {
-      const datetimeStart = `${selectedDate}T${time}:00`;
-
       try {
         await createAppointment({
           chairId,
-          datetimeStart,
+          datetimeStart: time,
         });
 
         // Refresh available chairs after successful booking
@@ -512,23 +519,61 @@ export const AppointmentManagement = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Agendar Massagem</h1>
           <p className="text-gray-600">
-            Selecione uma data e escolha o horário desejado
+            {activeSection === "schedule"
+              ? "Selecione uma data e escolha o horário desejado"
+              : activeSection === "my-appointments"
+              ? "Visualize e gerencie seus agendamentos"
+              : "Gerencie os agendamentos pendentes de confirmação"}
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            fetchChairs();
-            fetchSchedules();
-          }}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCwIcon
-            className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-          />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={activeSection === "schedule" ? "default" : "outline"}
+            onClick={() => setActiveSection("schedule")}
+            className="flex items-center gap-2"
+          >
+            <CalendarIcon className="h-4 w-4" />
+            Agendar
+          </Button>
+          <Button
+            variant={
+              activeSection === "my-appointments" ? "default" : "outline"
+            }
+            onClick={() => setActiveSection("my-appointments")}
+            className="flex items-center gap-2"
+          >
+            <ListIcon className="h-4 w-4" />
+            Meus Agendamentos
+          </Button>
+          {user?.role === "admin" && (
+            <Button
+              variant={
+                activeSection === "scheduled-list" ? "default" : "outline"
+              }
+              onClick={() => setActiveSection("scheduled-list")}
+              className="flex items-center gap-2"
+            >
+              <UsersIcon className="h-4 w-4" />
+              Lista de Agendamentos
+            </Button>
+          )}
+          {activeSection === "schedule" && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                fetchChairs();
+                fetchSchedules();
+              }}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCwIcon
+                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+              />
+              Atualizar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -546,135 +591,145 @@ export const AppointmentManagement = () => {
         </div>
       )}
 
-      {/* Date Filter */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Selecionar Data</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => setDatePickerOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <CalendarIcon className="h-4 w-4" />
-              {selectedDate
-                ? formatSelectedDate(selectedDate)
-                : "Escolher data"}
-            </Button>
-            {selectedDate && (
-              <Button
-                variant="outline"
-                onClick={() => setSelectedDate(null)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <XIcon className="h-4 w-4" />
-                Limpar
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Chairs Grid */}
-      {!selectedDate ? (
-        <div className="text-center py-12">
-          <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Selecione uma data
-          </h3>
-          <p className="text-gray-600">
-            Escolha uma data para ver as cadeiras disponíveis
-          </p>
-        </div>
-      ) : loadingAvailableChairs ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-2 text-gray-600">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            Carregando cadeiras disponíveis...
-          </div>
-        </div>
-      ) : paginatedChairs.length === 0 ? (
-        <div className="text-center py-12">
-          <MapPinIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Nenhuma cadeira disponível
-          </h3>
-          <p className="text-gray-600">
-            {hasAvailableSchedules(selectedDate)
-              ? `Não há cadeiras ativas para ${formatSelectedDate(
-                  selectedDate
-                )}`
-              : `Não há configurações de horário para ${formatSelectedDate(
-                  selectedDate
-                )}`}
-          </p>
-        </div>
-      ) : (
+      {/* Render appropriate section based on activeSection */}
+      {activeSection === "schedule" ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {paginatedChairs.map((chairData) => (
-              <ChairCard
-                key={chairData.chairId}
-                chair={{
-                  id: chairData.chairId,
-                  name: chairData.chairName,
-                  location: chairData.chairLocation || "",
-                  status: "ACTIVE",
-                  description: "",
-                  createdAt: "",
-                  updatedAt: "",
-                }}
-                availableTimes={getAvailableTimes(chairData.chairId)}
-                onTimeSelect={handleTimeSelect}
-                createLoading={createLoading}
-              />
-            ))}
-          </div>
-
-          {/* Load More Button */}
-          {pagination.hasNextPage && (
-            <div className="flex justify-center mt-6">
-              <Button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                {loadingMore ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    Carregando...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCwIcon className="h-4 w-4" />
-                    Carregar Mais Cadeiras (
-                    {pagination.totalItems - availableChairsData.length}{" "}
-                    restantes)
-                  </>
+          {/* Date Filter */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Selecionar Data</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={() => setDatePickerOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  {selectedDate
+                    ? formatSelectedDate(selectedDate)
+                    : "Escolher data"}
+                </Button>
+                {selectedDate && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedDate(null)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <XIcon className="h-4 w-4" />
+                    Limpar
+                  </Button>
                 )}
-              </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Chairs Grid */}
+          {!selectedDate ? (
+            <div className="text-center py-12">
+              <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Selecione uma data
+              </h3>
+              <p className="text-gray-600">
+                Escolha uma data para ver as cadeiras disponíveis
+              </p>
             </div>
+          ) : loadingAvailableChairs ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-2 text-gray-600">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                Carregando cadeiras disponíveis...
+              </div>
+            </div>
+          ) : paginatedChairs.length === 0 ? (
+            <div className="text-center py-12">
+              <MapPinIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Nenhuma cadeira disponível
+              </h3>
+              <p className="text-gray-600">
+                {hasAvailableSchedules(selectedDate)
+                  ? `Não há cadeiras ativas para ${formatSelectedDate(
+                      selectedDate
+                    )}`
+                  : `Não há configurações de horário para ${formatSelectedDate(
+                      selectedDate
+                    )}`}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paginatedChairs.map((chairData) => (
+                  <ChairCard
+                    key={chairData.chairId}
+                    chair={{
+                      id: chairData.chairId,
+                      name: chairData.chairName,
+                      location: chairData.chairLocation || "",
+                      status: "ACTIVE",
+                      description: "",
+                      createdAt: "",
+                      updatedAt: "",
+                    }}
+                    availableTimes={getAvailableTimes(chairData.chairId)}
+                    onTimeSelect={handleTimeSelect}
+                    createLoading={createLoading}
+                  />
+                ))}
+              </div>
+
+              {/* Load More Button */}
+              {pagination.hasNextPage && (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        Carregando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCwIcon className="h-4 w-4" />
+                        Carregar Mais Cadeiras (
+                        {pagination.totalItems -
+                          availableChairsData.length}{" "}
+                        restantes)
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {/* Pagination Info */}
+              {pagination.totalItems > 0 && (
+                <div className="text-center text-sm text-gray-600">
+                  Mostrando {availableChairsData.length} de{" "}
+                  {pagination.totalItems} cadeiras
+                </div>
+              )}
+            </>
           )}
 
-          {/* Pagination Info */}
-          {pagination.totalItems > 0 && (
-            <div className="text-center text-sm text-gray-600">
-              Mostrando {availableChairsData.length} de {pagination.totalItems}{" "}
-              cadeiras
-            </div>
-          )}
+          {/* Date Picker Modal */}
+          <DatePickerModal
+            open={datePickerOpen}
+            onClose={() => setDatePickerOpen(false)}
+            selectedDate={selectedDate}
+            onDateSelect={handleDateSelect}
+          />
         </>
+      ) : activeSection === "my-appointments" ? (
+        <MyAppointmentsList />
+      ) : (
+        <ScheduledAppointmentsList />
       )}
-
-      {/* Date Picker Modal */}
-      <DatePickerModal
-        open={datePickerOpen}
-        onClose={() => setDatePickerOpen(false)}
-        selectedDate={selectedDate}
-        onDateSelect={handleDateSelect}
-      />
     </div>
   );
 };
