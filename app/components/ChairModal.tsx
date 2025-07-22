@@ -19,7 +19,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger
+  SelectTrigger,
 } from "@/app/components/ui/select";
 import { useChairs } from "@/app/hooks/useChairs";
 import {
@@ -91,7 +91,8 @@ const ChairModal = () => {
     reset();
   };
 
-  const onSubmit = async (data: ChairFormData) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onSubmit = async (data: any) => {
     try {
       if (isEdit && selectedChair) {
         await updateChair(selectedChair.id, data as ChairUpdateFormData);
@@ -123,7 +124,7 @@ const ChairModal = () => {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4 w-full">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
           {/* Nome */}
           <div className="space-y-2">
             <Label htmlFor="name">Nome *</Label>

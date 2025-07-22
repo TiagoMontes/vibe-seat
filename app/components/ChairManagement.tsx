@@ -35,6 +35,7 @@ import {
 } from "@/app/atoms/chairAtoms";
 import {
   Chair,
+  ChairStatusKey,
   getStatusLabel,
   getStatusColor,
   getStatusOptions,
@@ -152,7 +153,7 @@ const ChairManagement = () => {
   };
 
   const getStatusColorClass = (status: string) => {
-    const colorName = getStatusColor(status as any);
+    const colorName = getStatusColor(status as ChairStatusKey);
     switch (colorName) {
       case "green":
         return "bg-green-100 text-green-800";
@@ -166,7 +167,7 @@ const ChairManagement = () => {
   };
 
   const getStatusText = (status: string) => {
-    return getStatusLabel(status as any);
+    return getStatusLabel(status as ChairStatusKey);
   };
 
   const getStatusIcon = (status: string) => {
@@ -199,7 +200,7 @@ const ChairManagement = () => {
 
   const getStatusFilterText = (status: StatusFilter) => {
     if (status === "all") return "Todos";
-    return getStatusLabel(status as any);
+    return getStatusLabel(status as ChairStatusKey);
   };
 
   const hasActiveFilters =
