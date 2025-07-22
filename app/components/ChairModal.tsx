@@ -19,8 +19,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
+  SelectTrigger
 } from "@/app/components/ui/select";
 import { useChairs } from "@/app/hooks/useChairs";
 import {
@@ -31,10 +30,11 @@ import {
 import {
   chairSchema,
   chairUpdateSchema,
-  ChairFormData,
   ChairUpdateFormData,
   getStatusOptions,
   getStatusLabel,
+  ChairStatusKey,
+  ChairFormData,
 } from "@/app/schemas/chairSchema";
 
 const ChairModal = () => {
@@ -55,7 +55,7 @@ const ChairModal = () => {
     reset,
     setValue,
     watch,
-  } = useForm<ChairFormData>({
+  } = useForm({
     resolver: yupResolver(isEdit ? chairUpdateSchema : chairSchema),
     defaultValues: {
       name: "",
@@ -123,7 +123,7 @@ const ChairModal = () => {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
+        <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4 w-full">
           {/* Nome */}
           <div className="space-y-2">
             <Label htmlFor="name">Nome *</Label>
@@ -173,14 +173,12 @@ const ChairModal = () => {
             <Label htmlFor="status">Status *</Label>
             <Select
               value={watchedStatus}
-              onValueChange={(value) =>
-                setValue("status", value as ChairFormData["status"])
-              }
+              onValueChange={(value) => setValue("status", value)}
             >
               <SelectTrigger className={errors.status ? "border-red-500" : ""}>
                 <span>
                   {watchedStatus
-                    ? getStatusLabel(watchedStatus)
+                    ? getStatusLabel(watchedStatus as ChairStatusKey)
                     : "Selecione o status"}
                 </span>
               </SelectTrigger>
