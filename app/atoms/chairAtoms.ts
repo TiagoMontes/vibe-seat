@@ -17,7 +17,7 @@ export const paginationAtom = atom<PaginationInfo>({
 // Filtros ativos
 export const chairFiltersAtom = atom<ChairFilters>({
   page: 1,
-  limit: 9,
+  limit: 6,
   search: "",
   status: "all",
   sortBy: "newest",

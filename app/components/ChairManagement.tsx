@@ -65,14 +65,15 @@ const ChairManagement = () => {
     deleteChair,
   } = useChairs();
 
-  // Debounced search - wait 500ms after user stops typing
+  // Debounced search - wait for user to stop typing
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
     null
   );
+  const [isSearchPending, setIsSearchPending] = useState(false);
 
-  // Initialize data on mount
+  // Initialize data on mount - only show loading for initial load
   useEffect(() => {
-    fetchChairs();
+    fetchChairs(undefined, true); // Show loading for initial load
   }, [fetchChairs]);
 
   // Sync local state with filters when they change
@@ -91,14 +92,20 @@ const ChairManagement = () => {
         clearTimeout(searchTimeout);
       }
 
+      // Show pending state when user is typing
+      setIsSearchPending(value !== filters.search && value.length > 0);
+
       // Set new timeout for debounced search
+      const DEBOUNCE_DELAY = 500;
+
       const timeout = setTimeout(() => {
+        setIsSearchPending(false);
         updateFilters({ search: value });
-      }, 500);
+      }, DEBOUNCE_DELAY);
 
       setSearchTimeout(timeout);
     },
-    [searchTimeout, updateFilters]
+    [searchTimeout, updateFilters, filters.search]
   );
 
   const handleStatusChange = useCallback(
@@ -196,14 +203,6 @@ const ChairManagement = () => {
   const hasActiveFilters =
     searchInput || statusInput !== "all" || sortInput !== "newest";
 
-  if (loading && pagination.currentPage === 1) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-500">Carregando cadeiras...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -227,77 +226,94 @@ const ChairManagement = () => {
       </div>
 
       {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-2xl font-bold text-black">
-                  {chairStats.total}
-                </p>
-              </div>
-              <Armchair className="h-8 w-8 text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Ativas</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {chairStats.active}
-                </p>
-              </div>
-              <Activity className="h-8 w-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Manutenção</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {chairStats.maintenance}
-                </p>
-              </div>
-              <Wrench className="h-8 w-8 text-yellow-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Inativas</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {chairStats.inactive}
-                </p>
-              </div>
-              <XCircle className="h-8 w-8 text-red-400" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        {[
+          {
+            key: "total",
+            label: "Total",
+            value: chairStats.total,
+            icon: Armchair,
+            valueColor: "text-black",
+            iconColor: "text-gray-400",
+          },
+          {
+            key: "active",
+            label: "Ativas",
+            value: chairStats.active,
+            icon: Activity,
+            valueColor: "text-green-600",
+            iconColor: "text-green-400",
+          },
+          {
+            key: "maintenance",
+            label: "Manutenção",
+            value: chairStats.maintenance,
+            icon: Wrench,
+            valueColor: "text-yellow-600",
+            iconColor: "text-yellow-400",
+          },
+          {
+            key: "inactive",
+            label: "Inativas",
+            value: chairStats.inactive,
+            icon: XCircle,
+            valueColor: "text-red-600",
+            iconColor: "text-red-400",
+          },
+        ].map((stat) => {
+          const IconComponent = stat.icon;
+          return (
+            <Card key={stat.key} className="flex-1 border border-gray-200">
+              <CardContent className="p-4 h-[100px] flex items-center">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex flex-col justify-center min-h-[52px]">
+                    <p className="text-sm font-medium text-gray-600 mb-1">
+                      {stat.label}
+                    </p>
+                    <div className="w-16 h-8 flex items-center">
+                      <p
+                        className={`text-2xl font-bold ${stat.valueColor} tabular-nums leading-none`}
+                      >
+                        {stat.value}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 ml-4">
+                    <IconComponent className={`h-8 w-8 ${stat.iconColor}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Filters and Search */}
       <Card>
-        <CardContent className="p-4">
+        <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             {/* Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search
+                className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors ${
+                  isSearchPending
+                    ? "text-blue-500 animate-pulse"
+                    : "text-gray-400"
+                }`}
+              />
               <Input
                 placeholder="Pesquisar por nome, descrição ou localização..."
                 value={searchInput}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
+                className={`pl-10 transition-colors ${
+                  isSearchPending ? "border-blue-300 ring-1 ring-blue-200" : ""
+                }`}
               />
+              {isSearchPending && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
             </div>
 
             {/* Status Filter */}
@@ -341,47 +357,26 @@ const ChairManagement = () => {
             </div>
 
             {/* Clear Filters */}
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                onClick={handleClearFilters}
-                className="whitespace-nowrap"
-              >
-                Limpar Filtros
-              </Button>
-            )}
-          </div>
-
-          {/* Results Info */}
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-gray-600">
-            <div>
-              <PaginationInfo
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
-                totalItems={pagination.totalItems}
-                itemsPerPage={pagination.itemsPerPage}
-              />
-              {searchInput && ` • Pesquisando: "${searchInput}"`}
-              {statusInput !== "all" &&
-                ` • Status: ${getStatusText(statusInput)}`}
-            </div>
-            <span>Ordenado por: {getSortText(sortInput)}</span>
+            <Button
+              variant="outline"
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              className="whitespace-nowrap"
+            >
+              Limpar Filtros
+            </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Chairs List */}
       <Card>
-        <CardContent className="p-6">
+        <CardContent>
           <h2 className="text-xl font-semibold text-black mb-4">
             Lista de Cadeiras
           </h2>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-gray-500">Carregando...</div>
-            </div>
-          ) : chairs.length === 0 ? (
+          {chairs.length === 0 && !loading ? (
             <div className="text-center py-8">
               <Armchair className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               {pagination.totalItems === 0 ? (
@@ -410,11 +405,18 @@ const ChairManagement = () => {
                 </>
               )}
             </div>
+          ) : loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-gray-500">Carregando...</div>
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 {chairs.map((chair) => (
-                  <Card key={chair.id} className="border border-gray-200">
+                  <Card
+                    key={chair.id}
+                    className="border border-gray-200 transition-opacity duration-200"
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">

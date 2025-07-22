@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import {
   chairsAtom,
   chairsLoadingAtom,
@@ -28,8 +28,17 @@ export const useChairs = () => {
   const [updateLoading, setUpdateLoading] = useAtom(chairUpdateLoadingAtom);
   const [deleteLoading, setDeleteLoading] = useAtom(chairDeleteLoadingAtom);
 
-  const fetchChairs = useCallback(async (customFilters?: Partial<ChairFilters>) => {
-    setLoading(true);
+  // Track if this is the initial load
+  const hasLoadedRef = useRef(false);
+
+  const fetchChairs = useCallback(async (customFilters?: Partial<ChairFilters>, showLoading = true) => {
+    // Only show loading for initial loads or when explicitly requested
+    const shouldShowLoading = showLoading && (!hasLoadedRef.current || pagination.totalItems === 0);
+    
+    if (shouldShowLoading) {
+      setLoading(true);
+    }
+    
     try {
       const currentFilters = { ...filters, ...customFilters };
       
@@ -43,7 +52,9 @@ export const useChairs = () => {
 
       const response = await fetch(`/api/chairs/getAll?${queryParams.toString()}`);
       if (!response.ok) {
-        throw new Error("Failed to fetch chairs");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("API Error:", errorData);
+        throw new Error(errorData.error || `Failed to fetch chairs: ${response.status}`);
       }
       
       const data: ChairListResponse = await response.json();
@@ -70,13 +81,18 @@ export const useChairs = () => {
         setChairStats(stats);
       }
       
+      // Mark as loaded
+      hasLoadedRef.current = true;
+      
     } catch (error) {
       console.error("Error fetching chairs:", error);
       throw error;
     } finally {
-      setLoading(false);
+      if (shouldShowLoading) {
+        setLoading(false);
+      }
     }
-  }, [filters, setChairs, setPagination, setFilters, setChairStats, setLoading]);
+  }, [filters, setChairs, setPagination, setFilters, setChairStats, setLoading, pagination.totalItems]);
 
   const updateFilters = useCallback((newFilters: Partial<ChairFilters>) => {
     const updatedFilters = { 
@@ -87,7 +103,8 @@ export const useChairs = () => {
     };
     
     setFilters(updatedFilters);
-    fetchChairs(updatedFilters);
+    // Don't show loading for filter changes - just update quietly
+    fetchChairs(updatedFilters, false);
   }, [filters, setFilters, fetchChairs]);
 
   const goToPage = useCallback((page: number) => {
@@ -109,13 +126,13 @@ export const useChairs = () => {
   const resetFilters = useCallback(() => {
     const defaultFilters: ChairFilters = {
       page: 1,
-      limit: 9,
+      limit: 6,
       search: "",
       status: "all",
       sortBy: "newest",
     };
     setFilters(defaultFilters);
-    fetchChairs(defaultFilters);
+    fetchChairs(defaultFilters, false);
   }, [setFilters, fetchChairs]);
 
   const createChair = useCallback(
@@ -138,7 +155,7 @@ export const useChairs = () => {
         const newChair = await response.json();
         
         // Refresh the current page to show updated data
-        await fetchChairs();
+        await fetchChairs(undefined, false);
         
         return newChair;
       } catch (error) {
@@ -171,7 +188,7 @@ export const useChairs = () => {
         const updatedChair = await response.json();
         
         // Refresh the current page to show updated data
-        await fetchChairs();
+        await fetchChairs(undefined, false);
         
         return updatedChair;
       } catch (error) {
@@ -199,9 +216,9 @@ export const useChairs = () => {
 
         // If we're on the last page and it becomes empty, go to previous page
         if (chairs.length === 1 && pagination.currentPage > 1) {
-          await fetchChairs({ page: pagination.currentPage - 1 });
+          await fetchChairs({ page: pagination.currentPage - 1 }, false);
         } else {
-          await fetchChairs();
+          await fetchChairs(undefined, false);
         }
         
         return { success: true };
