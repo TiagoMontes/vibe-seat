@@ -53,8 +53,6 @@ export async function DELETE(request: NextRequest) {
       body: JSON.stringify({ ids }),
     });
 
-    console.log(await backendResponse.json());
-
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json().catch(() => ({ error: "Erro desconhecido" }));
       return NextResponse.json(

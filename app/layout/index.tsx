@@ -6,6 +6,7 @@ import UserManagement from "@/app/components/UserManagement";
 import { Button } from "../components/ui/button";
 import ChairManagement from "../components/ChairManagement";
 import ScheduleManagement from "../components/ScheduleManagement";
+import { AppointmentManagement } from "../components/AppointmentManagement";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -56,8 +57,13 @@ const Layout: React.FC<LayoutProps> = ({
           },
           {
             key: "schedules" as TabKey,
-            label: "Horários",
+            label: "Gestão de disponibilidade",
             component: <ScheduleManagement />,
+          },
+          {
+            key: "appointments" as TabKey,
+            label: "Agendamentos",
+            component: <AppointmentManagement />,
           },
         ]
       : []),

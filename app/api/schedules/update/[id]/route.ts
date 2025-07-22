@@ -29,8 +29,6 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    console.log(body);
-
     // Call backend API
     const backendResponse = await fetch(`${API_BACKEND}/schedules/${id}`, {
       method: "PATCH",

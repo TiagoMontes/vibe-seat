@@ -43,7 +43,7 @@ const Login = () => {
   const isLoading = loading || isSubmitting;
 
   return (
-    <Card className="w-full max-w-md lg:border lg:border-gray-300">
+    <Card className="w-full p-4 max-w-md lg:border lg:border-gray-300">
       <CardHeader className="text-center">
         <CardTitle className="text-3xl font-bold text-blue-600 mb-2">
           VibeSeat

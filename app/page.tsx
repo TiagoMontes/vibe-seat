@@ -40,7 +40,7 @@ export default function LoginPage() {
             Não tem uma conta?{" "}
             <button
               onClick={() => setShowRegister(true)}
-              className="text-blue-600 hover:text-blue-800 font-medium underline"
+              className="text-blue-600 cursor-pointer hover:text-blue-800 font-medium underline"
             >
               Criar conta
             </button>

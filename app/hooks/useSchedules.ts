@@ -6,7 +6,7 @@ import {
   filteredSchedulesAtom,
   schedulesByDayAtom,
 } from "@/app/atoms/scheduleAtoms";
-import { ScheduleFormData, ScheduleUpdateFormData, ScheduleFilters } from "@/app/schemas/scheduleSchema";
+import { ScheduleFormData, ScheduleUpdateFormData, ScheduleFilters, generateTimeSlots } from "@/app/schemas/scheduleSchema";
 
 export const useSchedules = () => {
   const [schedules, setSchedules] = useAtom(schedulesAtom);
@@ -20,36 +20,26 @@ export const useSchedules = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSchedules = useCallback(
-    async (showLoading = false) => {
-      if (showLoading) setLoading(true);
-      setError(null);
+  const fetchSchedules = useCallback(async () => {
+    setLoading(true);
+    setError("");
 
-      try {
-        const response = await fetch("/api/schedules/getAll", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+    try {
+      const response = await fetch("/api/schedules/getAll");
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Erro ao buscar configurações");
-        }
-
-        const data = await response.json();
-        setSchedules(data);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
-        setError(errorMessage);
-        throw err;
-      } finally {
-        if (showLoading) setLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao buscar configurações de horário");
       }
-    },
-    [setSchedules]
-  );
+
+      const data = await response.json();
+      setSchedules(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+    } finally {
+      setLoading(false);
+    }
+  }, [setSchedules, setLoading, setError]);
 
   const createSchedule = useCallback(
     async (scheduleData: ScheduleFormData) => {
@@ -186,6 +176,39 @@ export const useSchedules = () => {
     [setSchedules]
   );
 
+  const getAvailableTimesForDate = useCallback((date: string): string[] => {
+    if (!schedules || schedules.length === 0) {
+      return [];
+    }
+
+    const selectedDate = new Date(date);
+    const dayOfWeek = selectedDate.getDay();
+
+    const validSchedules = schedules.filter((schedule) => {
+      if (schedule.dayOfWeek !== dayOfWeek) {
+        return false;
+      }
+
+      const validFrom = schedule.validFrom ? new Date(schedule.validFrom) : null;
+      const validTo = schedule.validTo ? new Date(schedule.validTo) : null;
+
+      if (!validFrom || !validTo) return false;
+
+      return selectedDate >= validFrom && selectedDate <= validTo;
+    });
+
+    const allTimeSlots: string[] = [];
+
+    validSchedules.forEach((schedule) => {
+      const timeSlots = generateTimeSlots(schedule.timeStart, schedule.timeEnd);
+      allTimeSlots.push(...timeSlots);
+    });
+
+    const uniqueTimeSlots = [...new Set(allTimeSlots)].sort();
+
+    return uniqueTimeSlots;
+  }, [schedules]);
+
   const updateFilters = useCallback(
     (newFilters: Partial<ScheduleFilters>) => {
       setFilters(prev => ({ ...prev, ...newFilters }));
@@ -201,23 +224,26 @@ export const useSchedules = () => {
     setError(null);
   }, []);
 
+  const hasAvailableSchedules = useCallback((date: string): boolean => {
+    return getAvailableTimesForDate(date).length > 0
+  }, [getAvailableTimesForDate]);
+
   return {
     schedules,
-    filteredSchedules,
-    schedulesByDay,
-    filters,
     loading,
-    createLoading,
-    updateLoading,
-    deleteLoading,
     error,
     fetchSchedules,
     createSchedule,
     updateSchedule,
     deleteSchedule,
     bulkDeleteSchedules,
+    createLoading,
+    updateLoading,
+    deleteLoading,
+    clearError,
     updateFilters,
     resetFilters,
-    clearError,
+    getAvailableTimesForDate,
+    hasAvailableSchedules
   };
 }; 

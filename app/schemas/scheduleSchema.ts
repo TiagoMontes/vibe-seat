@@ -180,17 +180,15 @@ export const generateTimeSlots = (timeStart: string, timeEnd: string): string[] 
   const endTotalMinutes = endHour * 60 + endMinute;
   
   while ((currentHour * 60 + currentMinute) < endTotalMinutes) {
-    const nextMinute = currentMinute + 30;
-    const nextHour = nextMinute >= 60 ? currentHour + 1 : currentHour;
-    const adjustedNextMinute = nextMinute >= 60 ? nextMinute - 60 : nextMinute;
+    const timeSlot = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+    slots.push(timeSlot);
     
-    const startSlot = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
-    const endSlot = `${nextHour.toString().padStart(2, '0')}:${adjustedNextMinute.toString().padStart(2, '0')}`;
-    
-    slots.push(`${startSlot} - ${endSlot}`);
-    
-    currentHour = nextHour;
-    currentMinute = adjustedNextMinute;
+    // Add 30 minutes
+    currentMinute += 30;
+    if (currentMinute >= 60) {
+      currentHour += 1;
+      currentMinute = 0;
+    }
   }
   
   return slots;

@@ -10,6 +10,10 @@ export const selectedScheduleAtom = atom<Schedule | null>(null);
 export const schedulesAtom = atom<Schedule[]>([]);
 export const scheduleFiltersAtom = atom<ScheduleFilters>({});
 
+// Loading and error states
+export const schedulesLoadingAtom = atom<boolean>(false);
+export const schedulesErrorAtom = atom<string>("");
+
 // Computed stats atom
 export const computedScheduleStatsAtom = atom<ScheduleStats>((get) => {
   const schedules = get(schedulesAtom);

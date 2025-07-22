@@ -71,12 +71,10 @@ export const authOptions: NextAuthOptions = {
         try {
           const result = await loginAPI(credentials.username, credentials.password)
 
-          console.log(result);
           if (result.token) {
             // Decodificar o token para extrair as informações do usuário
             const decodedToken = decode(result.token) as DecodedToken;
-            console.log('Decoded token:', decodedToken);
-            
+
             return {
               id: decodedToken.id?.toString() || '1',
               username: decodedToken.username || credentials.username,

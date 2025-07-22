@@ -67,7 +67,7 @@ const ScheduleManagement = () => {
   } = useSchedules();
 
   useEffect(() => {
-    fetchSchedules(true);
+    fetchSchedules();
   }, [fetchSchedules]);
 
   useEffect(() => {
