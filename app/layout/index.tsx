@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { cn } from "@/app/lib/utils";
 import UserManagement from "@/app/components/UserManagement";
 import { Button } from "../components/ui/button";
+import ChairManagement from "../components/ChairManagement";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -46,6 +47,11 @@ const Layout: React.FC<LayoutProps> = ({
             key: "users" as TabKey,
             label: "Usuários",
             component: <UserManagement />,
+          },
+          {
+            key: "chairs" as TabKey,
+            label: "Cadeiras",
+            component: <ChairManagement />,
           },
         ]
       : []),

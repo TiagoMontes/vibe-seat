@@ -4,22 +4,25 @@ import React, { useState } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Users, Clock, UserCheck } from "lucide-react";
+import { Users, Clock, UserCheck, Armchair } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import PendingApprovals from "./PendingApprovals";
 import RegisteredUsers from "./RegisteredUsers";
+import ChairManagement from "./ChairManagement";
 import {
   pendingCountAtom,
   totalUsersCountAtom,
 } from "@/app/atoms/userManagementAtoms";
+import { computedChairStatsAtom } from "@/app/atoms/chairAtoms";
 import { useUserManagementData } from "@/app/hooks/useUserManagementData";
 
-type TabType = "pending" | "users";
+type TabType = "pending" | "users" | "chairs";
 
 const UserManagement = () => {
   const [activeTab, setActiveTab] = useState<TabType>("pending");
   const [pendingCount] = useAtom(pendingCountAtom);
   const [totalUsersCount] = useAtom(totalUsersCountAtom);
+  const [chairStats] = useAtom(computedChairStatsAtom);
 
   // Inicializar dados uma vez
   useUserManagementData();
