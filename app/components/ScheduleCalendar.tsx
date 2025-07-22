@@ -32,19 +32,16 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Get current month info
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
-  const firstDayWeekday = firstDayOfMonth.getDay(); // 0 = Sunday
+  const firstDayWeekday = firstDayOfMonth.getDay();
   const daysInMonth = lastDayOfMonth.getDate();
 
-  // Generate calendar days including previous/next month padding
   const calendarDays = useMemo(() => {
     const days = [];
 
-    // Previous month days (for padding)
     const prevMonth = new Date(year, month - 1, 0);
     for (let i = firstDayWeekday - 1; i >= 0; i--) {
       days.push({
@@ -54,7 +51,6 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
       });
     }
 
-    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       days.push({
         date: day,
@@ -63,8 +59,7 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
       });
     }
 
-    // Next month days (for padding to complete the grid)
-    const remainingCells = 42 - days.length; // 6 rows × 7 days
+    const remainingCells = 42 - days.length;
     for (let day = 1; day <= remainingCells; day++) {
       days.push({
         date: day,
@@ -76,16 +71,12 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
     return days;
   }, [year, month, firstDayWeekday, daysInMonth]);
 
-  // Get schedules for a specific date
   const getSchedulesForDate = (date: Date) => {
     const dayOfWeek = date.getDay();
-    const dateString = date.toISOString().split("T")[0];
 
     return schedules.filter((schedule) => {
-      // Check if schedule applies to this day of week
       if (schedule.dayOfWeek !== dayOfWeek) return false;
 
-      // Check if schedule is valid for this date
       const validFrom = schedule.validFrom
         ? new Date(schedule.validFrom)
         : null;
@@ -98,7 +89,6 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
     });
   };
 
-  // Navigation functions
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
   };
@@ -136,7 +126,6 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
   return (
     <Card>
       <CardContent className="p-6">
-        {/* Calendar Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-semibold text-black flex items-center gap-2">
@@ -168,7 +157,6 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
           </div>
         </div>
 
-        {/* Week Days Header */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {weekDays.map((day) => (
             <div
@@ -180,11 +168,9 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
           ))}
         </div>
 
-        {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-1">
           {calendarDays.map((calendarDay, index) => {
             const daySchedules = getSchedulesForDate(calendarDay.fullDate);
-            const activeSchedules = daySchedules.filter(isScheduleActive);
             const totalSlots = daySchedules.reduce(
               (sum, schedule) =>
                 sum + calculateTimeSlots(schedule.timeStart, schedule.timeEnd),
@@ -202,7 +188,6 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
                   isToday(calendarDay.fullDate) ? "ring-2 ring-blue-500" : ""
                 }`}
               >
-                {/* Day Number */}
                 <div className="flex items-center justify-between mb-1">
                   <span
                     className={`text-sm font-medium ${
@@ -228,7 +213,6 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
                   )}
                 </div>
 
-                {/* Schedule Blocks */}
                 {calendarDay.isCurrentMonth && daySchedules.length > 0 && (
                   <div className="space-y-1">
                     {daySchedules.slice(0, 2).map((schedule) => {
@@ -265,14 +249,12 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
                       );
                     })}
 
-                    {/* Show "more" indicator if there are more than 2 schedules */}
                     {daySchedules.length > 2 && (
                       <div className="text-xs text-gray-500 text-center py-1">
                         +{daySchedules.length - 2} mais
                       </div>
                     )}
 
-                    {/* Total slots summary */}
                     {totalSlots > 0 && (
                       <div className="text-xs text-center py-1 bg-blue-50 text-blue-700 rounded">
                         {totalSlots} slots total
@@ -281,7 +263,6 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
                   </div>
                 )}
 
-                {/* Day of Week Label (only for current month) */}
                 {calendarDay.isCurrentMonth && daySchedules.length === 0 && (
                   <div className="text-xs text-gray-400 text-center mt-2">
                     {getDayShortLabel(calendarDay.fullDate.getDay())}
@@ -292,7 +273,6 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
           })}
         </div>
 
-        {/* Legend */}
         <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t">
           <div className="flex items-center gap-2 text-sm">
             <div className="w-3 h-3 bg-green-100 border border-green-200 rounded"></div>

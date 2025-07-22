@@ -23,7 +23,6 @@ import {
 } from "@/app/atoms/scheduleAtoms";
 import {
   scheduleSchema,
-  scheduleUpdateSchema,
   ScheduleFormData,
   ScheduleUpdateFormData,
   getDayOptions,
@@ -46,8 +45,6 @@ const ScheduleModal = () => {
   const isEdit = isEditModalOpen && selectedSchedule;
   const isOpen = isCreateModalOpen || isEditModalOpen;
 
-  // For creating schedules, we need a form that handles multiple days
-  // For editing, we handle a single schedule at a time
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [previewSlots, setPreviewSlots] = useState<string[]>([]);
 
@@ -72,10 +69,8 @@ const ScheduleModal = () => {
   const watchedTimeStart = watch("timeStart");
   const watchedTimeEnd = watch("timeEnd");
 
-  // Reset form when modal opens/closes or schedule changes
   useEffect(() => {
     if (isEdit && selectedSchedule) {
-      // For editing, we're editing a single day
       setValue("timeStart", selectedSchedule.timeStart);
       setValue("timeEnd", selectedSchedule.timeEnd);
       setValue(
@@ -90,18 +85,11 @@ const ScheduleModal = () => {
       );
       setSelectedDays([selectedSchedule.dayOfWeek]);
     } else if (isCreateModalOpen) {
-      reset({
-        daysOfWeek: [],
-        timeStart: "",
-        timeEnd: "",
-        validFrom: "",
-        validTo: "",
-      });
+      reset();
       setSelectedDays([]);
     }
   }, [isEdit, selectedSchedule, isCreateModalOpen, setValue, reset]);
 
-  // Update preview slots when times change
   useEffect(() => {
     if (
       watchedTimeStart &&
@@ -109,9 +97,8 @@ const ScheduleModal = () => {
       watchedTimeEnd > watchedTimeStart
     ) {
       try {
-        const slots = generateTimeSlots(watchedTimeStart, watchedTimeEnd);
-        setPreviewSlots(slots);
-      } catch (error) {
+        setPreviewSlots(generateTimeSlots(watchedTimeStart, watchedTimeEnd));
+      } catch {
         setPreviewSlots([]);
       }
     } else {
@@ -129,7 +116,7 @@ const ScheduleModal = () => {
   };
 
   const handleDayToggle = (dayOfWeek: number) => {
-    if (isEdit) return; // Can't change day when editing
+    if (isEdit) return;
 
     setSelectedDays((prev) => {
       const newDays = prev.includes(dayOfWeek)
@@ -141,39 +128,32 @@ const ScheduleModal = () => {
     });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: ScheduleFormData) => {
     try {
       if (isEdit && selectedSchedule) {
-        // For editing, create update data without daysOfWeek
         const updateData: ScheduleUpdateFormData = {
           timeStart: data.timeStart,
           timeEnd: data.timeEnd,
-          validFrom:
-            data.validFrom && data.validFrom.trim()
-              ? new Date(data.validFrom + "T00:00:00").toISOString()
-              : null,
-          validTo:
-            data.validTo && data.validTo.trim()
-              ? new Date(data.validTo + "T23:59:59.999").toISOString()
-              : null,
+          validFrom: data.validFrom
+            ? new Date(`${data.validFrom}T00:00:00`).toISOString()
+            : null,
+          validTo: data.validTo
+            ? new Date(`${data.validTo}T23:59:59.999`).toISOString()
+            : null,
         };
 
         await updateSchedule(selectedSchedule.id, updateData);
       } else {
-        // For creating, use the form data directly
         const createData: ScheduleFormData = {
           daysOfWeek: selectedDays,
           timeStart: data.timeStart,
           timeEnd: data.timeEnd,
-          validFrom:
-            data.validFrom && data.validFrom.trim()
-              ? new Date(data.validFrom + "T00:00:00").toISOString()
-              : null,
-          validTo:
-            data.validTo && data.validTo.trim()
-              ? new Date(data.validTo + "T23:59:59.999").toISOString()
-              : null,
+          validFrom: data.validFrom
+            ? new Date(`${data.validFrom}T00:00:00`).toISOString()
+            : null,
+          validTo: data.validTo
+            ? new Date(`${data.validTo}T23:59:59.999`).toISOString()
+            : null,
         };
 
         await createSchedule(createData);

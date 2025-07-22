@@ -42,7 +42,7 @@ const SelectContext = React.createContext<{
   setOpen: () => {},
 });
 
-const Select = ({ value, onValueChange, children, disabled }: SelectProps) => {
+const Select = ({ value, onValueChange, children }: SelectProps) => {
   const [open, setOpen] = React.useState(false);
 
   return (

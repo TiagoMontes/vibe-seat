@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
 const API_BACKEND = process.env.API_BACKEND || "http://localhost:3001";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if user has admin role
     if (session.user.role !== "admin") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores podem visualizar horários." },
@@ -23,7 +22,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Call backend API
     const backendResponse = await fetch(`${API_BACKEND}/schedules/`, {
       method: "GET",
       headers: {

@@ -12,7 +12,7 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Button } from "@/app/components/ui/button";
-import { User, Lock, AlertCircle, UserPlus } from "lucide-react";
+import { User, Lock, UserPlus } from "lucide-react";
 import {
   registerSchema,
   type RegisterFormData,

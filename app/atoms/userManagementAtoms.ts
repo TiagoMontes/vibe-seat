@@ -1,6 +1,5 @@
 import { atom } from 'jotai';
 
-// Tipos
 export interface User {
   id: number;
   username: string;
@@ -38,36 +37,30 @@ export interface RegisteredUser {
   updatedAt?: string;
 }
 
-// Atoms para aprovações
 export const approvalsAtom = atom<Approval[]>([]);
 export const approvalsLoadingAtom = atom<boolean>(false);
 export const approvalsErrorAtom = atom<string | null>(null);
 
-// Atoms para usuários
 export const registeredUsersAtom = atom<RegisteredUser[]>([]);
 export const usersLoadingAtom = atom<boolean>(false);
 export const usersErrorAtom = atom<string | null>(null);
 
-// Atom derivado para contagem de aprovações pendentes
 export const pendingCountAtom = atom((get) => {
   const approvals = get(approvalsAtom);
   return approvals.filter(approval => approval.status === 'pending').length;
 });
 
-// Atom derivado para contagem total de usuários
 export const totalUsersCountAtom = atom((get) => {
   const users = get(registeredUsersAtom);
   return users.length;
 });
 
-// Atom para sincronizar mudanças de aprovação com usuários
 export const syncUsersWithApprovalsAtom = atom(
   null,
-  (get, set, _update) => {
+  (get, set) => {
     const approvals = get(approvalsAtom);
     const users = get(registeredUsersAtom);
     
-    // Atualizar status dos usuários baseado nas aprovações
     const updatedUsers = users.map(user => {
       const approval = approvals.find(app => app.userId === user.id);
       if (approval && approval.status !== user.status) {
@@ -76,7 +69,6 @@ export const syncUsersWithApprovalsAtom = atom(
       return user;
     });
     
-    // Só atualizar se houve mudanças
     const hasChanges = updatedUsers.some((user, index) => 
       user.status !== users[index].status
     );

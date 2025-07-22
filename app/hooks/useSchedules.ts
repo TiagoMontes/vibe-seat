@@ -6,7 +6,7 @@ import {
   filteredSchedulesAtom,
   schedulesByDayAtom,
 } from "@/app/atoms/scheduleAtoms";
-import { Schedule, ScheduleFormData, ScheduleUpdateFormData, ScheduleFilters } from "@/app/schemas/scheduleSchema";
+import { ScheduleFormData, ScheduleUpdateFormData, ScheduleFilters } from "@/app/schemas/scheduleSchema";
 
 export const useSchedules = () => {
   const [schedules, setSchedules] = useAtom(schedulesAtom);
@@ -20,7 +20,6 @@ export const useSchedules = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all schedules
   const fetchSchedules = useCallback(
     async (showLoading = false) => {
       if (showLoading) setLoading(true);
@@ -52,7 +51,6 @@ export const useSchedules = () => {
     [setSchedules]
   );
 
-  // Create new schedule
   const createSchedule = useCallback(
     async (scheduleData: ScheduleFormData) => {
       setCreateLoading(true);
@@ -74,7 +72,6 @@ export const useSchedules = () => {
 
         const newSchedules = await response.json();
         
-        // Add new schedules to the current list
         setSchedules(prev => [...prev, ...newSchedules]);
         
         return newSchedules;
@@ -89,7 +86,6 @@ export const useSchedules = () => {
     [setSchedules]
   );
 
-  // Update schedule
   const updateSchedule = useCallback(
     async (id: number, scheduleData: ScheduleUpdateFormData) => {
       setUpdateLoading(true);
@@ -111,7 +107,6 @@ export const useSchedules = () => {
 
         const updatedSchedule = await response.json();
 
-        // Update the schedule in the current list
         setSchedules(prev =>
           prev.map(schedule =>
             schedule.id === id ? updatedSchedule : schedule
@@ -130,7 +125,6 @@ export const useSchedules = () => {
     [setSchedules]
   );
 
-  // Delete schedule
   const deleteSchedule = useCallback(
     async (id: number) => {
       setDeleteLoading(true);
@@ -149,7 +143,6 @@ export const useSchedules = () => {
           throw new Error(errorData.error || "Erro ao excluir configuração");
         }
 
-        // Remove the schedule from the current list
         setSchedules(prev => prev.filter(schedule => schedule.id !== id));
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
@@ -162,13 +155,11 @@ export const useSchedules = () => {
     [setSchedules]
   );
 
-  // Bulk delete schedules
   const bulkDeleteSchedules = useCallback(
     async (ids: number[]) => {
       setDeleteLoading(true);
       setError(null);
 
-      console.log(ids);
       try {
         const response = await fetch("/api/schedules/bulk-delete", {
           method: "DELETE",
@@ -183,7 +174,6 @@ export const useSchedules = () => {
           throw new Error(errorData.error || "Erro ao excluir configurações");
         }
 
-        // Remove the schedules from the current list
         setSchedules(prev => prev.filter(schedule => !ids.includes(schedule.id)));
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
@@ -196,39 +186,6 @@ export const useSchedules = () => {
     [setSchedules]
   );
 
-  const deleteManySchedules = useCallback(
-    async (ids: number[]) => {
-      setDeleteLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`/api/schedules/deleteMany/`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(ids),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Erro ao excluir configuração");
-        }
-
-        // Remove the schedule from the current list
-        setSchedules(prev => prev.filter(schedule => !ids.includes(schedule.id)));
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setDeleteLoading(false);
-      }
-    },
-    [setSchedules]
-  );
-
-  // Update filters
   const updateFilters = useCallback(
     (newFilters: Partial<ScheduleFilters>) => {
       setFilters(prev => ({ ...prev, ...newFilters }));
@@ -236,33 +193,24 @@ export const useSchedules = () => {
     [setFilters]
   );
 
-  // Reset filters
   const resetFilters = useCallback(() => {
     setFilters({});
   }, [setFilters]);
 
-  // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
   return {
-    // Data
     schedules,
     filteredSchedules,
     schedulesByDay,
     filters,
-    
-    // Loading states
     loading,
     createLoading,
     updateLoading,
     deleteLoading,
-    
-    // Error state
     error,
-    
-    // Actions
     fetchSchedules,
     createSchedule,
     updateSchedule,

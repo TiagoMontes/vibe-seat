@@ -6,7 +6,7 @@ const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
 export const scheduleSchema = yup.object({
   daysOfWeek: yup
     .array()
-    .of(yup.number().min(0).max(6))
+    .of(yup.number().required().min(0).max(6))
     .min(1, "Selecione pelo menos um dia da semana")
     .required("Dias da semana são obrigatórios"),
   timeStart: yup
@@ -91,21 +91,9 @@ export const scheduleUpdateSchema = yup.object({
     }),
 });
 
-export type ScheduleFormData = {
-  daysOfWeek: number[];
-  timeStart: string;
-  timeEnd: string;
-  validFrom: Date | string | null;
-  validTo: Date | string | null;
-};
+export type ScheduleFormData = yup.InferType<typeof scheduleSchema>;
 
-export type ScheduleUpdateFormData = {
-  dayOfWeek?: number;
-  timeStart?: string;
-  timeEnd?: string;
-  validFrom?: Date | string | null;
-  validTo?: Date | string | null;
-};
+export type ScheduleUpdateFormData = yup.InferType<typeof scheduleUpdateSchema>;
 
 export interface Schedule {
   id: number;

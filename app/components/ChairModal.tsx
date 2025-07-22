@@ -30,11 +30,11 @@ import {
 import {
   chairSchema,
   chairUpdateSchema,
-  ChairUpdateFormData,
   getStatusOptions,
   getStatusLabel,
   ChairStatusKey,
   ChairFormData,
+  ChairUpdateFormData,
 } from "@/app/schemas/chairSchema";
 
 const ChairModal = () => {
@@ -67,7 +67,6 @@ const ChairModal = () => {
 
   const watchedStatus = watch("status");
 
-  // Reset form when modal opens/closes or chair changes
   useEffect(() => {
     if (isEdit && selectedChair) {
       setValue("name", selectedChair.name);
@@ -91,13 +90,12 @@ const ChairModal = () => {
     reset();
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (formData: ChairFormData | ChairUpdateFormData) => {
     try {
       if (isEdit && selectedChair) {
-        await updateChair(selectedChair.id, data as ChairUpdateFormData);
+        await updateChair(selectedChair.id, formData as ChairUpdateFormData);
       } else {
-        await createChair(data);
+        await createChair(formData as ChairFormData);
       }
       handleClose();
     } catch (error) {
@@ -125,7 +123,6 @@ const ChairModal = () => {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
-          {/* Nome */}
           <div className="space-y-2">
             <Label htmlFor="name">Nome *</Label>
             <Input
@@ -139,7 +136,6 @@ const ChairModal = () => {
             )}
           </div>
 
-          {/* Descrição */}
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
             <Input
@@ -155,7 +151,6 @@ const ChairModal = () => {
             )}
           </div>
 
-          {/* Localização */}
           <div className="space-y-2">
             <Label htmlFor="location">Localização</Label>
             <Input
@@ -169,7 +164,6 @@ const ChairModal = () => {
             )}
           </div>
 
-          {/* Status */}
           <div className="space-y-2">
             <Label htmlFor="status">Status *</Label>
             <Select
@@ -196,7 +190,6 @@ const ChairModal = () => {
             )}
           </div>
 
-          {/* Buttons */}
           <div className="flex items-center gap-2 pt-4">
             <Button
               type="button"

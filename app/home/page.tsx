@@ -6,7 +6,7 @@ import Layout from "../layout/index";
 
 export default function HomePage() {
   const { logout } = useAuth();
-  const { user, userName, userRole, userId } = useUserData();
+  const { userName, userRole, userId } = useUserData();
 
   const handleLogout = () => {
     logout();

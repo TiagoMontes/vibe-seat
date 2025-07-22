@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { toast } from 'react-toastify';
 import { 
@@ -23,7 +23,7 @@ export function useApprovals() {
   const [filter, setFilter] = useState<ApprovalStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchApprovals = async () => {
+  const fetchApprovals = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -44,7 +44,7 @@ export function useApprovals() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setApprovals, setLoading, setError]);
 
   const updateApprovalStatus = async (approvalId: number, status: 'approved' | 'rejected'): Promise<boolean> => {
     try {
@@ -64,7 +64,6 @@ export function useApprovals() {
         throw new Error(errorData.error || 'Erro ao atualizar aprovação');
       }
 
-      // Atualizar o approval na lista local
       setApprovals(prev => 
         prev.map(approval => 
           approval.id === approvalId 
@@ -84,16 +83,13 @@ export function useApprovals() {
     }
   };
 
-  // Filtrar aprovações baseado no filtro e termo de busca
   useEffect(() => {
     let filtered = approvals;
 
-    // Filtrar por status
     if (filter !== 'all') {
       filtered = filtered.filter(approval => approval.status === filter);
     }
 
-    // Filtrar por termo de busca
     if (searchTerm.trim()) {
       filtered = filtered.filter(approval =>
         approval.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,11 +98,11 @@ export function useApprovals() {
     }
 
     setFilteredApprovals(filtered);
-  }, [approvals, filter, searchTerm]);
+  }, [approvals, filter, searchTerm, fetchApprovals]);
 
   useEffect(() => {
     fetchApprovals();
-  }, []);
+  }, [fetchApprovals]);
 
   return {
     approvals: filteredApprovals,

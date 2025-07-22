@@ -11,7 +11,6 @@ import {
   chairStatsAtom,
 } from "@/app/atoms/chairAtoms";
 import { 
-  Chair, 
   ChairFormData, 
   ChairUpdateFormData, 
   ChairListResponse,
@@ -28,11 +27,9 @@ export const useChairs = () => {
   const [updateLoading, setUpdateLoading] = useAtom(chairUpdateLoadingAtom);
   const [deleteLoading, setDeleteLoading] = useAtom(chairDeleteLoadingAtom);
 
-  // Track if this is the initial load
   const hasLoadedRef = useRef(false);
 
   const fetchChairs = useCallback(async (customFilters?: Partial<ChairFilters>, showLoading = true) => {
-    // Only show loading for initial loads or when explicitly requested
     const shouldShowLoading = showLoading && (!hasLoadedRef.current || pagination.totalItems === 0);
     
     if (shouldShowLoading) {
@@ -42,7 +39,6 @@ export const useChairs = () => {
     try {
       const currentFilters = { ...filters, ...customFilters };
       
-      // Build query parameters
       const queryParams = new URLSearchParams();
       queryParams.set("page", currentFilters.page.toString());
       queryParams.set("limit", currentFilters.limit.toString());
@@ -62,16 +58,13 @@ export const useChairs = () => {
       setChairs(data.chairs);
       setPagination(data.pagination);
       
-      // Update filters if they were passed
       if (customFilters) {
         setFilters(currentFilters);
       }
 
-      // Use backend stats if available, otherwise calculate from current page (fallback)
       if (data.stats) {
         setChairStats(data.stats);
       } else {
-        // Fallback: calculate stats from current page (temporary until backend provides them)
         const stats = {
           total: data.pagination.totalItems,
           active: data.chairs.filter(chair => chair.status === "ACTIVE").length,
@@ -81,7 +74,6 @@ export const useChairs = () => {
         setChairStats(stats);
       }
       
-      // Mark as loaded
       hasLoadedRef.current = true;
       
     } catch (error) {
@@ -98,12 +90,10 @@ export const useChairs = () => {
     const updatedFilters = { 
       ...filters, 
       ...newFilters,
-      // Reset to page 1 when filters change (except when changing page)
       page: newFilters.page !== undefined ? newFilters.page : 1
     };
     
     setFilters(updatedFilters);
-    // Don't show loading for filter changes - just update quietly
     fetchChairs(updatedFilters, false);
   }, [filters, setFilters, fetchChairs]);
 
@@ -154,7 +144,6 @@ export const useChairs = () => {
 
         const newChair = await response.json();
         
-        // Refresh the current page to show updated data
         await fetchChairs(undefined, false);
         
         return newChair;
@@ -187,7 +176,6 @@ export const useChairs = () => {
 
         const updatedChair = await response.json();
         
-        // Refresh the current page to show updated data
         await fetchChairs(undefined, false);
         
         return updatedChair;
@@ -214,7 +202,6 @@ export const useChairs = () => {
           throw new Error(errorData.error || "Failed to delete chair");
         }
 
-        // If we're on the last page and it becomes empty, go to previous page
         if (chairs.length === 1 && pagination.currentPage > 1) {
           await fetchChairs({ page: pagination.currentPage - 1 }, false);
         } else {
@@ -233,19 +220,14 @@ export const useChairs = () => {
   );
 
   return {
-    // Data
     chairs,
     pagination,
     filters,
     chairStats,
-    
-    // Loading states
     loading,
     createLoading,
     updateLoading,
     deleteLoading,
-    
-    // Actions
     fetchChairs,
     updateFilters,
     resetFilters,

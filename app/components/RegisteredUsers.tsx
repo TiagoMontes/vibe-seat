@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useAtom } from "jotai";
-import { toast } from "react-toastify";
 import { Input } from "@/app/components/ui/input";
 import {
   Card,
@@ -19,18 +18,16 @@ import {
 } from "@/app/atoms/userManagementAtoms";
 
 const RegisteredUsers = () => {
-  const [allUsers, setAllUsers] = useAtom(registeredUsersAtom);
-  const [loading, setLoading] = useAtom(usersLoadingAtom);
-  const [error, setError] = useAtom(usersErrorAtom);
+  const [allUsers] = useAtom(registeredUsersAtom);
+  const [loading] = useAtom(usersLoadingAtom);
+  const [error] = useAtom(usersErrorAtom);
 
   const [users, setUsers] = useState<RegisteredUser[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Filtrar usuários baseado no termo de busca
   useEffect(() => {
     let filtered = [...allUsers];
 
-    // Filtrar por termo de busca
     if (searchTerm.trim()) {
       filtered = filtered.filter(
         (user) =>
@@ -79,7 +76,6 @@ const RegisteredUsers = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header com contador */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <UserCheck className="h-6 w-6 text-blue-600" />
@@ -97,7 +93,6 @@ const RegisteredUsers = () => {
         </div>
       </div>
 
-      {/* Busca */}
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
@@ -112,7 +107,6 @@ const RegisteredUsers = () => {
         </CardContent>
       </Card>
 
-      {/* Lista de Usuários */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -187,10 +181,7 @@ const RegisteredUsers = () => {
                       </div>
                     </div>
 
-                    {/* Futuras ações aqui */}
-                    <div className="text-gray-400">
-                      {/* Por enquanto, sem ações */}
-                    </div>
+                    <div className="text-gray-400"></div>
                   </div>
                 </div>
               ))}

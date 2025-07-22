@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { toast } from 'react-toastify';
 import { 
@@ -20,7 +20,7 @@ export function useRegisteredUsers() {
   const [filteredUsers, setFilteredUsers] = useState<RegisteredUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -41,13 +41,11 @@ export function useRegisteredUsers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setUsers, setLoading, setError]);
 
-  // Filtrar usuários baseado no termo de busca
   useEffect(() => {
     let filtered = [...users];
 
-    // Filtrar por termo de busca
     if (searchTerm.trim()) {
       filtered = filtered.filter(user =>
         user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,7 +58,7 @@ export function useRegisteredUsers() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   return {
     users: filteredUsers,

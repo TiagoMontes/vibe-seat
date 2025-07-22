@@ -1,5 +1,7 @@
 import * as yup from "yup";
 
+export type ChairStatus = "ACTIVE" | "MAINTENANCE" | "INACTIVE";
+
 export const chairSchema = yup.object({
   name: yup
     .string()
@@ -46,7 +48,7 @@ export interface Chair {
   name: string;
   description?: string;
   location?: string;
-  status: "ACTIVE" | "MAINTENANCE" | "INACTIVE";
+  status: ChairStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -100,7 +102,7 @@ export const ChairStatusMap = {
   },
 } as const;
 
-export type ChairStatusKey = keyof typeof ChairStatusMap;
+export type ChairStatusKey = ChairStatus;
 
 // Helper functions
 export const getStatusLabel = (status: ChairStatusKey): string => {

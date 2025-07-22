@@ -18,15 +18,14 @@ import {
 
 const PendingApprovals = () => {
   const [allApprovals, setAllApprovals] = useAtom(approvalsAtom);
-  const [loading, setLoading] = useAtom(approvalsLoadingAtom);
-  const [error, setError] = useAtom(approvalsErrorAtom);
+  const [loading] = useAtom(approvalsLoadingAtom);
+  const [error] = useAtom(approvalsErrorAtom);
   const [pendingCount] = useAtom(pendingCountAtom);
   const [, syncUsers] = useAtom(syncUsersWithApprovalsAtom);
 
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Função para atualizar status da aprovação
   const updateApprovalStatus = async (
     approvalId: number,
     status: "approved" | "rejected"
@@ -48,15 +47,13 @@ const PendingApprovals = () => {
         throw new Error(errorData.error || "Erro ao atualizar aprovação");
       }
 
-      // Atualizar o approval na lista local
       setAllApprovals((prev) =>
         prev.map((approval) =>
           approval.id === approvalId ? { ...approval, status } : approval
         )
       );
 
-      // Sincronizar com a lista de usuários
-      syncUsers(null);
+      syncUsers();
 
       const statusText = status === "approved" ? "aprovado" : "rejeitado";
       toast.success(`Usuário ${statusText} com sucesso!`);
@@ -77,13 +74,11 @@ const PendingApprovals = () => {
     await updateApprovalStatus(approvalId, status);
   };
 
-  // Filtrar apenas aprovações pendentes
   useEffect(() => {
     let filtered = allApprovals.filter(
       (approval) => approval.status === "pending"
     );
 
-    // Filtrar por termo de busca
     if (searchTerm.trim()) {
       filtered = filtered.filter(
         (approval) =>
@@ -122,7 +117,6 @@ const PendingApprovals = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header com contador */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Clock className="h-6 w-6 text-orange-600" />
@@ -142,7 +136,6 @@ const PendingApprovals = () => {
         )}
       </div>
 
-      {/* Busca */}
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
@@ -157,7 +150,6 @@ const PendingApprovals = () => {
         </CardContent>
       </Card>
 
-      {/* Lista de Aprovações */}
       <Card>
         <CardContent className="pt-6">
           {error && (

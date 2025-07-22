@@ -30,10 +30,7 @@ export function useUsers() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Erro ao criar usuário');
       }
-
-      const data = await response.json();
       
-      // Toast de sucesso
       toast.success('Sua solicitação de criação de conta foi enviada com sucesso, aguarde a aprovação!', {
         position: "top-right",
         autoClose: 5000,
@@ -48,7 +45,6 @@ export function useUsers() {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
       
-      // Toast de erro
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 5000,

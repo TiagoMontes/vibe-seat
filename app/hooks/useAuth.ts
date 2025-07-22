@@ -19,7 +19,6 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Sincronizar dados da sessão NextAuth com o atom do Jotai
   useEffect(() => {
     if (session?.user && status === 'authenticated') {
       const userData: UserData = {
@@ -50,14 +49,14 @@ export function useAuth() {
       }
 
       if (result?.ok) {
-        // Redirecionar para a página home após login bem-sucedido
         router.push('/home');
         return true;
       }
 
       return false;
-    } catch (err) {
+    } catch (error) {
       setError('Erro de conexão. Verifique sua internet.');
+      console.error(error);
       return false;
     } finally {
       setLoading(false);
@@ -65,7 +64,7 @@ export function useAuth() {
   };
 
   const logout = async () => {
-    setUser(null); // Limpar atom antes do signOut
+    setUser(null);
     await signOut({ redirect: false });
     router.push('/');
   };

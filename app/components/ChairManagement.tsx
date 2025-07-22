@@ -23,9 +23,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/app/components/ui/select";
-import { Pagination, PaginationInfo } from "@/app/components/ui/pagination";
+import { Pagination } from "@/app/components/ui/pagination";
 import { useChairs } from "@/app/hooks/useChairs";
 import {
   chairModalOpenAtom,
@@ -46,12 +45,11 @@ type SortOption = "newest" | "oldest" | "name-asc" | "name-desc";
 type StatusFilter = "all" | "ACTIVE" | "MAINTENANCE" | "INACTIVE";
 
 const ChairManagement = () => {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useAtom(chairModalOpenAtom);
-  const [isEditModalOpen, setIsEditModalOpen] = useAtom(chairEditModalOpenAtom);
-  const [selectedChair, setSelectedChair] = useAtom(selectedChairAtom);
+  const [, setIsCreateModalOpen] = useAtom(chairModalOpenAtom);
+  const [, setIsEditModalOpen] = useAtom(chairEditModalOpenAtom);
+  const [, setSelectedChair] = useAtom(selectedChairAtom);
   const [chairStats] = useAtom(computedChairStatsAtom);
 
-  // Local state for form inputs (controlled components)
   const [searchInput, setSearchInput] = useState("");
   const [statusInput, setStatusInput] = useState<StatusFilter>("all");
   const [sortInput, setSortInput] = useState<SortOption>("newest");
@@ -71,18 +69,15 @@ const ChairManagement = () => {
     deleteChair,
   } = useChairs();
 
-  // Debounced search - wait for user to stop typing
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
     null
   );
   const [isSearchPending, setIsSearchPending] = useState(false);
 
-  // Initialize data on mount - only show loading for initial load
   useEffect(() => {
-    fetchChairs(undefined, true); // Show loading for initial load
+    fetchChairs(undefined, true);
   }, [fetchChairs]);
 
-  // Sync local state with filters when they change
   useEffect(() => {
     setSearchInput(filters.search);
     setStatusInput(filters.status);
@@ -93,15 +88,12 @@ const ChairManagement = () => {
     (value: string) => {
       setSearchInput(value);
 
-      // Clear previous timeout
       if (searchTimeout) {
         clearTimeout(searchTimeout);
       }
 
-      // Show pending state when user is typing
       setIsSearchPending(value !== filters.search && value.length > 0);
 
-      // Set new timeout for debounced search
       const DEBOUNCE_DELAY = 500;
 
       const timeout = setTimeout(() => {
@@ -148,6 +140,7 @@ const ChairManagement = () => {
         await deleteChair(id);
       } catch (error) {
         alert("Erro ao excluir cadeira");
+        console.error(error);
       }
     }
   };
@@ -208,7 +201,6 @@ const ChairManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Armchair className="h-8 w-8 text-black" />
@@ -228,7 +220,6 @@ const ChairManagement = () => {
         </Button>
       </div>
 
-      {/* Dashboard Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
         {[
           {
@@ -291,11 +282,9 @@ const ChairManagement = () => {
         })}
       </div>
 
-      {/* Filters and Search */}
       <Card>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            {/* Search */}
             <div className="relative flex-1">
               <Search
                 className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors ${
@@ -319,7 +308,6 @@ const ChairManagement = () => {
               )}
             </div>
 
-            {/* Status Filter */}
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-600" />
               <Select
@@ -342,7 +330,6 @@ const ChairManagement = () => {
               </Select>
             </div>
 
-            {/* Sort */}
             <div className="flex items-center gap-2">
               <ArrowUpDown className="h-4 w-4 text-gray-600" />
               <Select
@@ -361,7 +348,6 @@ const ChairManagement = () => {
               </Select>
             </div>
 
-            {/* Clear Filters */}
             <Button
               variant="outline"
               onClick={handleClearFilters}
@@ -374,7 +360,6 @@ const ChairManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Chairs List */}
       <Card>
         <CardContent>
           <h2 className="text-xl font-semibold text-black mb-4">
@@ -501,7 +486,6 @@ const ChairManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Chair Modal */}
       <ChairModal />
     </div>
   );

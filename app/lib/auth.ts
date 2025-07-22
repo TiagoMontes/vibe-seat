@@ -2,7 +2,19 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { decode } from 'jsonwebtoken';
 
-async function loginAPI(username: string, password: string) {
+interface LoginResponse {
+  token: string;
+  [key: string]: unknown;
+}
+
+interface DecodedToken {
+  id?: number;
+  username?: string;
+  role?: string;
+  exp?: number;
+}
+
+async function loginAPI(username: string, password: string): Promise<LoginResponse> {
   const apiUrl = process.env.API_BACKEND;
   
   if (!apiUrl) {
@@ -26,7 +38,7 @@ async function loginAPI(username: string, password: string) {
       throw new Error(`Erro na autenticação: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: LoginResponse = await response.json();
 
     if (!data.token) {
       throw new Error('Token não recebido do servidor');
@@ -62,12 +74,7 @@ export const authOptions: NextAuthOptions = {
           console.log(result);
           if (result.token) {
             // Decodificar o token para extrair as informações do usuário
-            const decodedToken = decode(result.token) as { 
-              id?: number; 
-              username?: string; 
-              role?: string; 
-              exp?: number; 
-            };
+            const decodedToken = decode(result.token) as DecodedToken;
             console.log('Decoded token:', decodedToken);
             
             return {
@@ -95,10 +102,9 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async jwt({ token, user, account }: any) {
+    async jwt({ token, user, account }) {
       if (account && user) {
-        const decodedToken = decode(user.token) as { exp?: number };
+        const decodedToken = decode(user.token) as DecodedToken;
         
         return {
           ...token,
@@ -113,14 +119,20 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async session({ session, token }: any) {
-      session.accessToken = token.accessToken;
-      session.expires = token.exp * 1000;
-      session.expiresFormatted = new Date(token.exp * 1000).toLocaleString('pt-BR');
-      session.user.username = token.username;
-      session.user.role = token.role;
-      session.user.id = token.id;
+    async session({ session, token }) {
+      // Acessamos as propriedades diretamente sem conversão
+      Object.assign(session, {
+        accessToken: token.accessToken,
+        expires: (token.exp as number) * 1000,
+        expiresFormatted: new Date((token.exp as number) * 1000).toLocaleString('pt-BR')
+      });
+      
+      // Atualizamos o objeto user
+      Object.assign(session.user, {
+        username: token.username,
+        role: token.role,
+        id: token.id
+      });
 
       return session;
     }

@@ -29,7 +29,6 @@ import {
 import {
   Schedule,
   getDayLabel,
-  getDayOptions,
   formatDateRange,
   isScheduleActive,
   generateTimeSlots,
@@ -45,12 +44,10 @@ const ScheduleManagement = () => {
   const [, setSelectedSchedule] = useAtom(selectedScheduleAtom);
   const [scheduleStats] = useAtom(computedScheduleStatsAtom);
 
-  // Local state for filters
   const [dayFilter, setDayFilter] = useState<DayFilter>("all");
   const [dateFilter, setDateFilter] = useState("");
   const [specificDateFilter, setSpecificDateFilter] = useState("");
 
-  // Selection state
   const [selectedSchedules, setSelectedSchedules] = useState<Set<number>>(
     new Set()
   );
@@ -58,7 +55,6 @@ const ScheduleManagement = () => {
 
   const {
     schedules,
-    schedulesByDay,
     loading,
     deleteLoading,
     error,
@@ -70,26 +66,16 @@ const ScheduleManagement = () => {
     clearError,
   } = useSchedules();
 
-  // Initialize data on mount
   useEffect(() => {
     fetchSchedules(true);
   }, [fetchSchedules]);
 
-  // Update filters when local state changes
   useEffect(() => {
     updateFilters({
       dayOfWeek: dayFilter === "all" ? undefined : dayFilter,
       validDate: dateFilter || undefined,
     });
   }, [dayFilter, dateFilter, updateFilters]);
-
-  const handleDayFilterChange = useCallback((value: string) => {
-    setDayFilter(value === "all" ? "all" : parseInt(value));
-  }, []);
-
-  const handleDateFilterChange = useCallback((value: string) => {
-    setDateFilter(value);
-  }, []);
 
   const handleClearFilters = useCallback(() => {
     setDayFilter("all");
@@ -117,11 +103,11 @@ const ScheduleManagement = () => {
         await deleteSchedule(id);
       } catch (error) {
         alert("Erro ao excluir configuração");
+        console.error(error);
       }
     }
   };
 
-  // Selection functions
   const toggleScheduleSelection = (id: number) => {
     setSelectedSchedules((prev) => {
       const newSelection = new Set(prev);
@@ -157,6 +143,7 @@ const ScheduleManagement = () => {
         clearSelection();
       } catch (error) {
         alert("Erro ao excluir configurações");
+        console.error(error);
       }
     }
   };
@@ -186,7 +173,6 @@ const ScheduleManagement = () => {
       : "bg-red-100 text-red-800";
   };
 
-  // Filter schedules by specific date
   const getSchedulesForSpecificDate = useCallback(
     (date: string) => {
       if (!date) return schedules;
@@ -195,11 +181,8 @@ const ScheduleManagement = () => {
       const dayOfWeek = selectedDate.getDay();
 
       return schedules.filter((schedule) => {
-        // Check if schedule applies to this day of week
         if (schedule.dayOfWeek !== dayOfWeek) return false;
 
-        // Check if schedule is valid for this date (don't filter by validity)
-        // We want to show both active and inactive schedules for the selected date
         return true;
       });
     },
@@ -210,15 +193,8 @@ const ScheduleManagement = () => {
     ? getSchedulesForSpecificDate(specificDateFilter)
     : schedules;
 
-  const hasActiveFilters =
-    dayFilter !== "all" || dateFilter || specificDateFilter;
-
-  // Create a complete week view (0-6)
-  const weekDays = [0, 1, 2, 3, 4, 5, 6];
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Calendar className="h-8 w-8 text-black" />
@@ -240,7 +216,6 @@ const ScheduleManagement = () => {
         </Button>
       </div>
 
-      {/* Error Display */}
       {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="p-4">
@@ -254,7 +229,6 @@ const ScheduleManagement = () => {
         </Card>
       )}
 
-      {/* Dashboard Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
         {[
           {
@@ -317,14 +291,12 @@ const ScheduleManagement = () => {
         })}
       </div>
 
-      {/* Calendar View */}
       <ScheduleCalendar
         schedules={schedules}
         onCreateSchedule={() => setIsCreateModalOpen(true)}
         onEditSchedule={handleEditSchedule}
       />
 
-      {/* Date Filter */}
       {specificDateFilter && (
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-4">
@@ -361,7 +333,6 @@ const ScheduleManagement = () => {
         </Card>
       )}
 
-      {/* Selection Controls */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -394,7 +365,6 @@ const ScheduleManagement = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Date Filter Input */}
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-gray-600" />
                 <Input
@@ -443,7 +413,6 @@ const ScheduleManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Detailed Schedule List */}
       <Card>
         <CardContent>
           {filteredSchedulesByDate.length === 0 && !loading ? (
@@ -627,7 +596,6 @@ const ScheduleManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Schedule Modal */}
       <ScheduleModal />
     </div>
   );

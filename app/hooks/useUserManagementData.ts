@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { toast } from 'react-toastify';
 import { 
@@ -23,7 +23,7 @@ export function useUserManagementData() {
   const [, setUsersError] = useAtom(usersErrorAtom);
   const [, syncUsers] = useAtom(syncUsersWithApprovalsAtom);
 
-  const fetchApprovals = async () => {
+  const fetchApprovals = useCallback(async () => {
     setApprovalsLoading(true);
     setApprovalsError(null);
 
@@ -44,9 +44,9 @@ export function useUserManagementData() {
     } finally {
       setApprovalsLoading(false);
     }
-  };
+  }, [setApprovals, setApprovalsLoading, setApprovalsError]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setUsersLoading(true);
     setUsersError(null);
 
@@ -67,17 +67,16 @@ export function useUserManagementData() {
     } finally {
       setUsersLoading(false);
     }
-  };
+  }, [setUsers, setUsersLoading, setUsersError]);
 
   useEffect(() => {
     const loadData = async () => {
       await Promise.all([fetchApprovals(), fetchUsers()]);
-      // Sincronizar dados após carregar
-      syncUsers(null);
+      syncUsers();
     };
     
     loadData();
-  }, []);
+  }, [fetchApprovals, fetchUsers, syncUsers]);
 
   return {
     fetchApprovals,
