@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useAtom } from 'jotai';
 import { toast } from 'react-toastify';
 import { 
@@ -22,6 +22,9 @@ export function useUserManagementData() {
   const [, setUsersLoading] = useAtom(usersLoadingAtom);
   const [, setUsersError] = useAtom(usersErrorAtom);
   const [, syncUsers] = useAtom(syncUsersWithApprovalsAtom);
+  
+  const hasLoadedRef = useRef(false);
+  const isLoadingRef = useRef(false);
 
   const fetchApprovals = useCallback(async () => {
     setApprovalsLoading(true);
@@ -71,15 +74,35 @@ export function useUserManagementData() {
 
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([fetchApprovals(), fetchUsers()]);
-      syncUsers();
+      // Evita chamadas duplicadas mesmo em React Strict Mode
+      if (hasLoadedRef.current || isLoadingRef.current) {
+        return;
+      }
+      
+      isLoadingRef.current = true;
+
+      try {
+        await Promise.all([fetchApprovals(), fetchUsers()]);
+        syncUsers();
+        hasLoadedRef.current = true;
+      } catch (error) {
+        console.error("useUserManagementData: Erro ao carregar dados:", error);
+      } finally {
+        isLoadingRef.current = false;
+      }
     };
     
     loadData();
-  }, [fetchApprovals, fetchUsers, syncUsers]);
+  }, []);
+
+  const resetData = useCallback(() => {
+    hasLoadedRef.current = false;
+    isLoadingRef.current = false;
+  }, []);
 
   return {
     fetchApprovals,
-    fetchUsers
+    fetchUsers,
+    resetData
   };
 } 
