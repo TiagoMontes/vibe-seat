@@ -33,9 +33,9 @@ export const getRoleName = (roleId: number | null | undefined): string => {
     case ROLES.ADMIN:
       return "Administrador";
     case ROLES.ATTENDANT:
-      return "Attendant - Operacional";
+      return "Atendente:";
     case ROLES.USER:
-      return "User - Usuário";
+      return "Usuário";
     default:
       return "Não definida";
   }

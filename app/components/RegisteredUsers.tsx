@@ -108,16 +108,16 @@ export const RegisteredUsers = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="flex flex-col gap-4">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             Usuários ({users.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex w-full">
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 mb-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               {error}
             </div>
           )}
@@ -137,7 +137,7 @@ export const RegisteredUsers = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-4">
               {users.map((user) => {
                 return (
                   <div
