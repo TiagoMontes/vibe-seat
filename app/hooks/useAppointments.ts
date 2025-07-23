@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useAtom } from "jotai";
 import { useToast } from "./useToast";
 import { 
@@ -38,9 +38,15 @@ export const useAppointments = () => {
   const [selectedAppointment, setSelectedAppointment] = useAtom(selectedAppointmentAtom);
   
   const { appointmentSuccess, appointmentError } = useToast();
+  
+  const hasLoadedRef = useRef(false);
 
-  const fetchAppointments = useCallback(async () => {
-    setLoading(true);
+  const fetchAppointments = useCallback(async (showLoading = true) => {
+    const shouldShowLoading = showLoading && (!hasLoadedRef.current || appointments.length === 0);
+    
+    if (shouldShowLoading) {
+      setLoading(true);
+    }
 
     try {
       const queryParams = new URLSearchParams();
@@ -60,12 +66,15 @@ export const useAppointments = () => {
       const data: AppointmentListResponse = await response.json();
       setAppointments(data.appointments);
       setPagination(data.pagination);
+      hasLoadedRef.current = true;
     } catch (err) {
       appointmentError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
-      setLoading(false);
+      if (shouldShowLoading) {
+        setLoading(false);
+      }
     }
-  }, [filters, setAppointments, setPagination, setLoading, appointmentError]);
+  }, [filters, setAppointments, setPagination, setLoading, appointmentError, appointments.length]);
 
   const fetchAvailableTimes = useCallback(async (chairId: number, date: string) => {
     setAvailableTimesLoading(true);
@@ -146,8 +155,7 @@ export const useAppointments = () => {
       setSelectedTime("");
       setModalOpen(false);
       
-      // Refresh list to get updated data
-      await fetchAppointments();
+      // Não precisamos recarregar a lista, pois já adicionamos o novo agendamento
       return true; // Sucesso
     } catch (err) {
       appointmentError(err instanceof Error ? err.message : "Erro desconhecido");
@@ -176,8 +184,7 @@ export const useAppointments = () => {
       );
       appointmentSuccess("Agendamento cancelado com sucesso!");
       
-      // Refresh list to get updated data
-      await fetchAppointments();
+      // Não precisamos recarregar a lista, pois já atualizamos o agendamento
     } catch (err) {
       appointmentError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
@@ -204,8 +211,7 @@ export const useAppointments = () => {
       );
       appointmentSuccess("Agendamento confirmado com sucesso!");
       
-      // Refresh list to get updated data
-      await fetchAppointments();
+      // Não precisamos recarregar a lista, pois já atualizamos o agendamento
     } catch (err) {
       appointmentError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {

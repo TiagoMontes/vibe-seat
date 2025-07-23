@@ -420,15 +420,17 @@ export const AppointmentManagement = () => {
     []
   );
 
-  // Fetch chairs and schedules on mount
+  // Fetch chairs and schedules on mount - apenas uma vez
   useEffect(() => {
     const loadInitialData = async () => {
-      await Promise.all([fetchChairs(), fetchSchedules(), fetchAppointments()]);
-      setIsFirstLoad(false);
+      if (isFirstLoad) {
+        await Promise.all([fetchChairs(), fetchSchedules()]);
+        setIsFirstLoad(false);
+      }
     };
 
     loadInitialData();
-  }, []); // Removidas as dependências que causam re-renders
+  }, [isFirstLoad, fetchChairs, fetchSchedules]);
 
   // Auto-clear messages - agora usando toasts (não é mais necessário)
 
@@ -462,13 +464,16 @@ export const AppointmentManagement = () => {
     }
   }, [selectedDate]); // Removidas dependências que causam re-renders
 
-  // Sincronizar estado quando mudar de seção
+  // Sincronizar estado quando mudar de seção - apenas quando necessário
   useEffect(() => {
-    // Sempre atualizar agendamentos quando mudar para a seção "schedule"
-    if (activeSection === "schedule") {
+    // Atualizar agendamentos apenas quando mudar para seções que precisam dos dados
+    if (
+      activeSection === "my-appointments" ||
+      activeSection === "scheduled-list"
+    ) {
       fetchAppointments();
     }
-  }, [activeSection]); // Removida dependência que causa re-renders
+  }, [activeSection, fetchAppointments]);
 
   // Paginate available chairs for display
   const totalDisplayPages = Math.ceil(
@@ -508,8 +513,7 @@ export const AppointmentManagement = () => {
 
   const handleDateSelect = useCallback(async (date: string) => {
     setSelectedDate(date);
-    // Atualizar agendamentos quando selecionar uma data para garantir dados atualizados
-    await fetchAppointments();
+    // Não precisamos buscar agendamentos aqui, pois só precisamos dos dados quando mudar de seção
   }, []);
 
   const handleTimeSelect = useCallback(
@@ -556,23 +560,29 @@ export const AppointmentManagement = () => {
 
   // Função para atualizar tudo quando clicar no botão atualizar
   const handleRefresh = useCallback(async () => {
-    await Promise.all([fetchChairs(), fetchSchedules(), fetchAppointments()]);
+    await Promise.all([fetchChairs(), fetchSchedules()]);
 
     // Se há uma data selecionada, atualizar também as cadeiras disponíveis
     if (selectedDate) {
       await fetchAvailableChairs(selectedDate, 1, false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, fetchChairs, fetchSchedules, fetchAvailableChairs]);
 
   // Função para atualizar agendamentos quando houver mudanças em outras seções
   const handleAppointmentChange = useCallback(async () => {
-    await fetchAppointments();
+    // Só buscar agendamentos se estivermos em uma seção que precisa deles
+    if (
+      activeSection === "my-appointments" ||
+      activeSection === "scheduled-list"
+    ) {
+      await fetchAppointments();
+    }
 
     // Se há uma data selecionada, atualizar também as cadeiras disponíveis
     if (selectedDate) {
       await fetchAvailableChairs(selectedDate, 1, false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, activeSection, fetchAppointments, fetchAvailableChairs]);
 
   const formatSelectedDate = (date: string) => {
     return new Date(date).toLocaleDateString("pt-BR");
@@ -629,6 +639,15 @@ export const AppointmentManagement = () => {
               Lista de Agendamentos
             </Button>
           )}
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={chairsLoading || schedulesLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCwIcon className="h-4 w-4" />
+            Atualizar
+          </Button>
         </div>
       </div>
 
