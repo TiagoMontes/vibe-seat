@@ -338,7 +338,7 @@ const ScheduleManagement = () => {
       )}
 
       <Card>
-        <CardContent className="p-4">
+        <CardContent>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h2 className="text-xl font-semibold text-black">
@@ -473,7 +473,7 @@ const ScheduleManagement = () => {
               )}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {filteredSchedulesByDate.map((schedule) => {
                 const slots = generateTimeSlots(
                   schedule.timeStart,
@@ -490,8 +490,8 @@ const ScheduleManagement = () => {
                         : "border-gray-200"
                     }`}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
+                    <CardContent className="p-4 flex flex-col gap-4">
+                      <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           {isSelectionMode && (
                             <input
@@ -523,7 +523,7 @@ const ScheduleManagement = () => {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                      <div className="flex justify-between gap-4">
                         <div>
                           <p className="text-sm font-medium text-gray-700 mb-1">
                             Período de Validade:
@@ -536,7 +536,7 @@ const ScheduleManagement = () => {
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-700 mb-1">
+                          <p className="text-sm text-end font-medium text-gray-700 mb-1">
                             Slots de 30min:
                           </p>
                           <p className="text-sm text-gray-600">
@@ -546,8 +546,8 @@ const ScheduleManagement = () => {
                       </div>
 
                       {/* Time Slots Preview */}
-                      <div className="mb-3">
-                        <p className="text-sm font-medium text-gray-700 mb-2">
+                      <div className="flex flex-col gap-2">
+                        <p className="text-sm font-medium text-gray-700">
                           Horários Disponíveis:
                         </p>
                         <div className="flex flex-wrap gap-1">
@@ -568,7 +568,7 @@ const ScheduleManagement = () => {
                       </div>
 
                       {!isSelectionMode && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex justify-end items-center gap-2">
                           <Button
                             onClick={() => handleEditSchedule(schedule)}
                             size="sm"

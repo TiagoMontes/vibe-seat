@@ -103,17 +103,6 @@ export const MyAppointmentsList = ({
             Visualize e gerencie seus agendamentos
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={fetchMyAppointments}
-          disabled={loading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCwIcon
-            className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-          />
-          Atualizar
-        </Button>
       </div>
 
       {/* Error Message */}
@@ -174,7 +163,7 @@ export const MyAppointmentsList = ({
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {appointments.map((appointment) => {
             const { date, time } = formatDateTime(appointment.datetimeStart);
             const isPastAppointment = isPast(appointment.datetimeStart);
@@ -184,8 +173,10 @@ export const MyAppointmentsList = ({
                 key={appointment.id}
                 className={`${isPastAppointment ? "opacity-75" : ""} ${
                   appointment.status === "CANCELLED"
-                    ? "border-red-200 bg-red-50"  
-                    : appointment.status === "SCHEDULED" ? "border-yellow-200 bg-yellow-50" : "border-green-200 bg-green-50"
+                    ? "border-red-200 bg-red-50"
+                    : appointment.status === "SCHEDULED"
+                    ? "border-yellow-200 bg-yellow-50"
+                    : "border-green-200 bg-green-50"
                 }`}
               >
                 <CardContent className="p-6">
@@ -214,33 +205,23 @@ export const MyAppointmentsList = ({
                       </div>
 
                       {/* Date and Time */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center gap-2">
-                          <CalendarIcon className="h-4 w-4 text-gray-500" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">
-                              Data e Horário
-                            </p>
-                            <p className="text-gray-900">{date}</p>
-                            <p className="text-gray-900">{time}</p>
-                          </div>
+                      <div className="flex justify-between">
+                        <div className="flex flex-col items-start gap-2">
+                          <p className="text-sm font-medium text-gray-700">
+                            Data e Horário
+                          </p>
+                          <p className="text-gray-900">
+                            {date}, {time}
+                          </p>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <MapPinIcon className="h-4 w-4 text-gray-500" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">
-                              Cadeira
-                            </p>
-                            <p className="text-gray-900">
-                              {appointment.chair.name}
-                            </p>
-                            {appointment.chair.location && (
-                              <p className="text-sm text-gray-600">
-                                {appointment.chair.location}
-                              </p>
-                            )}
-                          </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <p className="text-sm font-medium text-gray-700">
+                            Cadeira
+                          </p>
+                          <p className="text-gray-900">
+                            {appointment.chair?.name}
+                          </p>
                         </div>
                       </div>
 

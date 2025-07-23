@@ -96,17 +96,6 @@ export const ScheduledAppointmentsList = ({
             Gerencie todos os agendamentos do sistema
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={fetchScheduledAppointments}
-          disabled={loading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCwIcon
-            className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-          />
-          Atualizar
-        </Button>
       </div>
 
       {/* Error Message */}
@@ -167,7 +156,7 @@ export const ScheduledAppointmentsList = ({
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {appointments.map((appointment) => {
             const { date, time } = formatDateTime(appointment.datetimeStart);
 
@@ -177,16 +166,16 @@ export const ScheduledAppointmentsList = ({
                 className={`${
                   appointment.status === "CANCELLED"
                     ? "border-red-200 bg-red-50"
-                    : appointment.status === "COMPLETED"
-                    ? "border-blue-200 bg-blue-50"
-                    : ""
+                    : appointment.status === "CONFIRMED"
+                    ? "border-green-200 bg-green-50"
+                    : "border-yellow-200 bg-yellow-50"
                 }`}
               >
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div className="flex-1 space-y-3">
+                <CardContent>
+                  <div className="flex flex-col w-full lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="flex flex-col w-full justify-between">
                       {/* Header */}
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col justify-between">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-2">
                             <CalendarIcon className="h-5 w-5 text-blue-600" />

@@ -8,8 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Input } from "@/app/components/ui/input";
-import { Pagination } from "@/app/components/ui/pagination";
 import {
   Dialog,
   DialogContent,
@@ -84,10 +82,9 @@ const ChairCard = ({
   selectedDate,
 }: ChairCardProps) => {
   return (
-    <Card className="h-full">
+    <Card className="h-full border border-gray-200 p-4 flex flex-col justify-between">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
-          <MapPinIcon className="h-5 w-5 text-blue-600" />
           {chair.name}
         </CardTitle>
         {chair.location && (
@@ -473,7 +470,7 @@ export const AppointmentManagement = () => {
     ) {
       fetchAppointments();
     }
-  }, [activeSection, fetchAppointments]);
+  }, [activeSection]);
 
   // Paginate available chairs for display
   const totalDisplayPages = Math.ceil(
@@ -562,11 +559,19 @@ export const AppointmentManagement = () => {
   const handleRefresh = useCallback(async () => {
     await Promise.all([fetchChairs(), fetchSchedules()]);
 
+    // Só buscar agendamentos se estivermos em uma seção que precisa deles
+    if (
+      activeSection === "my-appointments" ||
+      activeSection === "scheduled-list"
+    ) {
+      await fetchAppointments();
+    }
+
     // Se há uma data selecionada, atualizar também as cadeiras disponíveis
     if (selectedDate) {
       await fetchAvailableChairs(selectedDate, 1, false);
     }
-  }, [selectedDate, fetchChairs, fetchSchedules, fetchAvailableChairs]);
+  }, [selectedDate, activeSection]); // Removido fetchAppointments e fetchAvailableChairs das dependências
 
   // Função para atualizar agendamentos quando houver mudanças em outras seções
   const handleAppointmentChange = useCallback(async () => {

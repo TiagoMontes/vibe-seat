@@ -74,7 +74,7 @@ export const useAppointments = () => {
         setLoading(false);
       }
     }
-  }, [filters, setAppointments, setPagination, setLoading, appointmentError, appointments.length]);
+  }, [filters]); // Removido dependências que causam re-renderizações
 
   const fetchAvailableTimes = useCallback(async (chairId: number, date: string) => {
     setAvailableTimesLoading(true);
@@ -99,7 +99,7 @@ export const useAppointments = () => {
     } finally {
       setAvailableTimesLoading(false);
     }
-  }, [setAvailableTimesLoading, setAvailableTimes, appointmentError]);
+  }, []); // Removido dependências que causam re-renderizações
 
   const createAppointment = useCallback(async (input: AppointmentInput): Promise<boolean> => {
     setCreateLoading(true);
@@ -163,7 +163,7 @@ export const useAppointments = () => {
     } finally {
       setCreateLoading(false);
     }
-  }, [appointments, setCreateLoading, appointmentError, appointmentSuccess, setAppointments, setSelectedChairId, setSelectedDate, setSelectedTime, setModalOpen, fetchAppointments]);
+  }, []); // Removido dependências que causam re-renderizações
 
   const cancelAppointment = useCallback(async (id: number) => {
     setCancelLoading(true);
@@ -190,7 +190,7 @@ export const useAppointments = () => {
     } finally {
       setCancelLoading(false);
     }
-  }, [setCancelLoading, appointmentError, appointmentSuccess, setAppointments, fetchAppointments]);
+  }, []); // Removido dependências que causam re-renderizações
 
   const confirmAppointment = useCallback(async (id: number) => {
     setConfirmLoading(true);
@@ -217,11 +217,11 @@ export const useAppointments = () => {
     } finally {
       setConfirmLoading(false);
     }
-  }, [setConfirmLoading, appointmentError, appointmentSuccess, setAppointments, fetchAppointments]);
+  }, []); // Removido dependências que causam re-renderizações
 
   const openModal = useCallback(() => {
     setModalOpen(true);
-  }, [setModalOpen]);
+  }, []); // Removido setModalOpen das dependências
 
   const closeModal = useCallback(() => {
     setModalOpen(false);
@@ -229,7 +229,7 @@ export const useAppointments = () => {
     setSelectedDate("");
     setSelectedTime("");
     setAvailableTimes(null);
-  }, [setModalOpen, setSelectedChairId, setSelectedDate, setSelectedTime, setAvailableTimes]);
+  }, []); // Removido dependências que causam re-renderizações
 
   const clearMessages = useCallback(() => {
     // Não é mais necessário limpar mensagens, pois usamos toasts
@@ -251,7 +251,7 @@ export const useAppointments = () => {
       limit: 10,
       status: "all",
     });
-  }, [setAppointments, setPagination, setFilters]);
+  }, []); // Removido dependências que causam re-renderizações
 
   // Verifica se o usuário pode fazer um novo agendamento
   const canCreateAppointment = useCallback(async () => {

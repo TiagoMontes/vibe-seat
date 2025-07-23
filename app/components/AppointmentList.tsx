@@ -45,8 +45,6 @@ export const AppointmentList = () => {
     loading,
     cancelLoading,
     confirmLoading,
-    error,
-    successMessage,
     fetchAppointments,
     cancelAppointment,
     confirmAppointment,
@@ -57,17 +55,7 @@ export const AppointmentList = () => {
   // Fetch appointments on component mount and when filters change
   useEffect(() => {
     fetchAppointments();
-  }, [fetchAppointments]);
-
-  // Auto-clear messages after 5 seconds
-  useEffect(() => {
-    if (successMessage || error) {
-      const timer = setTimeout(() => {
-        clearMessages();
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage, error, clearMessages]);
+  }, [filters]);
 
   const handlePageChange = (page: number) => {
     setFilters({ ...filters, page });
@@ -127,10 +115,6 @@ export const AppointmentList = () => {
     }
   };
 
-  import { isAdmin } from "@/app/lib/utils";
-
-  const userIsAdmin = isAdmin(user?.roleId);
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -143,33 +127,10 @@ export const AppointmentList = () => {
             Visualize e gerencie seus agendamentos de massagem
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => fetchAppointments()}
-          disabled={loading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCwIcon
-            className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-          />
-          Atualizar
-        </Button>
       </div>
 
       {/* Messages */}
-      {error && (
-        <div className="flex items-center gap-2 p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
-          <AlertCircleIcon className="h-4 w-4" />
-          {error}
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="flex items-center gap-2 p-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
-          <CheckIcon className="h-4 w-4" />
-          {successMessage}
-        </div>
-      )}
+      {/* Messages */}
 
       {/* Filters */}
       <Card>
@@ -308,20 +269,21 @@ export const AppointmentList = () => {
                           )}
 
                           {/* Confirm Button (Admin only) */}
-                          {isAdmin && appointment.status === "SCHEDULED" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleConfirmAppointment(appointment.id)
-                              }
-                              disabled={confirmLoading}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            >
-                              <CheckIcon className="h-4 w-4 mr-1" />
-                              Confirmar
-                            </Button>
-                          )}
+                          {user?.role === "admin" &&
+                            appointment.status === "SCHEDULED" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleConfirmAppointment(appointment.id)
+                                }
+                                disabled={confirmLoading}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              >
+                                <CheckIcon className="h-4 w-4 mr-1" />
+                                Confirmar
+                              </Button>
+                            )}
 
                           {/* Info about why can't cancel */}
                           {!canCancel && cancellationMessage && (

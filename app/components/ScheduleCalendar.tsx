@@ -286,10 +286,6 @@ const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
             <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded"></div>
             <span className="text-gray-600">Sem configuração</span>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Clock className="h-3 w-3 text-blue-600" />
-            <span className="text-gray-600">Clique para editar</span>
-          </div>
         </div>
       </CardContent>
     </Card>

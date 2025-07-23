@@ -85,7 +85,7 @@ export const useMyAppointments = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, setGlobalAppointments]);
+  }, [filters]);
 
   const cancelAppointment = useCallback(async (id: number) => {
     try {
@@ -113,7 +113,7 @@ export const useMyAppointments = () => {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       return false;
     }
-  }, [setGlobalAppointments]);
+  }, []); // Removido setGlobalAppointments das dependências
 
   const getStatusLabel = useCallback((status: string) => {
     switch (status) {
@@ -157,7 +157,7 @@ export const useMyAppointments = () => {
 
   useEffect(() => {
     fetchMyAppointments();
-  }, [fetchMyAppointments]);
+  }, [filters]); // Mudado para depender apenas de filters
 
   return {
     appointments,

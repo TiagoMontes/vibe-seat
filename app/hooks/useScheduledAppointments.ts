@@ -109,7 +109,7 @@ export const useScheduledAppointments = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, setGlobalAppointments]);
+  }, [filters]);
 
   const confirmAppointment = useCallback(async (id: number) => {
     try {
@@ -137,7 +137,7 @@ export const useScheduledAppointments = () => {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       return false;
     }
-  }, [setGlobalAppointments]);
+  }, []);
 
   const cancelAppointment = useCallback(async (id: number) => {
     try {
@@ -165,7 +165,7 @@ export const useScheduledAppointments = () => {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       return false;
     }
-  }, [setGlobalAppointments]);
+  }, []);
 
   const getStatusLabel = useCallback((status: string) => {
     switch (status) {
@@ -225,7 +225,7 @@ export const useScheduledAppointments = () => {
 
   useEffect(() => {
     fetchScheduledAppointments();
-  }, [fetchScheduledAppointments]);
+  }, [filters]);
 
   return {
     appointments,
