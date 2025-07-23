@@ -2,27 +2,38 @@
 
 import { useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { Pagination } from "@/app/components/ui/pagination";
 import { useAppointments } from "@/app/hooks/useAppointments";
 import { useAuth } from "@/app/hooks/useAuth";
-import { 
-  getStatusLabel, 
-  getStatusColor, 
-  canCancelAppointment, 
+import {
+  getStatusLabel,
+  getStatusColor,
+  canCancelAppointment,
   getCancellationMessage,
-  getStatusOptions 
+  getStatusOptions,
 } from "@/app/schemas/appointmentSchema";
-import { 
-  CalendarIcon, 
-  ClockIcon, 
-  MapPinIcon, 
+import {
+  CalendarIcon,
+  ClockIcon,
+  MapPinIcon,
   UserIcon,
   CheckIcon,
   XIcon,
   AlertCircleIcon,
-  RefreshCwIcon
+  RefreshCwIcon,
 } from "lucide-react";
 
 export const AppointmentList = () => {
@@ -116,14 +127,18 @@ export const AppointmentList = () => {
     }
   };
 
-  const isAdmin = user?.role === "admin";
+  import { isAdmin } from "@/app/lib/utils";
+
+  const userIsAdmin = isAdmin(user?.roleId);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Meus Agendamentos</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Meus Agendamentos
+          </h1>
           <p className="text-gray-600">
             Visualize e gerencie seus agendamentos de massagem
           </p>
@@ -134,7 +149,9 @@ export const AppointmentList = () => {
           disabled={loading}
           className="flex items-center gap-2"
         >
-          <RefreshCwIcon className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCwIcon
+            className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+          />
           Atualizar
         </Button>
       </div>
@@ -339,4 +356,4 @@ export const AppointmentList = () => {
       </Card>
     </div>
   );
-}; 
+};

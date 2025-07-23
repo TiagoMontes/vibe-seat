@@ -27,9 +27,7 @@ import {
   CalendarIcon,
   ClockIcon,
   MapPinIcon,
-  CheckIcon,
   XIcon,
-  AlertCircleIcon,
   RefreshCwIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -42,13 +40,48 @@ interface ChairCardProps {
   availableTimes: Array<{ time: string; available: boolean; reason?: string }>;
   onTimeSelect: (chairId: number, time: string) => void;
   createLoading: boolean;
+  selectedDate?: string | null;
 }
+
+// Função utilitária para separar data e hora de uma string ISO
+const formatDateTime = (
+  dateTimeString: string
+): { date: string; time: string } => {
+  try {
+    const date = new Date(dateTimeString);
+
+    // Formata a data para dd/mm/aaaa
+    const formattedDate = date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+
+    // Formata o horário para hh:mm
+    const formattedTime = date.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    return {
+      date: formattedDate,
+      time: formattedTime,
+    };
+  } catch (error) {
+    // Se houver erro na formatação, retorna valores padrão
+    return {
+      date: "Data inválida",
+      time: "Horário inválido",
+    };
+  }
+};
 
 const ChairCard = ({
   chair,
   availableTimes,
   onTimeSelect,
   createLoading,
+  selectedDate,
 }: ChairCardProps) => {
   return (
     <Card className="h-full">
@@ -70,24 +103,31 @@ const ChairCard = ({
 
           {availableTimes.length > 0 ? (
             <div className="grid grid-cols-3 gap-2">
-              {availableTimes.map((timeSlot) => (
-                <button
-                  key={timeSlot.time}
-                  onClick={() => onTimeSelect(chair.id, timeSlot.time)}
-                  disabled={createLoading || !timeSlot.available}
-                  className={`p-3 text-sm rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                    timeSlot.available
-                      ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
-                      : "border-red-300 bg-red-50 text-red-700 cursor-not-allowed"
-                  }`}
-                  title={
-                    timeSlot.reason ||
-                    (timeSlot.available ? "Disponível" : "Ocupado")
-                  }
-                >
-                  {timeSlot.time}
-                </button>
-              ))}
+              {availableTimes.map((timeSlot) => {
+                // Usa a função para formatar o datetime
+                const { time } = formatDateTime(timeSlot.time);
+
+                return (
+                  <button
+                    key={timeSlot.time}
+                    onClick={() => onTimeSelect(chair.id, timeSlot.time)}
+                    disabled={createLoading || !timeSlot.available}
+                    className={`p-3 text-sm rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      timeSlot.available
+                        ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
+                        : "border-red-300 bg-red-50 text-red-700 cursor-not-allowed"
+                    }`}
+                    title={
+                      timeSlot.reason ||
+                      (timeSlot.available ? "Disponível" : "Ocupado")
+                    }
+                  >
+                    <div className="text-center">
+                      <div className="font-medium">{time}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-gray-500 text-center py-4">
@@ -300,14 +340,8 @@ export const AppointmentManagement = () => {
     hasAvailableSchedules,
     loading: schedulesLoading,
   } = useSchedules();
-  const {
-    createAppointment,
-    createLoading,
-    error,
-    successMessage,
-    clearMessages,
-    fetchAppointments,
-  } = useAppointments();
+  const { createAppointment, createLoading, fetchAppointments } =
+    useAppointments();
 
   // Local state
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -329,6 +363,7 @@ export const AppointmentManagement = () => {
   >([]);
   const [loadingAvailableChairs, setLoadingAvailableChairs] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -387,20 +422,15 @@ export const AppointmentManagement = () => {
 
   // Fetch chairs and schedules on mount
   useEffect(() => {
-    fetchChairs();
-    fetchSchedules();
-    fetchAppointments(); // Carrega os agendamentos do usuário
-  }, [fetchChairs, fetchSchedules, fetchAppointments]);
+    const loadInitialData = async () => {
+      await Promise.all([fetchChairs(), fetchSchedules(), fetchAppointments()]);
+      setIsFirstLoad(false);
+    };
 
-  // Auto-clear messages
-  useEffect(() => {
-    if (successMessage || error) {
-      const timer = setTimeout(() => {
-        clearMessages();
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage, error, clearMessages]);
+    loadInitialData();
+  }, []); // Removidas as dependências que causam re-renders
+
+  // Auto-clear messages - agora usando toasts (não é mais necessário)
 
   // Fetch available chairs when date is selected
   useEffect(() => {
@@ -430,7 +460,7 @@ export const AppointmentManagement = () => {
         hasPrevPage: false,
       });
     }
-  }, [selectedDate, hasAvailableSchedules, fetchAvailableChairs]);
+  }, [selectedDate]); // Removidas dependências que causam re-renders
 
   // Sincronizar estado quando mudar de seção
   useEffect(() => {
@@ -438,7 +468,7 @@ export const AppointmentManagement = () => {
     if (activeSection === "schedule") {
       fetchAppointments();
     }
-  }, [activeSection, fetchAppointments]);
+  }, [activeSection]); // Removida dependência que causa re-renders
 
   // Paginate available chairs for display
   const totalDisplayPages = Math.ceil(
@@ -448,65 +478,73 @@ export const AppointmentManagement = () => {
   const paginatedChairs = availableChairsData.slice(startIndex);
 
   // Get available times for a specific chair
-  const getAvailableTimes = (chairId: number) => {
-    const chairData = availableChairsData.find(
-      (chair) => chair.chairId === chairId
-    );
-    if (!chairData) return [];
+  const getAvailableTimes = useCallback(
+    (chairId: number) => {
+      const chairData = availableChairsData.find(
+        (chair) => chair.chairId === chairId
+      );
+      if (!chairData) return [];
 
-    // Combina horários disponíveis e indisponíveis com status
-    const availableTimes = chairData.available.map((time) => ({
-      time,
-      available: true,
-      reason: "Disponível",
-    }));
+      // Combina horários disponíveis e indisponíveis com status
+      const availableTimes = chairData.available.map((time) => ({
+        time,
+        available: true,
+        reason: "Disponível",
+      }));
 
-    const unavailableTimes = chairData.unavailable.map((time) => ({
-      time,
-      available: false,
-      reason: "Ocupado",
-    }));
+      const unavailableTimes = chairData.unavailable.map((time) => ({
+        time,
+        available: false,
+        reason: "Ocupado",
+      }));
 
-    // Combina e ordena por horário
-    return [...availableTimes, ...unavailableTimes].sort((a, b) =>
-      a.time.localeCompare(b.time)
-    );
-  };
+      // Combina e ordena por horário
+      return [...availableTimes, ...unavailableTimes].sort((a, b) =>
+        a.time.localeCompare(b.time)
+      );
+    },
+    [availableChairsData]
+  );
 
-  const handleDateSelect = async (date: string) => {
+  const handleDateSelect = useCallback(async (date: string) => {
     setSelectedDate(date);
     // Atualizar agendamentos quando selecionar uma data para garantir dados atualizados
     await fetchAppointments();
-  };
+  }, []);
 
-  const handleTimeSelect = async (chairId: number, time: string) => {
-    if (!selectedDate) return;
+  const handleTimeSelect = useCallback(
+    async (chairId: number, time: string) => {
+      if (!selectedDate) return;
 
-    const chairData = availableChairsData.find(
-      (chair) => chair.chairId === chairId
-    );
-    if (!chairData) return;
+      const chairData = availableChairsData.find(
+        (chair) => chair.chairId === chairId
+      );
+      if (!chairData) return;
 
-    const confirmMessage = `Deseja realmente agendar uma sessão de massagem na ${
-      chairData.chairName
-    } para ${new Date(selectedDate).toLocaleDateString("pt-BR")} às ${time}?`;
+      // Formatar a data e hora para exibição
+      const { time: formattedTime } = formatDateTime(time);
+      const formattedDate = new Date(selectedDate).toLocaleDateString("pt-BR");
 
-    if (window.confirm(confirmMessage)) {
-      try {
-        await createAppointment({
+      const confirmMessage = `Deseja realmente agendar uma sessão de massagem na ${chairData.chairName} para ${formattedDate} às ${formattedTime}?`;
+
+      if (window.confirm(confirmMessage)) {
+        const success = await createAppointment({
           chairId,
           datetimeStart: time,
         });
 
-        // Refresh available chairs after successful booking
-        await fetchAvailableChairs(selectedDate, 1, false);
-      } catch (error) {
-        console.error("Error creating appointment:", error);
+        // Refresh available chairs only after successful booking
+        if (success) {
+          await fetchAvailableChairs(selectedDate, 1, false);
+        }
+        // Se não foi bem-sucedido, não recarrega o grid
+        // O toast já foi mostrado pelo useAppointments
       }
-    }
-  };
+    },
+    [selectedDate, availableChairsData, createAppointment]
+  );
 
-  const handleLoadMore = async () => {
+  const handleLoadMore = useCallback(async () => {
     if (pagination.hasNextPage && selectedDate) {
       await fetchAvailableChairs(
         selectedDate,
@@ -514,33 +552,37 @@ export const AppointmentManagement = () => {
         true
       );
     }
-  };
+  }, [pagination.hasNextPage, pagination.currentPage, selectedDate]);
 
   // Função para atualizar tudo quando clicar no botão atualizar
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     await Promise.all([fetchChairs(), fetchSchedules(), fetchAppointments()]);
 
     // Se há uma data selecionada, atualizar também as cadeiras disponíveis
     if (selectedDate) {
       await fetchAvailableChairs(selectedDate, 1, false);
     }
-  };
+  }, [selectedDate]);
 
   // Função para atualizar agendamentos quando houver mudanças em outras seções
-  const handleAppointmentChange = async () => {
+  const handleAppointmentChange = useCallback(async () => {
     await fetchAppointments();
 
     // Se há uma data selecionada, atualizar também as cadeiras disponíveis
     if (selectedDate) {
       await fetchAvailableChairs(selectedDate, 1, false);
     }
-  };
+  }, [selectedDate]);
 
   const formatSelectedDate = (date: string) => {
     return new Date(date).toLocaleDateString("pt-BR");
   };
 
-  const isLoading = chairsLoading || schedulesLoading;
+  // Loading específico para o grid de cadeiras
+  const isGridLoading = loadingAvailableChairs;
+
+  // Loading inicial (apenas na primeira carga)
+  const isInitialLoading = chairsLoading || schedulesLoading;
 
   return (
     <div className="space-y-6">
@@ -587,36 +629,10 @@ export const AppointmentManagement = () => {
               Lista de Agendamentos
             </Button>
           )}
-          {activeSection === "schedule" && (
-            <Button
-              variant="outline"
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
-              <RefreshCwIcon
-                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-              />
-              Atualizar
-            </Button>
-          )}
         </div>
       </div>
 
-      {/* Messages */}
-      {error && (
-        <div className="flex items-center gap-2 p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
-          <AlertCircleIcon className="h-4 w-4" />
-          {error}
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="flex items-center gap-2 p-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
-          <CheckIcon className="h-4 w-4" />
-          {successMessage}
-        </div>
-      )}
+      {/* Messages - agora usando toasts */}
 
       {/* Render appropriate section based on activeSection */}
       {activeSection === "schedule" ? (
@@ -654,20 +670,47 @@ export const AppointmentManagement = () => {
           {/* Chairs Grid */}
           {!selectedDate ? (
             <div className="text-center py-12">
-              <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Selecione uma data
-              </h3>
-              <p className="text-gray-600">
-                Escolha uma data para ver as cadeiras disponíveis
-              </p>
+              {isInitialLoading ? (
+                <div className="flex items-center justify-center gap-2 text-gray-600">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  Carregando...
+                </div>
+              ) : (
+                <>
+                  <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Selecione uma data
+                  </h3>
+                  <p className="text-gray-600">
+                    Escolha uma data para ver as cadeiras disponíveis
+                  </p>
+                </>
+              )}
             </div>
-          ) : loadingAvailableChairs ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center gap-2 text-gray-600">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                Carregando cadeiras disponíveis...
-              </div>
+          ) : isGridLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Skeleton loading para as cadeiras */}
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Card key={index} className="h-full animate-pulse">
+                  <CardHeader className="pb-3">
+                    <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {Array.from({ length: 6 }).map((_, timeIndex) => (
+                          <div
+                            key={timeIndex}
+                            className="h-12 bg-gray-200 rounded"
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : paginatedChairs.length === 0 ? (
             <div className="text-center py-12">
@@ -703,6 +746,7 @@ export const AppointmentManagement = () => {
                     availableTimes={getAvailableTimes(chairData.chairId)}
                     onTimeSelect={handleTimeSelect}
                     createLoading={createLoading}
+                    selectedDate={selectedDate}
                   />
                 ))}
               </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAtom } from 'jotai';
 import { userAtom, isAuthenticatedAtom, type UserData } from '@/app/atoms/userAtoms';
+import { appointmentsAtom } from '@/app/atoms/appointmentAtoms';
 
 interface LoginData {
   username: string;
@@ -15,6 +16,7 @@ export function useAuth() {
   const { data: session, status } = useSession();
   const [user, setUser] = useAtom(userAtom);
   const [isAuthenticated] = useAtom(isAuthenticatedAtom);
+  const [, setAppointments] = useAtom(appointmentsAtom);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -65,6 +67,7 @@ export function useAuth() {
 
   const logout = async () => {
     setUser(null);
+    setAppointments([]); // Limpar agendamentos ao fazer logout
     await signOut({ redirect: false });
     router.push('/');
   };

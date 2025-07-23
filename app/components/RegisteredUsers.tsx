@@ -16,8 +16,9 @@ import {
   usersErrorAtom,
   type RegisteredUser,
 } from "@/app/atoms/userManagementAtoms";
+import { getRoleName } from "@/app/lib/utils";
 
-const RegisteredUsers = () => {
+export const RegisteredUsers = () => {
   const [allUsers] = useAtom(registeredUsersAtom);
   const [loading] = useAtom(usersLoadingAtom);
   const [error] = useAtom(usersErrorAtom);
@@ -137,54 +138,54 @@ const RegisteredUsers = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Users className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {user.username}
-                          </h3>
-                          <span className={getStatusBadge(user.status)}>
-                            {user.status === "pending" && "Pendente"}
-                            {user.status === "approved" && "Aprovado"}
-                            {user.status === "rejected" && "Rejeitado"}
-                          </span>
+              {users.map((user) => {
+                return (
+                  <div
+                    key={user.id}
+                    className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Users className="h-6 w-6 text-blue-600" />
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Shield className="h-4 w-4" />
-                            <span>
-                              Role: {user.role?.name || "Não definida"}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {user.username}
+                            </h3>
+                            <span className={getStatusBadge(user.status)}>
+                              {user.status === "pending" && "Pendente"}
+                              {user.status === "approved" && "Aprovado"}
+                              {user.status === "rejected" && "Rejeitado"}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Users className="h-4 w-4" />
-                            <span>ID: {user.id}</span>
-                          </div>
-                          {user.createdAt && (
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
                             <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              <span>
-                                Criado em: {formatDate(user.createdAt)}
-                              </span>
+                              <Shield className="h-4 w-4" />
+                              <span>Role: {getRoleName(user.roleId)}</span>
                             </div>
-                          )}
+                            <div className="flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              <span>ID: {user.id}</span>
+                            </div>
+                            {user.createdAt && (
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                <span>
+                                  Criado em: {formatDate(user.createdAt)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="text-gray-400"></div>
+                      <div className="text-gray-400"></div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

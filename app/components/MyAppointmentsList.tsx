@@ -184,8 +184,8 @@ export const MyAppointmentsList = ({
                 key={appointment.id}
                 className={`${isPastAppointment ? "opacity-75" : ""} ${
                   appointment.status === "CANCELLED"
-                    ? "border-red-200 bg-red-50"
-                    : ""
+                    ? "border-red-200 bg-red-50"  
+                    : appointment.status === "SCHEDULED" ? "border-yellow-200 bg-yellow-50" : "border-green-200 bg-green-50"
                 }`}
               >
                 <CardContent className="p-6">

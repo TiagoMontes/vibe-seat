@@ -101,7 +101,7 @@ const Layout: React.FC<LayoutProps> = ({
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "w-full bg-white text-black text-left px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                  "w-full justify-start bg-white text-black  text-sm font-medium rounded-md transition-colors",
                   activeTab === tab.key
                     ? "bg-black text-white"
                     : "hover:bg-black/5"

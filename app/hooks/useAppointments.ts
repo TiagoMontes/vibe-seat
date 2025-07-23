@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useAtom } from "jotai";
+import { useToast } from "./useToast";
 import { 
   appointmentsAtom, 
   appointmentPaginationAtom, 
@@ -33,14 +34,13 @@ export const useAppointments = () => {
   const [selectedChairId, setSelectedChairId] = useAtom(selectedChairIdAtom);
   const [selectedDate, setSelectedDate] = useAtom(selectedDateAtom);
   const [selectedTime, setSelectedTime] = useAtom(selectedTimeAtom);
-  const [error, setError] = useAtom(appointmentErrorAtom);
-  const [successMessage, setSuccessMessage] = useAtom(appointmentSuccessMessageAtom);
   const [modalOpen, setModalOpen] = useAtom(appointmentModalOpenAtom);
   const [selectedAppointment, setSelectedAppointment] = useAtom(selectedAppointmentAtom);
+  
+  const { appointmentSuccess, appointmentError } = useToast();
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
-    setError("");
 
     try {
       const queryParams = new URLSearchParams();
@@ -61,15 +61,14 @@ export const useAppointments = () => {
       setAppointments(data.appointments);
       setPagination(data.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      appointmentError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setLoading(false);
     }
-  }, [filters, setAppointments, setPagination, setLoading, setError]);
+  }, [filters, setAppointments, setPagination, setLoading, appointmentError]);
 
   const fetchAvailableTimes = useCallback(async (chairId: number, date: string) => {
     setAvailableTimesLoading(true);
-    setError("");
 
     try {
       const queryParams = new URLSearchParams();
@@ -86,38 +85,41 @@ export const useAppointments = () => {
       const data: AvailableTimesResponse = await response.json();
       setAvailableTimes(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      appointmentError(err instanceof Error ? err.message : "Erro desconhecido");
       setAvailableTimes(null);
     } finally {
       setAvailableTimesLoading(false);
     }
-  }, [setAvailableTimesLoading, setAvailableTimes, setError]);
+  }, [setAvailableTimesLoading, setAvailableTimes, appointmentError]);
 
-  const createAppointment = useCallback(async (input: AppointmentInput) => {
+  const createAppointment = useCallback(async (input: AppointmentInput): Promise<boolean> => {
     setCreateLoading(true);
-    setError("");
-    setSuccessMessage("");
 
     try {
-      // Verificar se o usuário já tem um agendamento ativo
-      const hasActiveAppointment = appointments.some(appointment => {
-        // Exclui explicitamente agendamentos cancelados
-        if (appointment.status === 'CANCELLED') return false;
-        
-        // Considera agendamentos SCHEDULED, CONFIRMED e COMPLETED como ativos
-        const isActiveStatus = ['SCHEDULED', 'CONFIRMED', 'COMPLETED'].includes(appointment.status);
-        
-        if (!isActiveStatus) return false;
-        
-        // Verifica se o agendamento é futuro (incluindo hoje)
-        const appointmentDate = new Date(appointment.datetimeStart);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Remove horário para comparar apenas a data
-        
-        return appointmentDate >= today;
+      // Buscar agendamentos do usuário para validação usando a rota correta
+      const validationResponse = await fetch("/api/appointments/my-appointments?page=1&limit=100&status=all");
+      
+      if (!validationResponse.ok) {
+        const errorData = await validationResponse.json();
+        console.error("Erro ao buscar agendamentos para validação:", errorData);
+        throw new Error(errorData.error || "Erro ao validar agendamentos existentes");
+      }
+      
+      const validationData = await validationResponse.json();
+      
+      console.log("Dados de validação:", {
+        confirmedUpcoming: validationData.confirmedUpcoming,
+        confirmedDone: validationData.confirmedDone,
+        scheduled: validationData.scheduled,
+        total: validationData.total
       });
 
-      if (hasActiveAppointment) {
+      // Validar baseado nos campos do backend:
+      // - confirmedUpcoming > 0: Usuário tem agendamento confirmado futuro (não pode criar)
+      // - scheduled > 0: Usuário tem agendamento agendado (não pode criar)
+      // - confirmedUpcoming === 0 && scheduled === 0: Usuário não tem agendamentos ativos (pode criar)
+      // - confirmedDone > 0: Usuário já teve agendamentos confirmados (pode criar novos)
+      if (validationData.confirmedUpcoming > 0 || validationData.scheduled > 0) {
         throw new Error("Você já possui um agendamento ativo. Só é possível fazer um novo agendamento após a conclusão do atual.");
       }
 
@@ -136,7 +138,7 @@ export const useAppointments = () => {
 
       const newAppointment = await response.json();
       setAppointments(prev => [newAppointment, ...prev]);
-      setSuccessMessage("Agendamento criado com sucesso!");
+      appointmentSuccess("Agendamento criado com sucesso!");
       
       // Reset form
       setSelectedChairId(null);
@@ -146,17 +148,17 @@ export const useAppointments = () => {
       
       // Refresh list to get updated data
       await fetchAppointments();
+      return true; // Sucesso
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      appointmentError(err instanceof Error ? err.message : "Erro desconhecido");
+      return false; // Erro
     } finally {
       setCreateLoading(false);
     }
-  }, [appointments, setCreateLoading, setError, setSuccessMessage, setAppointments, setSelectedChairId, setSelectedDate, setSelectedTime, setModalOpen, fetchAppointments]);
+  }, [appointments, setCreateLoading, appointmentError, appointmentSuccess, setAppointments, setSelectedChairId, setSelectedDate, setSelectedTime, setModalOpen, fetchAppointments]);
 
   const cancelAppointment = useCallback(async (id: number) => {
     setCancelLoading(true);
-    setError("");
-    setSuccessMessage("");
 
     try {
       const response = await fetch(`/api/appointments/${id}/cancel`, {
@@ -172,21 +174,19 @@ export const useAppointments = () => {
       setAppointments(prev => 
         prev.map(apt => apt.id === id ? updatedAppointment : apt)
       );
-      setSuccessMessage("Agendamento cancelado com sucesso!");
+      appointmentSuccess("Agendamento cancelado com sucesso!");
       
       // Refresh list to get updated data
       await fetchAppointments();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      appointmentError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setCancelLoading(false);
     }
-  }, [setCancelLoading, setError, setSuccessMessage, setAppointments, fetchAppointments]);
+  }, [setCancelLoading, appointmentError, appointmentSuccess, setAppointments, fetchAppointments]);
 
   const confirmAppointment = useCallback(async (id: number) => {
     setConfirmLoading(true);
-    setError("");
-    setSuccessMessage("");
 
     try {
       const response = await fetch(`/api/appointments/confirm/${id}`, {
@@ -202,22 +202,20 @@ export const useAppointments = () => {
       setAppointments(prev => 
         prev.map(apt => apt.id === id ? updatedAppointment : apt)
       );
-      setSuccessMessage("Agendamento confirmado com sucesso!");
+      appointmentSuccess("Agendamento confirmado com sucesso!");
       
       // Refresh list to get updated data
       await fetchAppointments();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      appointmentError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setConfirmLoading(false);
     }
-  }, [setConfirmLoading, setError, setSuccessMessage, setAppointments, fetchAppointments]);
+  }, [setConfirmLoading, appointmentError, appointmentSuccess, setAppointments, fetchAppointments]);
 
   const openModal = useCallback(() => {
     setModalOpen(true);
-    setError("");
-    setSuccessMessage("");
-  }, [setModalOpen, setError, setSuccessMessage]);
+  }, [setModalOpen]);
 
   const closeModal = useCallback(() => {
     setModalOpen(false);
@@ -225,32 +223,49 @@ export const useAppointments = () => {
     setSelectedDate("");
     setSelectedTime("");
     setAvailableTimes(null);
-    setError("");
-    setSuccessMessage("");
-  }, [setModalOpen, setSelectedChairId, setSelectedDate, setSelectedTime, setAvailableTimes, setError, setSuccessMessage]);
+  }, [setModalOpen, setSelectedChairId, setSelectedDate, setSelectedTime, setAvailableTimes]);
 
   const clearMessages = useCallback(() => {
-    setError("");
-    setSuccessMessage("");
-  }, [setError, setSuccessMessage]);
+    // Não é mais necessário limpar mensagens, pois usamos toasts
+  }, []);
+
+  // Função para limpar o estado dos agendamentos
+  const clearAppointments = useCallback(() => {
+    setAppointments([]);
+    setPagination({
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      itemsPerPage: 10,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
+    setFilters({
+      page: 1,
+      limit: 10,
+      status: "all",
+    });
+  }, [setAppointments, setPagination, setFilters]);
 
   // Verifica se o usuário pode fazer um novo agendamento
-  const canCreateAppointment = useCallback(() => {
-    return !appointments.some(appointment => {
-      // Exclui explicitamente agendamentos cancelados
-      if (appointment.status === 'CANCELLED') return false;
+  const canCreateAppointment = useCallback(async () => {
+    try {
+      const response = await fetch("/api/appointments/my-appointments?page=1&limit=100&status=all");
       
-      const isActiveStatus = ['SCHEDULED', 'CONFIRMED', 'COMPLETED'].includes(appointment.status);
+      if (!response.ok) {
+        console.error("Erro ao verificar se pode criar agendamento");
+        return false;
+      }
       
-      if (!isActiveStatus) return false;
+      const data = await response.json();
       
-      const appointmentDate = new Date(appointment.datetimeStart);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      return appointmentDate >= today;
-    });
-  }, [appointments]);
+      // Pode criar se não há agendamentos ativos (confirmados futuros ou agendados)
+      return data.confirmedUpcoming === 0 && data.scheduled === 0;
+    } catch (error) {
+      console.error("Erro ao verificar permissão para criar agendamento:", error);
+      return false;
+    }
+  }, []);
 
   return {
     // Data
@@ -273,9 +288,7 @@ export const useAppointments = () => {
     // Modal state
     modalOpen,
     
-    // Messages
-    error,
-    successMessage,
+    // Messages - agora usando toasts
     
     // Actions
     fetchAppointments,
@@ -289,6 +302,9 @@ export const useAppointments = () => {
     openModal,
     closeModal,
     clearMessages,
+    
+    // State management
+    clearAppointments,
     
     // Setters
     setFilters,
