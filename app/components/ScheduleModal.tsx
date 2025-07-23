@@ -16,6 +16,7 @@ import {
   DialogClose,
 } from "@/app/components/ui/dialog";
 import { useSchedules } from "@/app/hooks/useSchedules";
+import { useToast } from "@/app/hooks/useToast";
 import {
   scheduleModalOpenAtom,
   scheduleEditModalOpenAtom,
@@ -41,6 +42,7 @@ const ScheduleModal = () => {
 
   const { createSchedule, updateSchedule, createLoading, updateLoading } =
     useSchedules();
+  const { error } = useToast();
 
   const isEdit = isEditModalOpen && selectedSchedule;
   const isOpen = isCreateModalOpen || isEditModalOpen;
@@ -159,11 +161,9 @@ const ScheduleModal = () => {
         await createSchedule(createData);
       }
       handleClose();
-    } catch (error) {
-      console.error("Error saving schedule:", error);
-      alert(
-        error instanceof Error ? error.message : "Erro ao salvar configuração"
-      );
+    } catch (err) {
+      console.error("Error saving schedule:", err);
+      // Toast já é gerenciado pelo hook useSchedules
     }
   };
 

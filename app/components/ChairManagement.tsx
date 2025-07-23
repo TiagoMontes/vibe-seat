@@ -26,6 +26,7 @@ import {
 } from "@/app/components/ui/select";
 import { Pagination } from "@/app/components/ui/pagination";
 import { useChairs } from "@/app/hooks/useChairs";
+import { useToast } from "@/app/hooks/useToast";
 import {
   chairModalOpenAtom,
   chairEditModalOpenAtom,
@@ -49,6 +50,8 @@ const ChairManagement = () => {
   const [, setIsEditModalOpen] = useAtom(chairEditModalOpenAtom);
   const [, setSelectedChair] = useAtom(selectedChairAtom);
   const [chairStats] = useAtom(computedChairStatsAtom);
+
+  const { success, error } = useToast();
 
   const [searchInput, setSearchInput] = useState("");
   const [statusInput, setStatusInput] = useState<StatusFilter>("all");
@@ -138,9 +141,10 @@ const ChairManagement = () => {
     if (window.confirm("Tem certeza que deseja excluir esta cadeira?")) {
       try {
         await deleteChair(id);
-      } catch (error) {
-        alert("Erro ao excluir cadeira");
-        console.error(error);
+        // Toast já é gerenciado pelo hook useChairs
+      } catch (err) {
+        // Toast já é gerenciado pelo hook useChairs
+        console.error(err);
       }
     }
   };

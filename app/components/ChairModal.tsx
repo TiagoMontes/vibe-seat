@@ -22,6 +22,7 @@ import {
   SelectTrigger,
 } from "@/app/components/ui/select";
 import { useChairs } from "@/app/hooks/useChairs";
+import { useToast } from "@/app/hooks/useToast";
 import {
   chairModalOpenAtom,
   chairEditModalOpenAtom,
@@ -44,6 +45,7 @@ const ChairModal = () => {
 
   const { createChair, updateChair, createLoading, updateLoading } =
     useChairs();
+  const { error } = useToast();
 
   const isEdit = isEditModalOpen && selectedChair;
   const isOpen = isCreateModalOpen || isEditModalOpen;
@@ -98,9 +100,9 @@ const ChairModal = () => {
         await createChair(formData as ChairFormData);
       }
       handleClose();
-    } catch (error) {
-      console.error("Error saving chair:", error);
-      alert(error instanceof Error ? error.message : "Erro ao salvar cadeira");
+    } catch (err) {
+      console.error("Error saving chair:", err);
+      // Toast já é gerenciado pelo hook useChairs
     }
   };
 

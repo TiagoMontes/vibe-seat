@@ -1,5 +1,6 @@
 import { useAtom } from "jotai";
 import { useCallback, useRef } from "react";
+import { useToast } from "./useToast";
 import {
   chairsAtom,
   chairsLoadingAtom,
@@ -26,6 +27,8 @@ export const useChairs = () => {
   const [createLoading, setCreateLoading] = useAtom(chairCreateLoadingAtom);
   const [updateLoading, setUpdateLoading] = useAtom(chairUpdateLoadingAtom);
   const [deleteLoading, setDeleteLoading] = useAtom(chairDeleteLoadingAtom);
+  
+  const { success, error } = useToast();
 
   const hasLoadedRef = useRef(false);
 
@@ -145,11 +148,14 @@ export const useChairs = () => {
         const newChair = await response.json();
         
         await fetchChairs(undefined, false);
+        success("Cadeira criada com sucesso!");
         
         return newChair;
-      } catch (error) {
-        console.error("Error creating chair:", error);
-        throw error;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        error("Erro ao criar cadeira: " + errorMessage);
+        console.error("Error creating chair:", err);
+        throw err;
       } finally {
         setCreateLoading(false);
       }
@@ -177,11 +183,14 @@ export const useChairs = () => {
         const updatedChair = await response.json();
         
         await fetchChairs(undefined, false);
+        success("Cadeira atualizada com sucesso!");
         
         return updatedChair;
-      } catch (error) {
-        console.error("Error updating chair:", error);
-        throw error;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        error("Erro ao atualizar cadeira: " + errorMessage);
+        console.error("Error updating chair:", err);
+        throw err;
       } finally {
         setUpdateLoading(false);
       }
@@ -208,10 +217,13 @@ export const useChairs = () => {
           await fetchChairs(undefined, false);
         }
         
+        success("Cadeira excluída com sucesso!");
         return { success: true };
-      } catch (error) {
-        console.error("Error deleting chair:", error);
-        throw error;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        error("Erro ao excluir cadeira: " + errorMessage);
+        console.error("Error deleting chair:", err);
+        throw err;
       } finally {
         setDeleteLoading(false);
       }

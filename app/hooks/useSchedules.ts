@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useAtom } from "jotai";
+import { useToast } from "./useToast";
 import {
   schedulesAtom,
   scheduleFiltersAtom,
@@ -19,6 +20,8 @@ export const useSchedules = () => {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const { success, error: toastError } = useToast();
 
   const fetchSchedules = useCallback(async () => {
     setLoading(true);
@@ -63,10 +66,12 @@ export const useSchedules = () => {
         const newSchedules = await response.json();
         
         setSchedules(prev => [...prev, ...newSchedules]);
+        success("Configuração de horário criada com sucesso!");
         
         return newSchedules;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        toastError("Erro ao criar configuração: " + errorMessage);
         setError(errorMessage);
         throw err;
       } finally {
@@ -103,9 +108,11 @@ export const useSchedules = () => {
           )
         );
 
+        success("Configuração de horário atualizada com sucesso!");
         return updatedSchedule;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        toastError("Erro ao atualizar configuração: " + errorMessage);
         setError(errorMessage);
         throw err;
       } finally {
@@ -134,8 +141,10 @@ export const useSchedules = () => {
         }
 
         setSchedules(prev => prev.filter(schedule => schedule.id !== id));
+        success("Configuração de horário excluída com sucesso!");
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        toastError("Erro ao excluir configuração: " + errorMessage);
         setError(errorMessage);
         throw err;
       } finally {
@@ -165,8 +174,10 @@ export const useSchedules = () => {
         }
 
         setSchedules(prev => prev.filter(schedule => !ids.includes(schedule.id)));
+        success(`${ids.length} configuração(ões) excluída(s) com sucesso!`);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        toastError("Erro ao excluir configurações: " + errorMessage);
         setError(errorMessage);
         throw err;
       } finally {

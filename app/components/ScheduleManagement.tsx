@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { useSchedules } from "@/app/hooks/useSchedules";
+import { useToast } from "@/app/hooks/useToast";
 import {
   scheduleModalOpenAtom,
   scheduleEditModalOpenAtom,
@@ -65,6 +66,7 @@ const ScheduleManagement = () => {
     bulkDeleteSchedules,
     clearError,
   } = useSchedules();
+  const { error: toastError } = useToast();
 
   useEffect(() => {
     fetchSchedules();
@@ -101,9 +103,10 @@ const ScheduleManagement = () => {
     if (window.confirm("Tem certeza que deseja excluir esta configuração?")) {
       try {
         await deleteSchedule(id);
-      } catch (error) {
-        alert("Erro ao excluir configuração");
-        console.error(error);
+        // Toast já é gerenciado pelo hook useSchedules
+      } catch (err) {
+        // Toast já é gerenciado pelo hook useSchedules
+        console.error(err);
       }
     }
   };
@@ -141,9 +144,10 @@ const ScheduleManagement = () => {
       try {
         await bulkDeleteSchedules(Array.from(selectedSchedules));
         clearSelection();
-      } catch (error) {
-        alert("Erro ao excluir configurações");
-        console.error(error);
+        // Toast já é gerenciado pelo hook useSchedules
+      } catch (err) {
+        // Toast já é gerenciado pelo hook useSchedules
+        console.error(err);
       }
     }
   };
