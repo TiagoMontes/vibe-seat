@@ -475,15 +475,15 @@ const ChairManagement = () => {
               </div>
 
               {/* Pagination */}
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
+              <PaginationComponent
                 hasNextPage={pagination.hasNextPage}
                 hasPrevPage={pagination.hasPrevPage}
-                onPageChange={goToPage}
-                onNextPage={nextPage}
-                onPrevPage={prevPage}
-                className="mt-6"
+                currentPage={pagination.currentPage}
+                nextPage={pagination.nextPage}
+                prevPage={pagination.prevPage}
+                lastPage={pagination.totalPages}
+                fetchAvailableChairs={fetchAvailableChairs}
+                selectedDate={selectedDate}
               />
             </>
           )}

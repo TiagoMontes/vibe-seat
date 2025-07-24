@@ -7,9 +7,7 @@ import { RecentAppointments } from "@/app/components/dashboard/RecentAppointment
 import { Button } from "@/app/components/ui/button";
 import {
   Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+  CardContent
 } from "@/app/components/ui/card";
 import {
   Users,
@@ -22,8 +20,7 @@ import {
   Wrench,
   XCircle,
   CheckCircle,
-  AlertCircle,
-  BarChart3,
+  AlertCircle
 } from "lucide-react";
 
 export const Dashboard: React.FC = () => {
@@ -193,7 +190,6 @@ export const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* User Appointments (for regular users) */}
       {!isAdmin && data.userAppointments && (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
           <StatCard
@@ -235,7 +231,6 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Charts and Recent Activity */}
       <RecentAppointments appointments={data.recentAppointments} />
     </div>
   );

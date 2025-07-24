@@ -32,6 +32,8 @@ import {
   ListIcon,
   UsersIcon,
 } from "lucide-react";
+import { PaginationType } from "@/app/types/pagination";
+import { PaginationComponent } from "@/app/components/PaginationComponent";
 
 interface ChairCardProps {
   chair: Chair;
@@ -79,7 +81,6 @@ const ChairCard = ({
   availableTimes,
   onTimeSelect,
   createLoading,
-  selectedDate,
 }: ChairCardProps) => {
   return (
     <Card className="h-full border border-gray-200 p-4 flex flex-col justify-between">
@@ -337,8 +338,12 @@ export const AppointmentManagement = () => {
     hasAvailableSchedules,
     loading: schedulesLoading,
   } = useSchedules();
-  const { createAppointment, createLoading, fetchAppointments } =
-    useAppointments();
+  const {
+    createAppointment,
+    createLoading,
+    fetchAppointments,
+    fetchAvailableTimes,
+  } = useAppointments();
 
   // Local state
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -361,13 +366,16 @@ export const AppointmentManagement = () => {
   const [loadingAvailableChairs, setLoadingAvailableChairs] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationType>({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
     itemsPerPage: 9,
     hasNextPage: false,
     hasPrevPage: false,
+    nextPage: 2,
+    prevPage: 0,
+    lastPage: 1,
   });
 
   const itemsPerPage = 6; // Paginação local para exibição
@@ -385,7 +393,7 @@ export const AppointmentManagement = () => {
         const queryParams = new URLSearchParams();
         queryParams.set("date", date);
         queryParams.set("page", page.toString());
-        queryParams.set("limit", "9");
+        queryParams.set("limit", "3");
 
         const response = await fetch(
           `/api/appointments/available-times?${queryParams.toString()}`
@@ -436,7 +444,7 @@ export const AppointmentManagement = () => {
     if (selectedDate) {
       // Check if the selected date has available schedules
       if (hasAvailableSchedules(selectedDate)) {
-        fetchAvailableChairs(selectedDate, 1, false);
+        fetchAvailableTimes(selectedDate, 1, false);
       } else {
         setAvailableChairsData([]);
         setPagination({
@@ -446,6 +454,9 @@ export const AppointmentManagement = () => {
           itemsPerPage: 9,
           hasNextPage: false,
           hasPrevPage: false,
+          nextPage: 2,
+          prevPage: 0,
+          lastPage: 1,
         });
       }
     } else {
@@ -457,6 +468,9 @@ export const AppointmentManagement = () => {
         itemsPerPage: 9,
         hasNextPage: false,
         hasPrevPage: false,
+        nextPage: 2,
+        prevPage: 0,
+        lastPage: 1,
       });
     }
   }, [selectedDate]); // Removidas dependências que causam re-renders
@@ -776,30 +790,17 @@ export const AppointmentManagement = () => {
               </div>
 
               {/* Load More Button */}
-              {pagination.hasNextPage && (
-                <div className="flex justify-center mt-6">
-                  <Button
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        Carregando...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCwIcon className="h-4 w-4" />
-                        Carregar Mais Cadeiras (
-                        {pagination.totalItems -
-                          availableChairsData.length}{" "}
-                        restantes)
-                      </>
-                    )}
-                  </Button>
-                </div>
+              {pagination.totalItems > 3 && (
+                <PaginationComponent
+                  hasNextPage={pagination.hasNextPage}
+                  hasPrevPage={pagination.hasPrevPage}
+                  currentPage={pagination.currentPage}
+                  nextPage={pagination.nextPage}
+                  prevPage={pagination.prevPage}
+                  lastPage={pagination.totalPages}
+                  fetchAvailableChairs={fetchAvailableChairs}
+                  selectedDate={selectedDate}
+                />
               )}
 
               {/* Pagination Info */}

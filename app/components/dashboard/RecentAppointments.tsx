@@ -6,7 +6,9 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { DashboardRecentAppointment } from "@/app/types/dashboard";
-import { Clock, MapPin, User, Calendar } from "lucide-react";
+import { Clock, MapPin, User } from "lucide-react";
+import { getStatusColor, getStatusLabel } from "@/app/utils/AppointmentUtils";
+import { formatDateTime } from "@/app/utils/AppointmentUtils";
 
 interface RecentAppointmentsProps {
   appointments: DashboardRecentAppointment[];
@@ -14,43 +16,6 @@ interface RecentAppointmentsProps {
 
 export const RecentAppointments: React.FC<RecentAppointmentsProps> = React.memo(
   ({ appointments }) => {
-    // Memoizar a formatação de data/hora
-    const formatDateTime = React.useCallback((dateTimeString: string) => {
-      const date = new Date(dateTimeString);
-      return {
-        date: date.toLocaleDateString("pt-BR"),
-        time: date.toLocaleTimeString("pt-BR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-    }, []);
-
-    const getStatusColor = (status: string) => {
-      switch (status) {
-        case "SCHEDULED":
-          return "bg-blue-100 text-blue-800";
-        case "CONFIRMED":
-          return "bg-green-100 text-green-800";
-        case "CANCELLED":
-          return "bg-red-100 text-red-800";
-        default:
-          return "bg-gray-100 text-gray-800";
-      }
-    };
-
-    const getStatusLabel = (status: string) => {
-      switch (status) {
-        case "SCHEDULED":
-          return "Agendado";
-        case "CONFIRMED":
-          return "Confirmado";
-        case "CANCELLED":
-          return "Cancelado";
-        default:
-          return status;
-      }
-    };
 
     if (appointments.length === 0) {
       return (
@@ -80,17 +45,16 @@ export const RecentAppointments: React.FC<RecentAppointmentsProps> = React.memo(
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex w-full justify-between gap-4">
-            {appointments.slice(0, 5).map((appointment) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {appointments.slice(0, 6).map((appointment) => {
               const { date, time } = formatDateTime(appointment.datetimeStart);
 
               return (
                 <div
                   key={appointment.id}
-                  className="flex w-full items-center gap-4 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
                 >
-
-                  <div className="flex items-center justify-between gap-2 w-full">
+                  <div className="flex items-center flex-wrap justify-between gap-2 w-full">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-500" />

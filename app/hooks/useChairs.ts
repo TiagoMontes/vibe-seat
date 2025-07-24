@@ -59,7 +59,6 @@ export const useChairs = () => {
       const data: ChairListResponse = await response.json();
       
       setChairs(data.chairs);
-      setPagination(data.pagination);
       
       if (customFilters) {
         setFilters(currentFilters);
@@ -99,22 +98,6 @@ export const useChairs = () => {
     setFilters(updatedFilters);
     fetchChairs(updatedFilters, false);
   }, [filters, setFilters, fetchChairs]);
-
-  const goToPage = useCallback((page: number) => {
-    updateFilters({ page });
-  }, [updateFilters]);
-
-  const nextPage = useCallback(() => {
-    if (pagination.hasNextPage) {
-      goToPage(pagination.currentPage + 1);
-    }
-  }, [pagination.hasNextPage, pagination.currentPage, goToPage]);
-
-  const prevPage = useCallback(() => {
-    if (pagination.hasPrevPage) {
-      goToPage(pagination.currentPage - 1);
-    }
-  }, [pagination.hasPrevPage, pagination.currentPage, goToPage]);
 
   const resetFilters = useCallback(() => {
     const defaultFilters: ChairFilters = {

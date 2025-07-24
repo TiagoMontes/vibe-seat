@@ -43,30 +43,30 @@ const Layout: React.FC<LayoutProps> = ({
       label: "Dashboard",
       component: children,
     },
-    ...(canManageUsers
-      ? [
-          {
-            key: "users" as TabKey,
-            label: "Usuários",
-            component: <UserManagement />,
-          },
-          {
-            key: "chairs" as TabKey,
-            label: "Cadeiras",
-            component: <ChairManagement />,
-          },
-          {
-            key: "schedules" as TabKey,
-            label: "Gestão de disponibilidade",
-            component: <ScheduleManagement />,
-          },
-          {
-            key: "appointments" as TabKey,
-            label: "Agendamentos",
-            component: <AppointmentManagement />,
-          },
-        ]
-      : []),
+    // ...(canManageUsers
+    //   ? [
+    //       {
+    //         key: "users" as TabKey,
+    //         label: "Usuários",
+    //         component: <UserManagement />,
+    //       },
+    //       {
+    //         key: "chairs" as TabKey,
+    //         label: "Cadeiras",
+    //         component: <ChairManagement />,
+    //       },
+    //       {
+    //         key: "schedules" as TabKey,
+    //         label: "Gestão de disponibilidade",
+    //         component: <ScheduleManagement />,
+    //       },
+    //       {
+    //         key: "appointments" as TabKey,
+    //         label: "Agendamentos",
+    //         component: <AppointmentManagement />,
+    //       },
+    //     ]
+    //   : []),
   ];
 
   // Se o usuário não tem permissão para a aba ativa, voltar para dashboard

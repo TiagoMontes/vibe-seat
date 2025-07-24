@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // URL do backend (ajuste conforme necessário)
     const backendUrl = process.env.API_BACKEND_URL || "http://localhost:3001";
     
     const response = await fetch(`${backendUrl}/dashboard/`, {
