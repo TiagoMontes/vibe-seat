@@ -7,8 +7,7 @@ import {
 } from "@/app/components/ui/card";
 import { DashboardRecentAppointment } from "@/app/types/dashboard";
 import { Clock, MapPin, User } from "lucide-react";
-import { getStatusColor, getStatusLabel } from "@/app/utils/AppointmentUtils";
-import { formatDateTime } from "@/app/utils/AppointmentUtils";
+import { getStatusColor, getStatusLabel, formatDateTime } from "@/app/lib/utils";
 
 interface RecentAppointmentsProps {
   appointments: DashboardRecentAppointment[];

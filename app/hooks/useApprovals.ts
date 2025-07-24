@@ -8,6 +8,7 @@ import {
   approvalsLoadingAtom, 
   approvalsErrorAtom,
   pendingCountAtom,
+  pendingApprovalsAtom,
   type Approval 
 } from '@/app/atoms/userManagementAtoms';
 
@@ -18,6 +19,7 @@ export function useApprovals() {
   const [loading, setLoading] = useAtom(approvalsLoadingAtom);
   const [error, setError] = useAtom(approvalsErrorAtom);
   const [pendingCount] = useAtom(pendingCountAtom);
+  const [pendingApprovals, setPendingApprovals] = useAtom(pendingApprovalsAtom);
   
   const [filteredApprovals, setFilteredApprovals] = useState<Approval[]>([]);
   const [filter, setFilter] = useState<ApprovalStatus>('all');
@@ -107,6 +109,7 @@ export function useApprovals() {
   return {
     approvals: filteredApprovals,
     allApprovals: approvals,
+    pendingApprovals,
     loading,
     error,
     filter,

@@ -12,6 +12,12 @@ export const ROLES = {
   USER: 3,
 } as const;
 
+export const ROLE_NAMES = {
+  ADMIN: "admin",
+  ATTENDANT: "attendant",
+  USER: "user",
+} as const;
+
 export type RoleId = typeof ROLES[keyof typeof ROLES];
 
 /**
@@ -28,13 +34,26 @@ export type RoleId = typeof ROLES[keyof typeof ROLES];
  * getRoleName(null) // "Não definida"
  * ```
  */
-export const getRoleName = (roleId: number | null | undefined): string => {
+export const getRoleNameById = (roleId: number): string => {
   switch (roleId) {
     case ROLES.ADMIN:
       return "Administrador";
     case ROLES.ATTENDANT:
       return "Atendente:";
     case ROLES.USER:
+      return "Usuário";
+    default:
+      return "Não definida";
+  }
+};
+
+export const getRoleByName = (roleName: string): string => {
+  switch (roleName) {
+    case ROLE_NAMES.ADMIN:
+      return "Administrador";
+    case ROLE_NAMES.ATTENDANT:
+      return "Atendente";
+    case ROLE_NAMES.USER:
       return "Usuário";
     default:
       return "Não definida";
@@ -106,3 +125,41 @@ export const isAttendant = (userRoleId: number | null | undefined): boolean => {
 export const isUser = (userRoleId: number | null | undefined): boolean => {
   return hasRole(userRoleId, ROLES.USER);
 };
+
+
+export const getStatusColor = (status: string) => {
+  switch (status) {
+    case "SCHEDULED":
+      return "bg-blue-100 text-blue-800";
+    case "CONFIRMED":
+      return "bg-green-100 text-green-800";
+    case "CANCELLED":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+export const getStatusLabel = (status: string) => {
+  switch (status) {
+    case "SCHEDULED":
+      return "Agendado";
+    case "CONFIRMED":
+      return "Confirmado";
+    case "CANCELLED":
+      return "Cancelado";
+    default:
+      return status;
+  }
+};
+
+export const formatDateTime = (dateTimeString: string) => {
+    const date = new Date(dateTimeString);
+    return {
+      date: date.toLocaleDateString("pt-BR"),
+      time: date.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  };

@@ -4,9 +4,6 @@ import React, { useState } from "react";
 import { cn } from "@/app/lib/utils";
 import UserManagement from "@/app/components/UserManagement";
 import { Button } from "../components/ui/button";
-import ChairManagement from "../components/ChairManagement";
-import ScheduleManagement from "../components/ScheduleManagement";
-import { AppointmentManagement } from "../components/AppointmentManagement";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -43,13 +40,13 @@ const Layout: React.FC<LayoutProps> = ({
       label: "Dashboard",
       component: children,
     },
-    // ...(canManageUsers
-    //   ? [
-    //       {
-    //         key: "users" as TabKey,
-    //         label: "Usuários",
-    //         component: <UserManagement />,
-    //       },
+    ...(canManageUsers
+      ? [
+          {
+            key: "users" as TabKey,
+            label: "Usuários",
+            component: <UserManagement />,
+          },
     //       {
     //         key: "chairs" as TabKey,
     //         label: "Cadeiras",
@@ -65,8 +62,8 @@ const Layout: React.FC<LayoutProps> = ({
     //         label: "Agendamentos",
     //         component: <AppointmentManagement />,
     //       },
-    //     ]
-    //   : []),
+        ]
+      : []),
   ];
 
   // Se o usuário não tem permissão para a aba ativa, voltar para dashboard

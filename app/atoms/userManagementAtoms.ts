@@ -50,6 +50,11 @@ export const pendingCountAtom = atom((get) => {
   return approvals.filter(approval => approval.status === 'pending').length;
 });
 
+export const pendingApprovalsAtom = atom((get) => {
+  const approvals = get(approvalsAtom);
+  return approvals.filter(approval => approval.status === 'pending')
+})
+
 export const totalUsersCountAtom = atom((get) => {
   const users = get(registeredUsersAtom);
   return users.length;
