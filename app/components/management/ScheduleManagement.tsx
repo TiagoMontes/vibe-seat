@@ -34,7 +34,7 @@ import {
   isScheduleActive,
   generateTimeSlots,
 } from "@/app/schemas/scheduleSchema";
-import ScheduleModal from "@/app/components/ScheduleModal";
+import ScheduleModal from "@/app/components/modal/ScheduleModal";
 import ScheduleCalendar from "@/app/components/ScheduleCalendar";
 
 type DayFilter = "all" | number;

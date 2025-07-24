@@ -40,7 +40,7 @@ import {
   getStatusColor,
   getStatusOptions,
 } from "@/app/schemas/chairSchema";
-import ChairModal from "./ChairModal";
+import ChairModal from "./modal/ChairModal";
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc";
 type StatusFilter = "all" | "ACTIVE" | "MAINTENANCE" | "INACTIVE";

@@ -6,8 +6,8 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { Users, Search, Check, X, Clock, Calendar } from "lucide-react";
 import { type Approval } from "@/app/atoms/userManagementAtoms";
 import { formatDateTime, getRoleByName } from "@/app/lib/utils";
-import { useApprovals } from "../hooks/useApprovals";
-import { PaginationComponent } from "./PaginationComponent";
+import { useApprovals } from "@/app/hooks/useApprovals";
+import { PaginationComponent } from "@/app/components/PaginationComponent";
 
 const PendingApprovals = () => {
   const {

@@ -6,8 +6,6 @@ import { useAtom } from "jotai";
 import { Input } from "@/app/components/ui/input";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
 } from "@/app/components/ui/card";
 
@@ -20,8 +18,8 @@ import {
 } from "@/app/atoms/userManagementAtoms";
 
 import { formatDateTime, getRoleNameById, useDebounce } from "@/app/lib/utils";
-import { useUserManagementData } from "../hooks/useUserManagementData";
-import { PaginationComponent } from "./PaginationComponent";
+import { useUserManagementData } from "@/app/hooks/useUserManagementData";
+import { PaginationComponent } from "@/app/components/PaginationComponent";
 
 // ============================================================================
 // UTILITY FUNCTIONS

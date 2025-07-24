@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { cn } from "@/app/lib/utils";
-import UserManagement from "@/app/components/UserManagement";
+import UserManagement from "@/app/components/management/UserManagement";
 import MobileMenu from "@/app/components/MobileMenu";
 import SidebarAccordion from "@/app/components/SidebarAccordion";
 import { Home, Users } from "lucide-react";

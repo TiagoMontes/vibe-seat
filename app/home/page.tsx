@@ -3,7 +3,7 @@
 import { useAuth } from "@/app/hooks/useAuth";
 import { useUserData } from "@/app/hooks/useUserData";
 import Layout from "../layout/index";
-import { Dashboard } from "@/app/components/Dashboard";
+import { Dashboard } from "@/app/components/modal/Dashboard";
 
 export default function HomePage() {
   const { logout } = useAuth();

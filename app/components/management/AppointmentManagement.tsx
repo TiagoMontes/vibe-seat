@@ -19,8 +19,8 @@ import { useChairs } from "@/app/hooks/useChairs";
 import { useSchedules } from "@/app/hooks/useSchedules";
 import { useAuth } from "@/app/hooks/useAuth";
 import { Chair } from "@/app/schemas/chairSchema";
-import { MyAppointmentsList } from "@/app/components/MyAppointmentsList";
-import { ScheduledAppointmentsList } from "@/app/components/ScheduledAppointmentsList";
+import { MyAppointmentsList } from "@/app/components/subTab/MyAppointmentsList";
+import { ScheduledAppointmentsList } from "@/app/components/subTab/ScheduledAppointmentsList";
 import {
   CalendarIcon,
   ClockIcon,
