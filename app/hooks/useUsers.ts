@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { toast } from 'react-toastify';
+import { useToast } from './useToast';
 
 interface CreateUserData {
   username: string;
@@ -12,6 +12,7 @@ interface CreateUserData {
 export function useUsers() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { success: showSuccess, error: showError } = useToast();
 
   const createUser = async (userData: CreateUserData): Promise<boolean> => {
     setLoading(true);
@@ -31,28 +32,14 @@ export function useUsers() {
         throw new Error(errorData.error || 'Erro ao criar usuário');
       }
       
-      toast.success('Sua solicitação de criação de conta foi enviada com sucesso, aguarde a aprovação!', {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      showSuccess('Sua solicitação de criação de conta foi enviada com sucesso, aguarde a aprovação!');
 
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
       
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      showError(errorMessage);
 
       return false;
     } finally {

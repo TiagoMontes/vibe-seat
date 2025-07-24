@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAtom } from 'jotai';
-import { toast } from 'react-toastify';
 import { 
   approvalsAtom, 
   approvalsLoadingAtom, 
   approvalsErrorAtom,
   type Approval 
 } from '@/app/atoms/userManagementAtoms';
+import { useToast } from './useToast';
 
 export type ApprovalStatus = 'all' | 'pending' | 'approved' | 'rejected';
 export type ApprovalSortBy = 'newest' | 'oldest' | 'user-asc' | 'user-desc';
@@ -50,6 +50,7 @@ export function useApprovals() {
   const [approvals, setApprovals] = useAtom(approvalsAtom);
   const [loading, setLoading] = useAtom(approvalsLoadingAtom);
   const [error, setError] = useAtom(approvalsErrorAtom);
+  const { error: showError, success: showSuccess } = useToast();
 
   const [pagination, setPagination] = useState<ApprovalPagination>({
     currentPage: 1,
@@ -72,7 +73,7 @@ export function useApprovals() {
   
   const [filters, setFilters] = useState<ApprovalFilters>({
     page: 1,
-    limit: 9,
+    limit: 8,
     search: '',
     status: 'all',
     sortBy: 'newest',
@@ -125,7 +126,7 @@ export function useApprovals() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
-      toast.error(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -153,12 +154,12 @@ export function useApprovals() {
       await fetchApprovals();
 
       const statusText = status === 'approved' ? 'aprovado' : 'rejeitado';
-      toast.success(`Usuário ${statusText} com sucesso!`);
+      showSuccess(`Usuário ${statusText} com sucesso!`);
       
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      toast.error(errorMessage);
+      showError(errorMessage);
       return false;
     }
   };

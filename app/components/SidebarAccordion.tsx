@@ -122,21 +122,21 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
 
       {/* Área do Usuário */}
       <div
-        className={cn("border-t border-gray-300", isExpanded ? "p-4" : "p-2")}
+        className="border-t border-gray-300 p-2"
       >
         {isExpanded ? (
-          <div>
-            <div className="flex items-center space-x-3">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center">
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                 <User className="h-4 w-4 text-primary-foreground" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-medium truncate">{userName}</p>
+                <p className="text-lg font-bold truncate">{userName}</p>
                 <p className="text-xs truncate">{userRole}</p>
               </div>
             </div>
 
-            <div className="pt-2">
+            <div>
               <Button
                 onClick={onLogout}
                 className="w-full flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-destructive hover:text-destructive-foreground transition-colors"
@@ -148,17 +148,17 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <User className="h-4 w-4 text-primary-foreground" />
+            <div className="w-full h-10 border  rounded-full flex items-center justify-center">
+              {userName.charAt(0).toUpperCase()}
             </div>
             <Button
               onClick={onLogout}
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0"
+              className="h-8 p-0 bg-black w-full"
               title="Sair"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 text-white" />
             </Button>
           </div>
         )}

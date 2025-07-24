@@ -1,4 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
+import { useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -39,7 +40,7 @@ export const getRoleNameById = (roleId: number): string => {
     case ROLES.ADMIN:
       return "Administrador";
     case ROLES.ATTENDANT:
-      return "Atendente:";
+      return "Atendente";
     case ROLES.USER:
       return "Usuário";
     default:
@@ -163,3 +164,20 @@ export const formatDateTime = (dateTimeString: string) => {
       }),
     };
   };
+
+  // Hook personalizado para debounce
+export const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};

@@ -12,7 +12,6 @@ import {
   pendingCountAtom,
   totalUsersCountAtom,
 } from "@/app/atoms/userManagementAtoms";
-import { useUserManagementData } from "@/app/hooks/useUserManagementData";
 
 type TabType = "pending" | "users" | "chairs";
 
@@ -20,8 +19,6 @@ const UserManagement = () => {
   const [activeTab, setActiveTab] = useState<TabType>("pending");
   const [pendingCount] = useAtom(pendingCountAtom);
   const [totalUsersCount] = useAtom(totalUsersCountAtom);
-
-  useUserManagementData();
 
   const tabs = [
     {

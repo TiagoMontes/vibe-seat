@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAtom } from 'jotai';
-import { toast } from 'react-toastify';
 import { 
   registeredUsersAtom, 
   usersLoadingAtom, 
@@ -10,12 +9,14 @@ import {
   totalUsersCountAtom,
   type RegisteredUser 
 } from '@/app/atoms/userManagementAtoms';
+import { useToast } from './useToast';
 
 export function useRegisteredUsers() {
   const [users, setUsers] = useAtom(registeredUsersAtom);
   const [loading, setLoading] = useAtom(usersLoadingAtom);
   const [error, setError] = useAtom(usersErrorAtom);
   const [totalCount] = useAtom(totalUsersCountAtom);
+  const { error: showError } = useToast();
   
   const [filteredUsers, setFilteredUsers] = useState<RegisteredUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,7 +38,7 @@ export function useRegisteredUsers() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
-      toast.error(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }

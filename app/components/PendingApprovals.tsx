@@ -37,64 +37,69 @@ const PendingApprovals = () => {
     return (
       <div
         key={approval.id}
-        className="p-4 border w-full flex-1 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+        className="h-full p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex flex-col"
       >
-        <div className="flex flex-col flex-wrap justify-between gap-4">
+        <div className="flex items-start gap-4 flex-1">
+          {/* Avatar */}
+          <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
+            <Users className="h-6 w-6 text-orange-600" />
+          </div>
+
           {/* User Info */}
-          <div className="flex items-start gap-4 ">
-            <div className="min-w-12 min-h-12 w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-              <Users className="h-6 w-6 text-orange-600" />
+          <div className="flex-1 min-w-0">
+            {/* Username and Status */}
+            <div className="flex items-center gap-2 mb-2">
+              <h3
+                className="text-base font-semibold text-gray-900 truncate"
+                title={approval.user.username}
+              >
+                {approval.user.username}
+              </h3>
+              <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium shrink-0">
+                Pendente
+              </span>
             </div>
 
-            <div className="flex flex-col gap-1 w-full">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                <h3
-                  className="text-base font-semibold text-gray-900 truncate max-w-[180px] sm:max-w-[200px]"
-                  title={approval.user.username}
-                >
-                  {approval.user.username}
-                </h3>
-                <span className="mt-1 sm:mt-0 px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium w-max">
-                  Pendente
+            {/* Role */}
+            <p className="font-semibold text-blue-600 mb-2">
+              {getRoleByName(approval.requestedRole.name)}
+            </p>
+
+            {/* Metadata */}
+            <div className="space-y-2 text-sm text-gray-500">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {date}, {time}
                 </span>
               </div>
-
-              <p className="font-semibold text-blue-600">
-                {getRoleByName(approval.requestedRole.name)}
-              </p>
-
-              <div className="flex flex-col gap-2 text-sm text-gray-500 ">
-                <p>
-                  {date}, {time}
-                </p>
-                <div className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  <span>ID: {approval.user.id}</span>
-                </div>
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4 shrink-0" />
+                <span>ID: {approval.user.id}</span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 lg:gap-3 shrink-0">
-            <Button
-              onClick={() => handleApproval(approval.id, "rejected")}
-              variant="destructive"
-              size="sm"
-              className="w-full lg:w-auto"
-            >
-              <X className="h-4 w-4" />
-              Rejeitar
-            </Button>
-            <Button
-              onClick={() => handleApproval(approval.id, "approved")}
-              className="bg-green-600 hover:bg-green-700 text-white w-full lg:w-auto"
-              size="sm"
-            >
-              <Check className="h-4 w-4" />
-              Aprovar
-            </Button>
-          </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-2 mt-4 shrink-0">
+          <Button
+            onClick={() => handleApproval(approval.id, "rejected")}
+            variant="destructive"
+            size="sm"
+            className="w-full sm:w-auto"
+          >
+            <X className="h-4 w-4" />
+            Rejeitar
+          </Button>
+          <Button
+            onClick={() => handleApproval(approval.id, "approved")}
+            className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+            size="sm"
+          >
+            <Check className="h-4 w-4" />
+            Aprovar
+          </Button>
         </div>
       </div>
     );
@@ -147,7 +152,7 @@ const PendingApprovals = () => {
               </p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-4 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full gap-4">
               {approvals.map((approval) => ApprovalComponent(approval))}
             </div>
           )}

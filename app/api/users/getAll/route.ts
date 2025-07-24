@@ -2,7 +2,32 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  
+  // Extrair parâmetros de query
+  const page = searchParams.get('page') || '1';
+  const limit = searchParams.get('limit') || '8';
+  const status = searchParams.get('status') || '';
+  const search = searchParams.get('search') || '';
+  const sortBy = searchParams.get('sortBy') || 'newest';
+  
+  // Construir URL com parâmetros
+  const queryParams = new URLSearchParams();
+  queryParams.set('page', page);
+  queryParams.set('limit', limit);
+  
+  if (status) {
+    queryParams.set('status', status);
+  }
+  
+  if (search) {
+    queryParams.set('search', search);
+  }
+  
+  if (sortBy !== 'newest') {
+    queryParams.set('sortBy', sortBy);
+  }
   try {
     const session = await getServerSession(authOptions);
     
@@ -22,7 +47,7 @@ export async function GET() {
       );
     }
 
-    const response = await fetch(`${apiUrl}/users/`, {
+    const response = await fetch(`${apiUrl}/users/?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
