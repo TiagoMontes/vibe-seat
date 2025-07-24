@@ -47,12 +47,14 @@ export const usersErrorAtom = atom<string | null>(null);
 
 export const pendingCountAtom = atom((get) => {
   const approvals = get(approvalsAtom);
-  return approvals.filter(approval => approval.status === 'pending').length;
+  const approvalsArray = Array.isArray(approvals) ? approvals : [];
+  return approvalsArray.filter(approval => approval.status === 'pending').length;
 });
 
 export const pendingApprovalsAtom = atom((get) => {
   const approvals = get(approvalsAtom);
-  return approvals.filter(approval => approval.status === 'pending')
+  const approvalsArray = Array.isArray(approvals) ? approvals : [];
+  return approvalsArray.filter(approval => approval.status === 'pending')
 })
 
 export const totalUsersCountAtom = atom((get) => {
@@ -66,8 +68,11 @@ export const syncUsersWithApprovalsAtom = atom(
     const approvals = get(approvalsAtom);
     const users = get(registeredUsersAtom);
     
+    // Garantir que approvals seja sempre um array
+    const approvalsArray = Array.isArray(approvals) ? approvals : [];
+    
     const updatedUsers = users.map(user => {
-      const approval = approvals.find(app => app.userId === user.id);
+      const approval = approvalsArray.find(app => app.userId === user.id);
       if (approval && approval.status !== user.status) {
         return { ...user, status: approval.status };
       }

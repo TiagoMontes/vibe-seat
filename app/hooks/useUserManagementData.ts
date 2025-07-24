@@ -39,7 +39,7 @@ export function useUserManagementData() {
       }
 
       const data = await response.json();
-      setApprovals(data);
+      setApprovals(data.approvals || []);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setApprovalsError(errorMessage);

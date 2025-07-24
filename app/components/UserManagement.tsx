@@ -58,7 +58,7 @@ const UserManagement = () => {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-col lg:flex-row">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.key;

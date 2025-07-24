@@ -7,7 +7,7 @@ interface PaginationProps {
   nextPage: number;
   prevPage: number;
   lastPage: number;
-  fetchAvailableChairs: (date: string, page: number, append: boolean) => void;
+  goToPage: (date: string, page: number, append: boolean) => void;
   selectedDate: string;
 }
 
@@ -18,11 +18,11 @@ export const PaginationComponent = ({
   nextPage,
   prevPage,
   lastPage,
-  fetchAvailableChairs,
+  goToPage,
   selectedDate,
 }: PaginationProps) => {
   const handleClick = (page: number) => {
-    fetchAvailableChairs(selectedDate, page, false);
+    goToPage(selectedDate, page, false);
   };
 
   return (

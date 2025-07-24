@@ -21,7 +21,6 @@ export const RecentAppointments: React.FC<RecentAppointmentsProps> = React.memo(
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
               Agendamentos Recentes
             </CardTitle>
           </CardHeader>
@@ -39,7 +38,6 @@ export const RecentAppointments: React.FC<RecentAppointmentsProps> = React.memo(
       <Card className="flex flex-col gap-4">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
             Agendamentos Recentes
           </CardTitle>
         </CardHeader>

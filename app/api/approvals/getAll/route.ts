@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -22,7 +22,32 @@ export async function GET() {
       );
     }
 
-    const response = await fetch(`${apiUrl}/approvals/`, {
+    // Extrair query parameters
+    const { searchParams } = new URL(request.url);
+    const page = searchParams.get('page') || '1';
+    const limit = searchParams.get('limit') || '9';
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
+    const sortBy = searchParams.get('sortBy') || '';
+
+    // Construir URL com query parameters
+    const queryParams = new URLSearchParams();
+    queryParams.set('page', page);
+    queryParams.set('limit', limit);
+    
+    if (search) {
+      queryParams.set('search', search);
+    }
+    
+    if (status) {
+      queryParams.set('status', status);
+    }
+    
+    if (sortBy) {
+      queryParams.set('sortBy', sortBy);
+    }
+
+    const response = await fetch(`${apiUrl}/approvals/?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
