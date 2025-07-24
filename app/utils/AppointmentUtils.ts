@@ -1,5 +1,3 @@
-import React from "react";
-
 export const getStatusColor = (status: string) => {
   switch (status) {
     case "SCHEDULED":
@@ -26,7 +24,7 @@ export const getStatusLabel = (status: string) => {
   }
 };
 
-export const formatDateTime = React.useCallback((dateTimeString: string) => {
+export const formatDateTime = (dateTimeString: string) => {
     const date = new Date(dateTimeString);
     return {
       date: date.toLocaleDateString("pt-BR"),
@@ -35,4 +33,4 @@ export const formatDateTime = React.useCallback((dateTimeString: string) => {
         minute: "2-digit",
       }),
     };
-  }, []);
+  };
