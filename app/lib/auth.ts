@@ -77,7 +77,7 @@ export const authOptions: NextAuthOptions = {
           if (result.token) {
             const user = decode(result.token) as { id: number, username: string, role: string };
             return {
-              id: user.id,
+              id: user.id.toString(), // Convert to string
               username: user.username,
               role: user.role,
               token: result.token
