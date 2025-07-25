@@ -9,6 +9,7 @@ import {
   Clock,
   Calendar,
   AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { type Approval } from "@/app/atoms/userManagementAtoms";
 import { formatDateTime, getRoleByName } from "@/app/lib/utils";
@@ -16,6 +17,7 @@ import { useApprovals } from "@/app/hooks/useApprovals";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 import GenericFilter from "@/app/components/GenericFilter";
 import EmptyState from "@/app/components/EmptyState";
+import { useEffect } from "react";
 
 const sortOptions = [
   { value: "newest", label: "Mais recentes" },
@@ -24,38 +26,48 @@ const sortOptions = [
   { value: "user-desc", label: "Usuário (Z-A)" },
 ];
 
-const PendingApprovals = () => {
+const PendingApprovals: React.FC = () => {
   const {
+    listApprovals,
+    updateApproval,
+    setFilters,
     approvals,
     pagination,
     stats,
     filters,
-    updateApprovalStatus,
-    updateSearch,
-    updateStatusFilter,
-    updateSortBy,
-    goToPage,
+    loading,
   } = useApprovals();
+
+  console.log(approvals);
+
+  useEffect(() => {
+    listApprovals(filters);
+  }, [filters, listApprovals]);
 
   const handleApproval = async (
     approvalId: number,
     status: "approved" | "rejected"
   ) => {
-    await updateApprovalStatus(approvalId, status);
+    await updateApproval(approvalId, { status });
   };
 
-  // Handlers para o filtro genérico
   const handleSearchChange = (value: string) => {
-    updateSearch(value);
+    setFilters({ ...filters, search: value });
   };
+
   const handleSortChange = (value: string) => {
-    updateSortBy(value as any);
+    setFilters({ ...filters, sortBy: value as any });
   };
+
   const handleClearFilters = () => {
-    updateSearch("");
-    updateStatusFilter("pending");
-    updateSortBy("newest");
+    setFilters({ ...filters, search: "", status: "pending", sortBy: "newest" });
   };
+
+  const goToPage = (page: number) => {
+    setFilters({ ...filters, page });
+    listApprovals(filters);
+  };
+
   const hasActiveFilters =
     (filters.search && filters.search.trim() !== "") ||
     filters.status !== "pending" ||
@@ -156,7 +168,7 @@ const PendingApprovals = () => {
       {/* Filtro Genérico */}
       <GenericFilter
         searchPlaceholder="Buscar por usuário ou role..."
-        searchValue={filters.search}
+        searchValue={filters.search || ""}
         onSearchChange={handleSearchChange}
         sortOptions={sortOptions}
         sortValue={filters.sortBy}
@@ -165,40 +177,51 @@ const PendingApprovals = () => {
         hasActiveFilters={hasActiveFilters}
       />
 
-      <Card>
-        <CardContent className="flex justify-center">
-          {approvals.length === 0 ? (
-            <EmptyState
-              icon={<AlertTriangle className="h-16 w-16 text-gray-300" />}
-              title="Nenhuma aprovação pendente encontrada"
-              description={
-                hasActiveFilters
-                  ? "Nenhuma aprovação pendente corresponde aos filtros aplicados."
-                  : "Ainda não há aprovações pendentes."
-              }
-              hasActiveFilters={hasActiveFilters}
-              onClearFilters={handleClearFilters}
-            />
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full gap-4">
-              {approvals.map((approval) => ApprovalComponent(approval))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {loading && (
+        <div className="flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+        </div>
+      )}
 
-      {/* Paginação */}
-      {pagination.totalPages > 1 && (
-        <PaginationComponent
-          hasNextPage={pagination.hasNextPage}
-          hasPrevPage={pagination.hasPrevPage}
-          currentPage={pagination.currentPage}
-          nextPage={pagination.nextPage || 0}
-          prevPage={pagination.prevPage || 0}
-          lastPage={pagination.lastPage}
-          goToPage={(_, page) => goToPage(page)}
-          selectedDate=""
-        />
+      {!loading && (
+        <>
+          <Card>
+            <CardContent className="flex justify-center">
+              {approvals.length === 0 ? (
+                <EmptyState
+                  icon={<AlertTriangle className="h-16 w-16 text-gray-300" />}
+                  title="Nenhuma aprovação pendente encontrada"
+                  description={
+                    hasActiveFilters
+                      ? "Nenhuma aprovação pendente corresponde aos filtros aplicados."
+                      : "Ainda não há aprovações pendentes."
+                  }
+                  hasActiveFilters={hasActiveFilters}
+                  onClearFilters={handleClearFilters}
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full gap-4">
+                  {approvals.map((approval) =>
+                    ApprovalComponent(approval as unknown as Approval)
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          {/* Paginação */}
+          {pagination.totalPages > 1 && (
+            <PaginationComponent
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+              currentPage={pagination.currentPage}
+              nextPage={pagination.nextPage || 0}
+              prevPage={pagination.prevPage || 0}
+              lastPage={pagination.lastPage}
+              goToPage={(_, page) => goToPage(page)}
+              selectedDate=""
+            />
+          )}
+        </>
       )}
     </div>
   );

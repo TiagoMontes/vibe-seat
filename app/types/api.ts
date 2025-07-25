@@ -210,6 +210,7 @@ export interface UpdateApprovalRequest {
 export interface ApprovalListResponse {
   approvals: Approval[];
   pagination: Pagination;
+  stats: UserStats;
 }
 
 export interface ApprovalFilters {

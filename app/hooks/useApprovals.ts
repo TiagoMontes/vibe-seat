@@ -1,11 +1,43 @@
 "use client";
 
-import { useCallback } from 'react';
-import { ApprovalListResponse, ApprovalFilters, UpdateApprovalRequest } from '@/app/types/api';
+import { useCallback, useState } from 'react';
+import { ApprovalListResponse, ApprovalFilters, UpdateApprovalRequest, Approval, Pagination, UserStats } from '@/app/types/api';
 
 export const useApprovals = () => {
+  const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+    hasNextPage: false,
+    hasPrevPage: false,
+    nextPage: null,
+    prevPage: null,
+    lastPage: 1,
+  });
+  const [stats, setStats] = useState<UserStats>({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  });
+  const [filters, setFilters] = useState<ApprovalFilters>({
+    page: 1,
+    limit: 10,
+    search: "",
+    status: "pending",
+    sortBy: "newest",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+
   const listApprovals = useCallback(async (filters: ApprovalFilters = {}): Promise<ApprovalListResponse | null> => {
     try {
+      setLoading(true);
+      setError(null);
+
       const queryParams = new URLSearchParams();
       
       if (filters.page) queryParams.set('page', filters.page.toString());
@@ -22,10 +54,15 @@ export const useApprovals = () => {
       }
 
       const data: ApprovalListResponse = await response.json();
+      setApprovals(data.approvals);
+      setPagination(data.pagination);
+      setStats(data.stats);
       return data;
     } catch (error) {
       console.error('Erro ao buscar aprovações:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -81,5 +118,12 @@ export const useApprovals = () => {
     getPendingApprovals,
     getApproval,
     updateApproval,
+    approvals,
+    pagination,
+    stats,
+    filters,
+    loading,
+    error,
+    setFilters,
   };
 }; 
