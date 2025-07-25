@@ -10,10 +10,12 @@ interface SelectProps {
   children: React.ReactNode;
   placeholder?: string;
   disabled?: boolean;
+  className?: string;
 }
 
 interface SelectContentProps {
   children: React.ReactNode;
+  className?: string;
 }
 
 interface SelectItemProps {
@@ -42,12 +44,12 @@ const SelectContext = React.createContext<{
   setOpen: () => {},
 });
 
-const Select = ({ value, onValueChange, children }: SelectProps) => {
+const Select = ({ value, onValueChange, children, className }: SelectProps) => {
   const [open, setOpen] = React.useState(false);
 
   return (
     <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
-      <div className="relative">{children}</div>
+      <div className={cn("relative", className)}>{children}</div>
     </SelectContext.Provider>
   );
 };
@@ -80,7 +82,7 @@ const SelectValue = ({ placeholder }: SelectValueProps) => {
   );
 };
 
-const SelectContent = ({ children }: SelectContentProps) => {
+const SelectContent = ({ children, className }: SelectContentProps) => {
   const { open, setOpen } = React.useContext(SelectContext);
 
   if (!open) return null;
@@ -88,7 +90,12 @@ const SelectContent = ({ children }: SelectContentProps) => {
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-      <div className="absolute top-full z-50 mt-1 w-full rounded-md border bg-white shadow-lg">
+      <div
+        className={cn(
+          "absolute top-full z-50 mt-1 w-full rounded-md border bg-white shadow-lg",
+          className
+        )}
+      >
         <div className="p-1">{children}</div>
       </div>
     </>

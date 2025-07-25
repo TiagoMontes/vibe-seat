@@ -61,7 +61,7 @@ export const GenericFilter: React.FC<GenericFilterProps> = ({
       <CardContent>
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           {/* Busca */}
-          <div className="relative flex-1">
+          <div className="relative w-full">
             <Search
               className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors ${
                 isSearchPending
@@ -86,10 +86,13 @@ export const GenericFilter: React.FC<GenericFilterProps> = ({
 
           {/* Status */}
           {statusOptions.length > 0 && onStatusChange && (
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-600" />
-              <Select value={statusValue} onValueChange={onStatusChange}>
-                <SelectTrigger className="w-40">
+            <div className="flex items-center gap-2 w-full lg:w-40">
+              <Select
+                value={statusValue}
+                onValueChange={onStatusChange}
+                className="w-full lg:w-40"
+              >
+                <SelectTrigger className="w-full lg:w-40">
                   <span>
                     {statusOptions.find((o) => o.value === statusValue)
                       ?.label || statusLabel}
@@ -108,10 +111,13 @@ export const GenericFilter: React.FC<GenericFilterProps> = ({
 
           {/* Ordenação */}
           {sortOptions.length > 0 && onSortChange && (
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="h-4 w-4 text-gray-600" />
-              <Select value={sortValue} onValueChange={onSortChange}>
-                <SelectTrigger className="w-40">
+            <div className="flex items-center gap-2 w-full lg:w-40">
+              <Select
+                value={sortValue}
+                onValueChange={onSortChange}
+                className="w-full lg:w-40"
+              >
+                <SelectTrigger className="w-full lg:w-40">
                   <span>
                     {sortOptions.find((o) => o.value === sortValue)?.label ||
                       sortLabel}
@@ -134,7 +140,7 @@ export const GenericFilter: React.FC<GenericFilterProps> = ({
               variant="outline"
               onClick={onClearFilters}
               disabled={!hasActiveFilters}
-              className="whitespace-nowrap"
+              className="whitespace-nowrap w-full lg:w-auto"
             >
               Limpar Filtros
             </Button>

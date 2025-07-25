@@ -182,32 +182,12 @@ const ChairManagement = () => {
     }
   };
 
-  const getSortText = (option: SortOption) => {
-    switch (option) {
-      case "newest":
-        return "Mais recentes";
-      case "oldest":
-        return "Mais antigas";
-      case "name-asc":
-        return "Nome (A-Z)";
-      case "name-desc":
-        return "Nome (Z-A)";
-      default:
-        return "";
-    }
-  };
-
-  const getStatusFilterText = (status: StatusFilter) => {
-    if (status === "all") return "Todos";
-    return getStatusLabel(status as ChairStatusKey);
-  };
-
   const hasActiveFilters =
     searchInput || statusInput !== "all" || sortInput !== "newest";
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-col lg:flex-row gap-4">
         <div className="flex items-center gap-3">
           <Armchair className="h-8 w-8 text-black" />
           <div>
@@ -219,7 +199,7 @@ const ChairManagement = () => {
         </div>
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2"
+          className="flex w-full lg:w-auto items-center gap-2"
         >
           <Plus className="h-4 w-4" />
           Nova Cadeira
