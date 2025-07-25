@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
 import { Card, CardContent } from "@/app/components/ui/card";
 import {
   Armchair,
@@ -14,20 +13,9 @@ import {
   Wrench,
   XCircle,
   MapPin,
-  Search,
-  Filter,
-  ArrowUpDown,
   AlertTriangle,
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/app/components/ui/select";
-import { Pagination } from "@/app/components/ui/pagination";
 import { useChairs } from "@/app/hooks/useChairs";
-import { useToast } from "@/app/hooks/useToast";
 import {
   chairModalOpenAtom,
   chairEditModalOpenAtom,
@@ -35,7 +23,6 @@ import {
   computedChairStatsAtom,
 } from "@/app/atoms/chairAtoms";
 import {
-  Chair,
   ChairStatusKey,
   getStatusLabel,
   getStatusColor,
@@ -45,6 +32,7 @@ import ChairModal from "@/app/components/modal/ChairModal";
 import GenericFilter from "@/app/components/GenericFilter";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 import EmptyState from "@/app/components/EmptyState";
+import { Chair } from "@/app/types/api";
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc";
 type StatusFilter = "all" | "ACTIVE" | "MAINTENANCE" | "INACTIVE";
@@ -55,23 +43,19 @@ const ChairManagement = () => {
   const [, setSelectedChair] = useAtom(selectedChairAtom);
   const [chairStats] = useAtom(computedChairStatsAtom);
 
-  const { success, error } = useToast();
-
   const [searchInput, setSearchInput] = useState("");
   const [statusInput, setStatusInput] = useState<StatusFilter>("all");
   const [sortInput, setSortInput] = useState<SortOption>("newest");
 
   const {
+    fetchChairs,
+    createChair,
+    deleteChair,
+    setFilters,
     chairs,
     pagination,
     filters,
     loading,
-    deleteLoading,
-    fetchChairs,
-    updateFilters,
-    resetFilters,
-    deleteChair,
-    goToPage,
   } = useChairs();
 
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
@@ -80,59 +64,78 @@ const ChairManagement = () => {
   const [isSearchPending, setIsSearchPending] = useState(false);
 
   useEffect(() => {
-    fetchChairs(filters, true);
-  }, [fetchChairs]);
+    console.log("filters", filters);
+    fetchChairs(filters);
+  }, [fetchChairs, filters]);
 
   useEffect(() => {
-    setSearchInput(filters.search);
-    setStatusInput(filters.status);
-    setSortInput(filters.sortBy);
+    setSearchInput(filters.search || "");
+    setStatusInput(filters.status || "all");
+    setSortInput(filters.sortBy || "newest");
   }, [filters]);
 
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      setSearchInput(value);
-
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
       if (searchTimeout) {
         clearTimeout(searchTimeout);
       }
-
-      setIsSearchPending(value !== filters.search && value.length > 0);
-
-      const DEBOUNCE_DELAY = 500;
-
-      const timeout = setTimeout(() => {
-        setIsSearchPending(false);
-        updateFilters({ search: value });
-      }, DEBOUNCE_DELAY);
-
-      setSearchTimeout(timeout);
-    },
-    [searchTimeout, updateFilters, filters.search]
-  );
+    };
+  }, [searchTimeout]);
 
   const handleStatusChange = useCallback(
     (value: StatusFilter) => {
       setStatusInput(value);
-      updateFilters({ status: value });
+      setFilters({ ...filters, status: value, page: 1 });
     },
-    [updateFilters]
+    [setFilters]
   );
 
-  const handleSortChange = useCallback(
-    (value: SortOption) => {
-      setSortInput(value);
-      updateFilters({ sortBy: value });
-    },
-    [updateFilters]
-  );
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    setIsSearchPending(true);
 
-  const handleClearFilters = useCallback(() => {
+    // Clear previous timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    // Set new timeout for debounced search
+    const newTimeout = setTimeout(() => {
+      setFilters({ ...filters, search: value, page: 1 });
+      setIsSearchPending(false);
+    }, 500);
+
+    setSearchTimeout(newTimeout);
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortInput(value as SortOption);
+    setFilters({ ...filters, sortBy: value as SortOption, page: 1 });
+  };
+
+  const handleClearFilters = () => {
+    // Clear timeout if exists
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
     setSearchInput("");
     setStatusInput("all");
     setSortInput("newest");
-    resetFilters();
-  }, [resetFilters]);
+    setIsSearchPending(false);
+    setFilters({
+      page: 1,
+      limit: 9,
+      search: "",
+      status: "all",
+      sortBy: "newest",
+    });
+  };
+
+  const goToPage = (page: number) => {
+    setFilters({ ...filters, page });
+  };
 
   const handleEditChair = (chair: Chair) => {
     setSelectedChair(chair);
@@ -375,7 +378,6 @@ const ChairManagement = () => {
                           onClick={() => handleDeleteChair(chair.id)}
                           size="sm"
                           variant="destructive"
-                          disabled={deleteLoading}
                           className="flex items-center gap-1"
                         >
                           <Trash2 className="h-3 w-3" />

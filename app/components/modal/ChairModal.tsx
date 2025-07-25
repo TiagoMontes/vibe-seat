@@ -22,7 +22,6 @@ import {
   SelectTrigger,
 } from "@/app/components/ui/select";
 import { useChairs } from "@/app/hooks/useChairs";
-import { useToast } from "@/app/hooks/useToast";
 import {
   chairModalOpenAtom,
   chairEditModalOpenAtom,
@@ -37,15 +36,15 @@ import {
   ChairFormData,
   ChairUpdateFormData,
 } from "@/app/schemas/chairSchema";
+import { CreateChairRequest, UpdateChairRequest } from "@/app/types/api";
 
 const ChairModal = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useAtom(chairModalOpenAtom);
   const [isEditModalOpen, setIsEditModalOpen] = useAtom(chairEditModalOpenAtom);
   const [selectedChair, setSelectedChair] = useAtom(selectedChairAtom);
 
-  const { createChair, updateChair, createLoading, updateLoading } =
+  const { createChair, updateChair, loading } =
     useChairs();
-  const { error } = useToast();
 
   const isEdit = isEditModalOpen && selectedChair;
   const isOpen = isCreateModalOpen || isEditModalOpen;
@@ -95,9 +94,9 @@ const ChairModal = () => {
   const onSubmit = async (formData: ChairFormData | ChairUpdateFormData) => {
     try {
       if (isEdit && selectedChair) {
-        await updateChair(selectedChair.id, formData as ChairUpdateFormData);
+        await updateChair(selectedChair.id, formData as UpdateChairRequest);
       } else {
-        await createChair(formData as ChairFormData);
+        await createChair(formData as CreateChairRequest);
       }
       handleClose();
     } catch (err) {
@@ -197,17 +196,17 @@ const ChairModal = () => {
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={createLoading || updateLoading}
+              disabled={loading}
               className="flex-1"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={createLoading || updateLoading}
+              disabled={loading}
               className="flex-1"
             >
-              {createLoading || updateLoading
+              {loading
                 ? isEdit
                   ? "Atualizando..."
                   : "Criando..."

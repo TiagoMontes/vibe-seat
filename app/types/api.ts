@@ -74,7 +74,7 @@ export interface UserFilters {
 }
 
 // ===== CADEIRAS =====
-export type ChairStatus = 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE';
+export type ChairStatus = 'all' | 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE';
 
 export interface Chair {
   id: number;
