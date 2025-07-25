@@ -8,14 +8,7 @@ interface CreateUserBody {
 
 export async function POST(request: NextRequest) {
   try {
-    const apiUrl = process.env.API_BACKEND;
-    
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: 'API_BACKEND não configurado no .env' },
-        { status: 500 }
-      );
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
     const body: CreateUserBody = await request.json();
 
@@ -27,11 +20,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${apiUrl}/users/`, {
+    const response = await fetch(`${apiUrl}/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': '*'
       },
       body: JSON.stringify({
         username: body.username,
@@ -41,9 +33,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.message || `Erro ao criar usuário: ${response.status}` },
+        { error: errorData.error || `Erro ao criar usuário: ${response.status}` },
         { status: response.status }
       );
     }

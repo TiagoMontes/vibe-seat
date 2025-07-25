@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
-  Clock,
   CheckCircle,
   XCircle,
   Plus,

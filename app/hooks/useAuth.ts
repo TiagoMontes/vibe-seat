@@ -1,43 +1,10 @@
 "use client";
 
-import { signIn, signOut, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { useAtom } from 'jotai';
-import { userAtom, isAuthenticatedAtom, type UserData } from '@/app/atoms/userAtoms';
-import { appointmentsAtom } from '@/app/atoms/appointmentAtoms';
+import { signIn, signOut } from 'next-auth/react';
+import { LoginRequest } from '@/app/types/api';
 
-interface LoginData {
-  username: string;
-  password: string;
-}
-
-export function useAuth() {
-  const { data: session, status } = useSession();
-  const [user, setUser] = useAtom(userAtom);
-  const [isAuthenticated] = useAtom(isAuthenticatedAtom);
-  const [, setAppointments] = useAtom(appointmentsAtom);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (session?.user && status === 'authenticated') {
-      const userData: UserData = {
-        id: session.user.id || '',
-        username: session.user.username || '',
-        role: session.user.role || 'User',
-      };
-      setUser(userData);
-    } else if (status === 'unauthenticated') {
-      setUser(null);
-    }
-  }, [session, status, setUser]);
-
-  const login = async (loginData: LoginData): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
+export const useAuth = () => {
+  const login = async (loginData: LoginRequest): Promise<boolean> => {
     try {
       const result = await signIn('credentials', {
         username: loginData.username,
@@ -46,40 +13,27 @@ export function useAuth() {
       });
 
       if (result?.error) {
-        setError(result.error);
-        return false;
+        throw new Error(result.error);
       }
 
-      if (result?.ok) {
-        router.push('/home');
-        return true;
-      }
-
-      return false;
+      return result?.ok || false;
     } catch (error) {
-      setError('Erro de conexão. Verifique sua internet.');
-      console.error(error);
-      return false;
-    } finally {
-      setLoading(false);
+      console.error('Erro no login:', error);
+      throw error;
     }
   };
 
   const logout = async () => {
-    setUser(null);
-    setAppointments([]); // Limpar agendamentos ao fazer logout
-    await signOut({ redirect: false });
-    router.push('/');
+    try {
+      await signOut({ redirect: true, callbackUrl: '/' });
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      throw error;
+    }
   };
 
   return {
-    user,
-    session,
-    loading: loading || status === 'loading',
-    error,
     login,
     logout,
-    isAuthenticated: isAuthenticated && status === 'authenticated',
-    status,
   };
-} 
+}; 

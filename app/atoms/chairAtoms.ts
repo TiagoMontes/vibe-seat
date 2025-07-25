@@ -1,11 +1,11 @@
 import { atom } from "jotai";
-import { Chair, ChairStats, PaginationInfo, ChairFilters } from "@/app/schemas/chairSchema";
+import { Chair, ChairStats, Pagination, ChairFilters } from "@/app/types/api";
 
 // Lista de cadeiras (agora paginada)
 export const chairsAtom = atom<Chair[]>([]);
 
 // Informações de paginação
-export const paginationAtom = atom<PaginationInfo & { nextPage: number | null; prevPage: number | null }>({
+export const paginationAtom = atom<Pagination>({
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
@@ -14,6 +14,7 @@ export const paginationAtom = atom<PaginationInfo & { nextPage: number | null; p
   hasPrevPage: false,
   nextPage: null,
   prevPage: null,
+  lastPage: 1,
 });
 
 // Filtros ativos
@@ -21,7 +22,7 @@ export const chairFiltersAtom = atom<ChairFilters>({
   page: 1,
   limit: 6,
   search: "",
-  status: "all",
+  status: "ACTIVE",
   sortBy: "newest",
 });
 

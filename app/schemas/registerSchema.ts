@@ -1,29 +1,49 @@
-import * as yup from 'yup';
+import * as yup from "yup";
+import { CreateUserRequest } from "@/app/types/api";
 
 export const registerSchema = yup.object({
   username: yup
     .string()
-    .required('Usuário é obrigatório')
-    .min(2, 'Usuário deve ter pelo menos 2 caracteres')
-    .max(50, 'Usuário deve ter no máximo 50 caracteres')
+    .required("Usuário é obrigatório")
+    .min(3, "Usuário deve ter pelo menos 3 caracteres")
+    .max(50, "Usuário deve ter no máximo 50 caracteres")
     .matches(
       /^[a-zA-Z0-9._-]+$/,
-      'Usuário deve conter apenas letras, números, pontos, hífens ou underscores'
+      "Usuário deve conter apenas letras, números, pontos, hífens ou underscores"
     ),
   password: yup
     .string()
-    .required('Senha é obrigatória')
-    .min(6, 'Senha deve ter pelo menos 6 caracteres')
-    .max(100, 'Senha deve ter no máximo 100 caracteres'),
+    .required("Senha é obrigatória")
+    .min(6, "Senha deve ter pelo menos 6 caracteres")
+    .max(100, "Senha deve ter no máximo 100 caracteres"),
   confirmPassword: yup
     .string()
-    .required('Confirmação de senha é obrigatória')
-    .oneOf([yup.ref('password')], 'As senhas devem ser iguais'),
+    .required("Confirmação de senha é obrigatória")
+    .oneOf([yup.ref("password")], "Senhas devem ser iguais"),
   roleId: yup
     .number()
-    .required('Selecione uma role')
-    .positive('Role deve ser selecionada')
-    .integer('Role deve ser um número válido'),
+    .required("Tipo de usuário é obrigatório")
+    .min(1, "Tipo de usuário inválido"),
 });
 
-export type RegisterFormData = yup.InferType<typeof registerSchema>; 
+export type RegisterFormData = yup.InferType<typeof registerSchema>;
+
+// Type guard para verificar se os dados são do tipo CreateUserRequest
+export const isCreateUserRequest = (data: unknown): data is CreateUserRequest => {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof (data as CreateUserRequest).username === 'string' &&
+    typeof (data as CreateUserRequest).password === 'string' &&
+    typeof (data as CreateUserRequest).roleId === 'number'
+  );
+};
+
+// Helper para converter RegisterFormData para CreateUserRequest
+export const toCreateUserRequest = (data: RegisterFormData): CreateUserRequest => {
+  return {
+    username: data.username,
+    password: data.password,
+    roleId: data.roleId,
+  };
+}; 

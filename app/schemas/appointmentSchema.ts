@@ -1,6 +1,5 @@
 import * as yup from "yup";
-
-export type AppointmentStatus = "SCHEDULED" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+import { AppointmentStatus, Appointment } from "@/app/types/api";
 
 export const appointmentSchema = yup.object({
   chairId: yup
@@ -13,81 +12,6 @@ export const appointmentSchema = yup.object({
 });
 
 export type AppointmentFormData = yup.InferType<typeof appointmentSchema>;
-
-export interface Appointment {
-  id: number;
-  userId: number;
-  chairId: number;
-  datetimeStart: string;
-  datetimeEnd: string;
-  status: AppointmentStatus;
-  presenceConfirmed: boolean;
-  createdAt: string;
-  user?: {
-    id: number;
-    username: string;
-  };
-  chair?: {
-    id: number;
-    name: string;
-    location?: string;
-  };
-}
-
-export interface AppointmentInput {
-  chairId: number;
-  datetimeStart: string;
-}
-
-export interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-}
-
-export interface AppointmentListResponse {
-  appointments: Appointment[];
-  pagination: PaginationInfo;
-}
-
-export interface AppointmentFilters {
-  page: number;
-  limit: number;
-  status: "all" | "SCHEDULED" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
-}
-
-export interface AvailableTime {
-  time: string; // "HH:MM" format
-  available: boolean;
-  reason?: string; // why it's not available
-}
-
-export interface AvailableTimesResponse {
-  chairs: Array<{
-    chairId: number;
-    chairName: string;
-    chairLocation?: string | null;
-    available: string[];
-    unavailable: string[];
-    totalSlots: number;
-    bookedSlots: number;
-    availableSlots: number;
-  }>;
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
-  totalSlots: number;
-  bookedSlots: number;
-  availableSlots: number;
-}
 
 // Status mapping system
 export const AppointmentStatusMap = {
@@ -105,11 +29,6 @@ export const AppointmentStatusMap = {
     value: "CANCELLED",
     label: "Cancelado", 
     color: "red",
-  },
-  COMPLETED: {
-    value: "COMPLETED",
-    label: "Concluído", 
-    color: "gray",
   },
 } as const;
 

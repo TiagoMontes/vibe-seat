@@ -15,18 +15,13 @@ interface DecodedToken {
 }
 
 async function loginAPI(username: string, password: string): Promise<LoginResponse> {
-  const apiUrl = process.env.API_BACKEND;
-  
-  if (!apiUrl) {
-    throw new Error('API_BACKEND não configurado no .env');
-  }
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
   try {
     const response = await fetch(`${apiUrl}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': '*'
       },
       body: JSON.stringify({
         username,
@@ -35,7 +30,8 @@ async function loginAPI(username: string, password: string): Promise<LoginRespon
     });
 
     if (!response.ok) {
-      throw new Error(`Erro na autenticação: ${response.status}`);
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+      throw new Error(errorData.error || `Erro na autenticação: ${response.status}`);
     }
 
     const data: LoginResponse = await response.json();

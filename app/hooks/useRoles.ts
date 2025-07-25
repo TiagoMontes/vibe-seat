@@ -1,21 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useCallback } from 'react';
+import { RoleListResponse } from '@/app/types/api';
 
-interface Role {
-  id: number;
-  name: string;
-}
-
-export function useRoles() {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchRoles = async () => {
-    setLoading(true);
-    setError(null);
-
+export const useRoles = () => {
+  const getRoles = useCallback(async (): Promise<RoleListResponse | null> => {
     try {
       const response = await fetch('/api/roles/getAll');
       
@@ -24,23 +13,15 @@ export function useRoles() {
         throw new Error(errorData.error || 'Erro ao buscar roles');
       }
 
-      const data = await response.json();
-      setRoles(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
-    } finally {
-      setLoading(false);
+      const data: RoleListResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar roles:', error);
+      throw error;
     }
-  };
-
-  useEffect(() => {
-    fetchRoles();
   }, []);
 
   return {
-    roles,
-    loading,
-    error,
-    refetch: fetchRoles,
+    getRoles,
   };
-} 
+}; 

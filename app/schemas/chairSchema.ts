@@ -1,6 +1,5 @@
 import * as yup from "yup";
-
-export type ChairStatus = "ACTIVE" | "MAINTENANCE" | "INACTIVE";
+import { ChairStatus } from "@/app/types/api";
 
 export const chairSchema = yup.object({
   name: yup
@@ -42,46 +41,6 @@ export const chairUpdateSchema = yup.object({
 
 export type ChairFormData = yup.InferType<typeof chairSchema>;
 export type ChairUpdateFormData = yup.InferType<typeof chairUpdateSchema>;
-
-export interface Chair {
-  id: number;
-  name: string;
-  description?: string;
-  location?: string;
-  status: ChairStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ChairStats {
-  total: number;
-  active: number;
-  maintenance: number;
-  inactive: number;
-}
-
-export interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-}
-
-export interface ChairListResponse {
-  chairs: Chair[];
-  pagination: PaginationInfo;
-  stats?: ChairStats; // Optional - backend may provide global stats
-}
-
-export interface ChairFilters {
-  page: number;
-  limit: number;
-  search: string;
-  status: "all" | "ACTIVE" | "MAINTENANCE" | "INACTIVE";
-  sortBy: "newest" | "oldest" | "name-asc" | "name-desc";
-}
 
 // Status mapping system
 export const ChairStatusMap = {

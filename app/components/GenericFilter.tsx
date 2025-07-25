@@ -8,7 +8,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/app/components/ui/select";
-import { Search, Filter, ArrowUpDown } from "lucide-react";
+import { Search } from "lucide-react";
 
 interface Option {
   value: string;

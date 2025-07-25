@@ -16,14 +16,7 @@ export async function DELETE(
       );
     }
 
-    const apiUrl = process.env.API_BACKEND;
-    
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: "API_BACKEND não configurado no .env" },
-        { status: 500 }
-      );
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
     const { id } = await params;
 
@@ -32,7 +25,6 @@ export async function DELETE(
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
-        "User-Agent": "*"
       },
     });
 
@@ -44,14 +36,15 @@ export async function DELETE(
         );
       }
       
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.message || "Erro ao excluir cadeira" },
+        { error: errorData.error || "Erro ao excluir cadeira" },
         { status: response.status }
       );
     }
 
-    return NextResponse.json({ message: "Cadeira excluída com sucesso" });
+    const result = await response.json();
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Erro ao excluir cadeira:", error);
     return NextResponse.json(

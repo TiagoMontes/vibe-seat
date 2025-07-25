@@ -1,24 +1,27 @@
 import { atom } from "jotai";
-import { Appointment, PaginationInfo, AppointmentFilters, AvailableTimesResponse } from "@/app/schemas/appointmentSchema";
+import { Appointment, Pagination, AppointmentFilters, AvailableTimesResponse } from "@/app/types/api";
 
 // Lista de appointments do usuário
 export const appointmentsAtom = atom<Appointment[]>([]);
 
 // Informações de paginação
-export const appointmentPaginationAtom = atom<PaginationInfo>({
+export const appointmentPaginationAtom = atom<Pagination>({
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
   itemsPerPage: 10,
   hasNextPage: false,
   hasPrevPage: false,
+  nextPage: null,
+  prevPage: null,
+  lastPage: 1,
 });
 
 // Filtros ativos
 export const appointmentFiltersAtom = atom<AppointmentFilters>({
   page: 1,
   limit: 10,
-  status: "all",
+  status: "SCHEDULED",
 });
 
 // Estados de loading

@@ -18,14 +18,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const apiUrl = process.env.API_BACKEND;
-    
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: 'API_BACKEND não configurado no .env' },
-        { status: 500 }
-      );
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
     const body: UpdateApprovalBody = await request.json();
 
@@ -41,7 +34,6 @@ export async function PATCH(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.accessToken}`,
-        'User-Agent': '*'
       },
       body: JSON.stringify({
         status: body.status
@@ -56,9 +48,9 @@ export async function PATCH(request: NextRequest) {
         );
       }
       
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.message || `Erro ao atualizar approval: ${response.status}` },
+        { error: errorData.error || `Erro ao atualizar approval: ${response.status}` },
         { status: response.status }
       );
     }

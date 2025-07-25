@@ -2,26 +2,19 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const apiUrl = process.env.API_BACKEND;
-    
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: 'API_BACKEND não configurado no .env' },
-        { status: 500 }
-      );
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-    const response = await fetch(`${apiUrl}/roles/`, {
+    const response = await fetch(`${apiUrl}/roles`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': '*'
       }
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: `Erro ao buscar roles: ${response.status}` },
+        { error: errorData.error || `Erro ao buscar roles: ${response.status}` },
         { status: response.status }
       );
     }

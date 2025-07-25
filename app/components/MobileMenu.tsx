@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Menu, Home, Users, LogOut, User } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

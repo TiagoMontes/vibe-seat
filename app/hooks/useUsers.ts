@@ -1,23 +1,10 @@
 "use client";
 
-import { useState } from 'react';
-import { useToast } from './useToast';
+import { useCallback } from 'react';
+import { CreateUserRequest, UserListResponse, UserFilters } from '@/app/types/api';
 
-interface CreateUserData {
-  username: string;
-  password: string;
-  roleId: number;
-}
-
-export function useUsers() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { success: showSuccess, error: showError } = useToast();
-
-  const createUser = async (userData: CreateUserData): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
+export const useUsers = () => {
+  const createUser = useCallback(async (userData: CreateUserRequest): Promise<boolean> => {
     try {
       const response = await fetch('/api/users/create', {
         method: 'POST',
@@ -31,25 +18,79 @@ export function useUsers() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Erro ao criar usuário');
       }
-      
-      showSuccess('Sua solicitação de criação de conta foi enviada com sucesso, aguarde a aprovação!');
 
       return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      setError(errorMessage);
-      
-      showError(errorMessage);
-
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
       return false;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
+
+  const listUsers = useCallback(async (filters: UserFilters = {}): Promise<UserListResponse | null> => {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (filters.page) queryParams.set('page', filters.page.toString());
+      if (filters.limit) queryParams.set('limit', filters.limit.toString());
+      if (filters.search) queryParams.set('search', filters.search);
+      if (filters.status) queryParams.set('status', filters.status);
+      if (filters.roleId) queryParams.set('roleId', filters.roleId.toString());
+      if (filters.sortBy) queryParams.set('sortBy', filters.sortBy);
+
+      const response = await fetch(`/api/users/getAll?${queryParams.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao buscar usuários');
+      }
+
+      const data: UserListResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
+      return null;
+    }
+  }, []);
+
+  const getUser = useCallback(async (id: number) => {
+    try {
+      const response = await fetch(`/api/users/getAll?id=${id}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao buscar usuário');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar usuário:', error);
+      return null;
+    }
+  }, []);
+
+  const deleteUser = useCallback(async (id: number): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/users/getAll?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao excluir usuário');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      return false;
+    }
+  }, []);
 
   return {
     createUser,
-    loading,
-    error,
+    listUsers,
+    getUser,
+    deleteUser,
   };
-} 
+}; 

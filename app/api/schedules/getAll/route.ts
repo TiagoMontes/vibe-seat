@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
-const API_BACKEND = process.env.API_BACKEND || "http://localhost:3001";
-
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -22,7 +20,9 @@ export async function GET() {
       );
     }
 
-    const backendResponse = await fetch(`${API_BACKEND}/schedules/`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+    const backendResponse = await fetch(`${apiUrl}/schedules`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -33,7 +33,7 @@ export async function GET() {
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json().catch(() => ({ error: "Erro desconhecido" }));
       return NextResponse.json(
-        { error: errorData.error || errorData.message || "Erro ao buscar configurações" },
+        { error: errorData.error || "Erro ao buscar configurações" },
         { status: backendResponse.status }
       );
     }

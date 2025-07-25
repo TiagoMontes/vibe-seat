@@ -1,259 +1,128 @@
-import { useAtom } from "jotai";
-import { useCallback, useRef, useEffect } from "react";
-import { useToast } from "./useToast";
-import {
-  chairsAtom,
-  chairsLoadingAtom,
-  chairCreateLoadingAtom,
-  chairUpdateLoadingAtom,
-  chairDeleteLoadingAtom,
-  paginationAtom,
-  chairFiltersAtom,
-  chairStatsAtom,
-} from "@/app/atoms/chairAtoms";
-import { 
-  ChairFormData, 
-  ChairUpdateFormData, 
-  ChairListResponse,
-  ChairFilters 
-} from "@/app/schemas/chairSchema";
+import { useCallback } from 'react';
+import { useSetAtom } from 'jotai';
+import { chairsAtom, paginationAtom, chairStatsAtom } from '@/app/atoms/chairAtoms';
+import { ChairFilters, CreateChairRequest, UpdateChairRequest, ChairListResponse } from '@/app/types/api';
 
 export const useChairs = () => {
-  const [chairs, setChairs] = useAtom(chairsAtom);
-  const [pagination, setPagination] = useAtom(paginationAtom);
-  const [filters, setFilters] = useAtom(chairFiltersAtom);
-  const [chairStats, setChairStats] = useAtom(chairStatsAtom);
-  const [loading, setLoading] = useAtom(chairsLoadingAtom);
-  const [createLoading, setCreateLoading] = useAtom(chairCreateLoadingAtom);
-  const [updateLoading, setUpdateLoading] = useAtom(chairUpdateLoadingAtom);
-  const [deleteLoading, setDeleteLoading] = useAtom(chairDeleteLoadingAtom);
-  
-  const { success, error } = useToast();
+  const setChairs = useSetAtom(chairsAtom);
+  const setPagination = useSetAtom(paginationAtom);
+  const setChairStats = useSetAtom(chairStatsAtom);
 
-  const hasLoadedRef = useRef(false);
-
-  // fetchChairs NÃO depende de filters, recebe explicitamente os filtros a usar
-  const fetchChairs = useCallback(async (customFilters: ChairFilters, showLoading = true) => {
-    const shouldShowLoading = showLoading && (!hasLoadedRef.current || pagination.totalItems === 0);
-    
-    if (shouldShowLoading) {
-      setLoading(true);
-    }
-    
+  const fetchChairs = useCallback(async (customFilters: ChairFilters) => {
     try {
       const queryParams = new URLSearchParams();
-      queryParams.set("page", customFilters.page.toString());
-      queryParams.set("limit", customFilters.limit.toString());
-      if (customFilters.search) queryParams.set("search", customFilters.search);
-      if (customFilters.status !== "all") queryParams.set("status", customFilters.status);
-      queryParams.set("sortBy", customFilters.sortBy);
+      
+      if (customFilters.page) queryParams.set('page', customFilters.page.toString());
+      if (customFilters.limit) queryParams.set('limit', customFilters.limit.toString());
+      if (customFilters.search) queryParams.set('search', customFilters.search);
+      if (customFilters.status) queryParams.set('status', customFilters.status);
+      if (customFilters.sortBy) queryParams.set('sortBy', customFilters.sortBy);
 
       const response = await fetch(`/api/chairs/getAll?${queryParams.toString()}`);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("API Error:", errorData);
-        throw new Error(errorData.error || `Failed to fetch chairs: ${response.status}`);
-      }
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao buscar cadeiras');
+      }
+
       const data: ChairListResponse = await response.json();
       
-      setChairs(data.chairs);
-      // Atualiza paginação incluindo nextPage e prevPage
-      setPagination({
-        ...data.pagination,
-        nextPage: (data.pagination as any).nextPage ?? null,
-        prevPage: (data.pagination as any).prevPage ?? null,
+      setChairs(data.chairs || []);
+      setPagination(data.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 9,
+        hasNextPage: false,
+        hasPrevPage: false,
+        nextPage: null,
+        prevPage: null,
+        lastPage: 1,
       });
       
-      if (data.stats) {
-        setChairStats(data.stats);
-      } else {
-        const stats = {
-          total: data.pagination.totalItems,
-          active: data.chairs.filter(chair => chair.status === "ACTIVE").length,
-          maintenance: data.chairs.filter(chair => chair.status === "MAINTENANCE").length,
-          inactive: data.chairs.filter(chair => chair.status === "INACTIVE").length,
-        };
-        setChairStats(stats);
-      }
+      // Calcula stats baseado nos dados retornados
+      const stats = {
+        total: data.pagination?.totalItems || 0,
+        active: data.chairs?.filter(chair => chair.status === "ACTIVE").length || 0,
+        maintenance: data.chairs?.filter(chair => chair.status === "MAINTENANCE").length || 0,
+        inactive: data.chairs?.filter(chair => chair.status === "INACTIVE").length || 0,
+      };
+      setChairStats(stats);
       
-      hasLoadedRef.current = true;
-      
+      return data;
     } catch (error) {
-      console.error("Error fetching chairs:", error);
+      console.error('Erro ao buscar cadeiras:', error);
       throw error;
-    } finally {
-      if (shouldShowLoading) {
-        setLoading(false);
-      }
     }
-  }, [setChairs, setChairStats, setLoading, pagination.totalItems, setPagination]);
+  }, [setChairs, setPagination, setChairStats]);
 
-  // Atualizar filtros (apenas setFilters)
-  const updateFilters = useCallback((newFilters: Partial<ChairFilters>) => {
-    const updatedFilters = { 
-      ...filters, 
-      ...newFilters,
-      page: newFilters.page !== undefined ? newFilters.page : 1
-    };
-    
-    setFilters(updatedFilters);
-  }, [filters, setFilters]);
+  const createChair = useCallback(async (chairData: CreateChairRequest) => {
+    try {
+      const response = await fetch('/api/chairs/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chairData),
+      });
 
-  // Resetar filtros (apenas setFilters)
-  const resetFilters = useCallback(() => {
-    const defaultFilters: ChairFilters = {
-      page: 1,
-      limit: 6,
-      search: "",
-      status: "all",
-      sortBy: "newest",
-    };
-    setFilters(defaultFilters);
-  }, [setFilters]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao criar cadeira');
+      }
 
-  // Funções de paginação
-  const goToPage = useCallback((page: number) => {
-    setFilters((prev) => ({ ...prev, page }));
-  }, [setFilters]);
-
-  const nextPage = useCallback(() => {
-    if (pagination.hasNextPage && pagination.nextPage) {
-      setFilters((prev) => ({ ...prev, page: pagination.nextPage! }));
+      const newChair = await response.json();
+      return newChair;
+    } catch (error) {
+      console.error('Erro ao criar cadeira:', error);
+      throw error;
     }
-  }, [pagination.hasNextPage, pagination.nextPage, setFilters]);
+  }, []);
 
-  const prevPage = useCallback(() => {
-    if (pagination.hasPrevPage && pagination.prevPage) {
-      setFilters((prev) => ({ ...prev, page: pagination.prevPage! }));
+  const updateChair = useCallback(async (id: number, chairData: UpdateChairRequest) => {
+    try {
+      const response = await fetch(`/api/chairs/update/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chairData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao atualizar cadeira');
+      }
+
+      const updatedChair = await response.json();
+      return updatedChair;
+    } catch (error) {
+      console.error('Erro ao atualizar cadeira:', error);
+      throw error;
     }
-  }, [pagination.hasPrevPage, pagination.prevPage, setFilters]);
+  }, []);
 
-  // Buscar cadeiras sempre que filters mudar
-  useEffect(() => {
-    fetchChairs(filters, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  const deleteChair = useCallback(async (id: number) => {
+    try {
+      const response = await fetch(`/api/chairs/delete/${id}`, {
+        method: 'DELETE',
+      });
 
-  const createChair = useCallback(
-    async (chairData: ChairFormData) => {
-      setCreateLoading(true);
-      try {
-        const response = await fetch("/api/chairs/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(chairData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to create chair");
-        }
-
-        const newChair = await response.json();
-        
-        await fetchChairs(filters, false);
-        success("Cadeira criada com sucesso!");
-        
-        return newChair;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
-        error("Erro ao criar cadeira: " + errorMessage);
-        console.error("Error creating chair:", err);
-        throw err;
-      } finally {
-        setCreateLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao excluir cadeira');
       }
-    },
-    [fetchChairs, setCreateLoading, filters]
-  );
 
-  const updateChair = useCallback(
-    async (id: number, chairData: ChairUpdateFormData) => {
-      setUpdateLoading(true);
-      try {
-        const response = await fetch(`/api/chairs/update/${id}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(chairData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to update chair");
-        }
-
-        const updatedChair = await response.json();
-        
-        await fetchChairs(filters, false);
-        success("Cadeira atualizada com sucesso!");
-        
-        return updatedChair;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
-        error("Erro ao atualizar cadeira: " + errorMessage);
-        console.error("Error updating chair:", err);
-        throw err;
-      } finally {
-        setUpdateLoading(false);
-      }
-    },
-    [fetchChairs, setUpdateLoading, filters]
-  );
-
-  const deleteChair = useCallback(
-    async (id: number) => {
-      setDeleteLoading(true);
-      try {
-        const response = await fetch(`/api/chairs/delete/${id}`, {
-          method: "DELETE",
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to delete chair");
-        }
-
-        if (chairs.length === 1 && pagination.currentPage > 1) {
-          // Passa todos os filtros, só mudando a página
-          await fetchChairs({ ...filters, page: pagination.currentPage - 1 }, false);
-        } else {
-          await fetchChairs(filters, false);
-        }
-        
-        success("Cadeira excluída com sucesso!");
-        return { success: true };
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
-        error("Erro ao excluir cadeira: " + errorMessage);
-        console.error("Error deleting chair:", err);
-        throw err;
-      } finally {
-        setDeleteLoading(false);
-      }
-    },
-    [chairs.length, pagination.currentPage, fetchChairs, setDeleteLoading, filters]
-  );
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Erro ao excluir cadeira:', error);
+      throw error;
+    }
+  }, []);
 
   return {
-    chairs,
-    pagination,
-    filters,
-    chairStats,
-    loading,
-    createLoading,
-    updateLoading,
-    deleteLoading,
     fetchChairs,
-    updateFilters,
-    resetFilters,
-    goToPage,
-    nextPage,
-    prevPage,
     createChair,
     updateChair,
     deleteChair,

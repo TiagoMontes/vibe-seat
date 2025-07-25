@@ -13,9 +13,9 @@ export async function GET() {
       );
     }
 
-    const backendUrl = process.env.API_BACKEND_URL || "http://localhost:3001";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     
-    const response = await fetch(`${backendUrl}/dashboard/`, {
+    const response = await fetch(`${apiUrl}/dashboard`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -24,7 +24,7 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       console.error("Backend error:", errorData);
       return NextResponse.json(
         { error: errorData.error || "Erro ao buscar dados do dashboard" },

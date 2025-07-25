@@ -13,33 +13,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const apiUrl = process.env.API_BACKEND;
-    
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: "API_BACKEND não configurado no .env" },
-        { status: 500 }
-      );
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
     // Extract query parameters
     const { searchParams } = new URL(request.url);
     const page = searchParams.get("page") || "1";
     const limit = searchParams.get("limit") || "10";
     const status = searchParams.get("status") || "";
+    const search = searchParams.get("search") || "";
+    const sortBy = searchParams.get("sortBy") || "newest";
 
     // Build query string
     const queryParams = new URLSearchParams();
     queryParams.set("page", page);
     queryParams.set("limit", limit);
     if (status && status !== "all") queryParams.set("status", status);
+    if (search) queryParams.set("search", search);
+    if (sortBy !== "newest") queryParams.set("sortBy", sortBy);
 
-    const response = await fetch(`${apiUrl}/appointments/?${queryParams.toString()}`, {
+    const response = await fetch(`${apiUrl}/appointments?${queryParams.toString()}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
-        "User-Agent": "*"
       },
     });
 
@@ -51,26 +47,16 @@ export async function GET(request: NextRequest) {
         );
       }
       
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: `Erro ao buscar agendamentos: ${response.status}` },
+        { error: errorData.error || `Erro ao buscar agendamentos: ${response.status}` },
         { status: response.status }
       );
     }
 
     const data = await response.json();
     
-    // Garante que o frontend sempre recebe o formato esperado
-    return NextResponse.json({
-      appointments: Array.isArray(data) ? data : data.appointments ?? [],
-      pagination: data.pagination ?? {
-        currentPage: parseInt(page),
-        totalPages: 1,
-        totalItems: Array.isArray(data) ? data.length : (data.appointments?.length ?? 0),
-        itemsPerPage: parseInt(limit),
-        hasNextPage: false,
-        hasPrevPage: false,
-      }
-    });
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Erro ao buscar agendamentos:", error);
     return NextResponse.json(

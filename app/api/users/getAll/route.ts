@@ -7,10 +7,11 @@ export async function GET(request: Request) {
   
   // Extrair parâmetros de query
   const page = searchParams.get('page') || '1';
-  const limit = searchParams.get('limit') || '8';
+  const limit = searchParams.get('limit') || '9';
   const status = searchParams.get('status') || '';
   const search = searchParams.get('search') || '';
   const sortBy = searchParams.get('sortBy') || 'newest';
+  const roleId = searchParams.get('roleId') || '';
   
   // Construir URL com parâmetros
   const queryParams = new URLSearchParams();
@@ -28,6 +29,11 @@ export async function GET(request: Request) {
   if (sortBy !== 'newest') {
     queryParams.set('sortBy', sortBy);
   }
+
+  if (roleId) {
+    queryParams.set('roleId', roleId);
+  }
+  
   try {
     const session = await getServerSession(authOptions);
     
@@ -38,21 +44,13 @@ export async function GET(request: Request) {
       );
     }
 
-    const apiUrl = process.env.API_BACKEND;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: 'API_BACKEND não configurado no .env' },
-        { status: 500 }
-      );
-    }
-
-    const response = await fetch(`${apiUrl}/users/?${queryParams.toString()}`, {
+    const response = await fetch(`${apiUrl}/users?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.accessToken}`,
-        'User-Agent': '*'
       }
     });
 
@@ -64,8 +62,9 @@ export async function GET(request: Request) {
         );
       }
       
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: `Erro ao buscar usuários: ${response.status}` },
+        { error: errorData.error || `Erro ao buscar usuários: ${response.status}` },
         { status: response.status }
       );
     }

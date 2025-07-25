@@ -16,14 +16,7 @@ export async function PATCH(
       );
     }
 
-    const apiUrl = process.env.API_BACKEND;
-    
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: "API_BACKEND não configurado no .env" },
-        { status: 500 }
-      );
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
     const { id } = await params;
 
@@ -32,7 +25,6 @@ export async function PATCH(
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
-        "User-Agent": "*"
       },
     });
 
@@ -44,9 +36,9 @@ export async function PATCH(
         );
       }
       
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.message || "Erro ao cancelar agendamento" },
+        { error: errorData.error || "Erro ao cancelar agendamento" },
         { status: response.status }
       );
     }

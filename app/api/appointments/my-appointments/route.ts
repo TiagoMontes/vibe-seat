@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
@@ -13,34 +13,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const apiUrl = process.env.API_BACKEND;
-    
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: "API_BACKEND não configurado no .env" },
-        { status: 500 }
-      );
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-    // Pegar parâmetros de query para paginação
-    const { searchParams } = new URL(request.url);
-    const page = searchParams.get("page") || "1";
-    const limit = searchParams.get("limit") || "10";
-    const status = searchParams.get("status") || "all";
-
-    const queryParams = new URLSearchParams();
-    queryParams.set("page", page);
-    queryParams.set("limit", limit);
-    if (status !== "all") {
-      queryParams.set("status", status);
-    }
-
-    const response = await fetch(`${apiUrl}/appointments/my-appointments?${queryParams.toString()}`, {
+    const response = await fetch(`${apiUrl}/appointments/my-appointments`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
-        "User-Agent": "*"
       },
     });
 
@@ -52,9 +31,9 @@ export async function GET(request: NextRequest) {
         );
       }
       
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.message || "Erro ao buscar agendamentos" },
+        { error: errorData.error || "Erro ao buscar agendamentos" },
         { status: response.status }
       );
     }

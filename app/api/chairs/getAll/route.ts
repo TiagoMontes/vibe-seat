@@ -13,14 +13,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const apiUrl = process.env.API_BACKEND;
-    
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: "API_BACKEND não configurado no .env" },
-        { status: 500 }
-      );
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
     // Extract query parameters
     const { searchParams } = new URL(request.url);
@@ -38,12 +31,11 @@ export async function GET(request: NextRequest) {
     if (status && status !== "all") queryParams.set("status", status);
     queryParams.set("sortBy", sortBy);
 
-    const response = await fetch(`${apiUrl}/chairs/?${queryParams.toString()}`, {
+    const response = await fetch(`${apiUrl}/chairs?${queryParams.toString()}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
-        "User-Agent": "*"
       },
     });
 
@@ -55,8 +47,9 @@ export async function GET(request: NextRequest) {
         );
       }
       
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: `Erro ao buscar cadeiras: ${response.status}` },
+        { error: errorData.error || `Erro ao buscar cadeiras: ${response.status}` },
         { status: response.status }
       );
     }

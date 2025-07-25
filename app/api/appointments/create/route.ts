@@ -13,24 +13,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiUrl = process.env.API_BACKEND;
-    
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: "API_BACKEND não configurado no .env" },
-        { status: 500 }
-      );
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
     const body = await request.json();
 
     console.log(body);
-    const response = await fetch(`${apiUrl}/appointments/`, {
+    const response = await fetch(`${apiUrl}/appointments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
-        "User-Agent": "*"
       },
       body: JSON.stringify(body),
     });
@@ -43,9 +35,9 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.message || "Erro ao criar agendamento" },
+        { error: errorData.error || "Erro ao criar agendamento" },
         { status: response.status }
       );
     }
