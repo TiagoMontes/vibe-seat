@@ -1,11 +1,9 @@
 "use client";
 
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
 import { Card, CardContent } from "@/app/components/ui/card";
 import {
   Users,
-  Search,
   Check,
   X,
   Clock,
@@ -18,12 +16,6 @@ import { useApprovals } from "@/app/hooks/useApprovals";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 import GenericFilter from "@/app/components/GenericFilter";
 import EmptyState from "@/app/components/EmptyState";
-
-const statusOptions = [
-  { value: "pending", label: "Pendente" },
-  { value: "approved", label: "Aprovado" },
-  { value: "rejected", label: "Rejeitado" },
-];
 
 const sortOptions = [
   { value: "newest", label: "Mais recentes" },
@@ -55,9 +47,6 @@ const PendingApprovals = () => {
   // Handlers para o filtro genérico
   const handleSearchChange = (value: string) => {
     updateSearch(value);
-  };
-  const handleStatusChange = (value: string) => {
-    updateStatusFilter(value as any);
   };
   const handleSortChange = (value: string) => {
     updateSortBy(value as any);

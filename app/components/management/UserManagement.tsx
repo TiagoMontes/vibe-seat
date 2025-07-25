@@ -1,17 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Users, Clock, UserCheck } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import PendingApprovals from "@/app/components/subTab/PendingApprovals";
 import RegisteredUsers from "@/app/components/subTab/RegisteredUsers";
-import {
-  pendingCountAtom,
-  totalUsersCountAtom,
-} from "@/app/atoms/userManagementAtoms";
 
 type TabType = "pending" | "users" | "chairs";
 
