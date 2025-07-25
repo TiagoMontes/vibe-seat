@@ -17,22 +17,18 @@ type TabType = "pending" | "users" | "chairs";
 
 const UserManagement = () => {
   const [activeTab, setActiveTab] = useState<TabType>("pending");
-  const [pendingCount] = useAtom(pendingCountAtom);
-  const [totalUsersCount] = useAtom(totalUsersCountAtom);
 
   const tabs = [
     {
       key: "pending" as TabType,
       label: "Aprovações Pendentes",
       icon: Clock,
-      count: pendingCount,
       component: <PendingApprovals />,
     },
     {
       key: "users" as TabType,
       label: "Usuários Cadastrados",
       icon: UserCheck,
-      count: totalUsersCount,
       component: <RegisteredUsers />,
     },
   ];
@@ -71,18 +67,6 @@ const UserManagement = () => {
                 >
                   <Icon className="h-5 w-5" />
                   <span>{tab.label}</span>
-                  {tab.count > 0 && (
-                    <span
-                      className={cn(
-                        "px-2 py-1 rounded-full text-xs font-medium",
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-black/10 text-black"
-                      )}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
                 </Button>
               );
             })}

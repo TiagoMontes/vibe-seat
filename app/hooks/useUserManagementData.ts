@@ -191,6 +191,18 @@ export function useUserManagementData() {
     isLoadingRef.current = false;
   }, []);
 
+  const resetFilters = useCallback(() => {
+    const defaultFilters = {
+      page: 1,
+      limit: 8,
+      search: '',
+      status: 'all',
+      sortBy: 'newest',
+    };
+    setFilters(defaultFilters);
+    fetchUsers(defaultFilters);
+  }, [fetchUsers]);
+
   return {
     fetchUsers,
     pagination,
@@ -202,6 +214,7 @@ export function useUserManagementData() {
     goToPage,
     nextPage,
     prevPage,
-    resetData
+    resetData,
+    resetFilters,
   };
 } 

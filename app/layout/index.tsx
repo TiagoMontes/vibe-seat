@@ -6,6 +6,7 @@ import UserManagement from "@/app/components/management/UserManagement";
 import MobileMenu from "@/app/components/MobileMenu";
 import SidebarAccordion from "@/app/components/SidebarAccordion";
 import { Home, Users } from "lucide-react";
+import ChairManagement from "../components/management/ChairManagement";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -64,12 +65,12 @@ const Layout: React.FC<LayoutProps> = ({
             icon: <Users className="h-4 w-4" />,
             component: <UserManagement />,
           },
-          //       {
-          //         key: "chairs" as TabKey,
-          //         label: "Cadeiras",
-          //         icon: <Chair className="h-4 w-4" />,
-          //         component: <ChairManagement />,
-          //       },
+          {
+            key: "chairs" as TabKey,
+            label: "Cadeiras",
+            icon: <Users className="h-4 w-4" />,
+            component: <ChairManagement />,
+          },
           //       {
           //         key: "schedules" as TabKey,
           //         label: "Gestão de disponibilidade",

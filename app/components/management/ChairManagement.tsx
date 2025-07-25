@@ -17,6 +17,7 @@ import {
   Search,
   Filter,
   ArrowUpDown,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Select,
@@ -40,7 +41,10 @@ import {
   getStatusColor,
   getStatusOptions,
 } from "@/app/schemas/chairSchema";
-import ChairModal from "./modal/ChairModal";
+import ChairModal from "@/app/components/modal/ChairModal";
+import GenericFilter from "@/app/components/GenericFilter";
+import { PaginationComponent } from "@/app/components/PaginationComponent";
+import EmptyState from "@/app/components/EmptyState";
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc";
 type StatusFilter = "all" | "ACTIVE" | "MAINTENANCE" | "INACTIVE";
@@ -66,10 +70,8 @@ const ChairManagement = () => {
     fetchChairs,
     updateFilters,
     resetFilters,
-    goToPage,
-    nextPage,
-    prevPage,
     deleteChair,
+    goToPage,
   } = useChairs();
 
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
@@ -78,7 +80,7 @@ const ChairManagement = () => {
   const [isSearchPending, setIsSearchPending] = useState(false);
 
   useEffect(() => {
-    fetchChairs(undefined, true);
+    fetchChairs(filters, true);
   }, [fetchChairs]);
 
   useEffect(() => {
@@ -286,83 +288,31 @@ const ChairManagement = () => {
         })}
       </div>
 
-      <Card>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <div className="relative flex-1">
-              <Search
-                className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors ${
-                  isSearchPending
-                    ? "text-blue-500 animate-pulse"
-                    : "text-gray-400"
-                }`}
-              />
-              <Input
-                placeholder="Pesquisar por nome, descrição ou localização..."
-                value={searchInput}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className={`pl-10 transition-colors ${
-                  isSearchPending ? "border-blue-300 ring-1 ring-blue-200" : ""
-                }`}
-              />
-              {isSearchPending && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-600" />
-              <Select
-                value={statusInput}
-                onValueChange={(value) =>
-                  handleStatusChange(value as StatusFilter)
-                }
-              >
-                <SelectTrigger className="w-40">
-                  <span>{getStatusFilterText(statusInput)}</span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {getStatusOptions().map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="h-4 w-4 text-gray-600" />
-              <Select
-                value={sortInput}
-                onValueChange={(value) => handleSortChange(value as SortOption)}
-              >
-                <SelectTrigger className="w-40">
-                  <span>{getSortText(sortInput)}</span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Mais recentes</SelectItem>
-                  <SelectItem value="oldest">Mais antigas</SelectItem>
-                  <SelectItem value="name-asc">Nome (A-Z)</SelectItem>
-                  <SelectItem value="name-desc">Nome (Z-A)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={handleClearFilters}
-              disabled={!hasActiveFilters}
-              className="whitespace-nowrap"
-            >
-              Limpar Filtros
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <GenericFilter
+        searchPlaceholder="Pesquisar por nome, descrição ou localização..."
+        searchValue={searchInput}
+        onSearchChange={handleSearchChange}
+        isSearchPending={isSearchPending}
+        statusOptions={[
+          { value: "all", label: "Todos" },
+          ...getStatusOptions().map((option) => ({
+            value: option.value,
+            label: option.label,
+          })),
+        ]}
+        statusValue={statusInput}
+        onStatusChange={(value) => handleStatusChange(value as StatusFilter)}
+        sortOptions={[
+          { value: "newest", label: "Mais recentes" },
+          { value: "oldest", label: "Mais antigas" },
+          { value: "name-asc", label: "Nome (A-Z)" },
+          { value: "name-desc", label: "Nome (Z-A)" },
+        ]}
+        sortValue={sortInput}
+        onSortChange={(value) => handleSortChange(value as SortOption)}
+        onClearFilters={handleClearFilters}
+        hasActiveFilters={!!hasActiveFilters}
+      />
 
       <Card>
         <CardContent>
@@ -371,34 +321,17 @@ const ChairManagement = () => {
           </h2>
 
           {chairs.length === 0 && !loading ? (
-            <div className="text-center py-8">
-              <Armchair className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              {pagination.totalItems === 0 ? (
-                <>
-                  <p className="text-gray-500">Nenhuma cadeira cadastrada</p>
-                  <Button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="mt-4"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Cadastrar primeira cadeira
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <p className="text-gray-500">
-                    Nenhuma cadeira encontrada com os filtros aplicados
-                  </p>
-                  <Button
-                    onClick={handleClearFilters}
-                    variant="outline"
-                    className="mt-4"
-                  >
-                    Limpar Filtros
-                  </Button>
-                </>
-              )}
-            </div>
+            <EmptyState
+              icon={<AlertTriangle className="h-16 w-16 text-gray-300" />}
+              title="Nenhuma cadeira encontrada"
+              description={
+                hasActiveFilters
+                  ? "Nenhuma cadeira corresponde aos filtros aplicados."
+                  : "Ainda não há cadeiras cadastradas no sistema."
+              }
+              hasActiveFilters={!!hasActiveFilters}
+              onClearFilters={handleClearFilters}
+            />
           ) : loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-gray-500">Carregando...</div>
@@ -479,11 +412,11 @@ const ChairManagement = () => {
                 hasNextPage={pagination.hasNextPage}
                 hasPrevPage={pagination.hasPrevPage}
                 currentPage={pagination.currentPage}
-                nextPage={pagination.nextPage}
-                prevPage={pagination.prevPage}
+                nextPage={pagination.nextPage || 0}
+                prevPage={pagination.prevPage || 0}
                 lastPage={pagination.totalPages}
-                fetchAvailableChairs={fetchAvailableChairs}
-                selectedDate={selectedDate}
+                goToPage={(_, page: number) => goToPage(page)}
+                selectedDate=""
               />
             </>
           )}

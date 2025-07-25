@@ -5,13 +5,15 @@ import { Chair, ChairStats, PaginationInfo, ChairFilters } from "@/app/schemas/c
 export const chairsAtom = atom<Chair[]>([]);
 
 // Informações de paginação
-export const paginationAtom = atom<PaginationInfo>({
+export const paginationAtom = atom<PaginationInfo & { nextPage: number | null; prevPage: number | null }>({
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
   itemsPerPage: 9,
   hasNextPage: false,
   hasPrevPage: false,
+  nextPage: null,
+  prevPage: null,
 });
 
 // Filtros ativos

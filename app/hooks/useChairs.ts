@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { useToast } from "./useToast";
 import {
   chairsAtom,
@@ -32,7 +32,8 @@ export const useChairs = () => {
 
   const hasLoadedRef = useRef(false);
 
-  const fetchChairs = useCallback(async (customFilters?: Partial<ChairFilters>, showLoading = true) => {
+  // fetchChairs NÃO depende de filters, recebe explicitamente os filtros a usar
+  const fetchChairs = useCallback(async (customFilters: ChairFilters, showLoading = true) => {
     const shouldShowLoading = showLoading && (!hasLoadedRef.current || pagination.totalItems === 0);
     
     if (shouldShowLoading) {
@@ -40,14 +41,12 @@ export const useChairs = () => {
     }
     
     try {
-      const currentFilters = { ...filters, ...customFilters };
-      
       const queryParams = new URLSearchParams();
-      queryParams.set("page", currentFilters.page.toString());
-      queryParams.set("limit", currentFilters.limit.toString());
-      if (currentFilters.search) queryParams.set("search", currentFilters.search);
-      if (currentFilters.status !== "all") queryParams.set("status", currentFilters.status);
-      queryParams.set("sortBy", currentFilters.sortBy);
+      queryParams.set("page", customFilters.page.toString());
+      queryParams.set("limit", customFilters.limit.toString());
+      if (customFilters.search) queryParams.set("search", customFilters.search);
+      if (customFilters.status !== "all") queryParams.set("status", customFilters.status);
+      queryParams.set("sortBy", customFilters.sortBy);
 
       const response = await fetch(`/api/chairs/getAll?${queryParams.toString()}`);
       if (!response.ok) {
@@ -59,11 +58,13 @@ export const useChairs = () => {
       const data: ChairListResponse = await response.json();
       
       setChairs(data.chairs);
+      // Atualiza paginação incluindo nextPage e prevPage
+      setPagination({
+        ...data.pagination,
+        nextPage: (data.pagination as any).nextPage ?? null,
+        prevPage: (data.pagination as any).prevPage ?? null,
+      });
       
-      if (customFilters) {
-        setFilters(currentFilters);
-      }
-
       if (data.stats) {
         setChairStats(data.stats);
       } else {
@@ -86,8 +87,9 @@ export const useChairs = () => {
         setLoading(false);
       }
     }
-  }, [filters, setChairs, setPagination, setFilters, setChairStats, setLoading, pagination.totalItems]);
+  }, [setChairs, setChairStats, setLoading, pagination.totalItems, setPagination]);
 
+  // Atualizar filtros (apenas setFilters)
   const updateFilters = useCallback((newFilters: Partial<ChairFilters>) => {
     const updatedFilters = { 
       ...filters, 
@@ -96,9 +98,9 @@ export const useChairs = () => {
     };
     
     setFilters(updatedFilters);
-    fetchChairs(updatedFilters, false);
-  }, [filters, setFilters, fetchChairs]);
+  }, [filters, setFilters]);
 
+  // Resetar filtros (apenas setFilters)
   const resetFilters = useCallback(() => {
     const defaultFilters: ChairFilters = {
       page: 1,
@@ -108,8 +110,30 @@ export const useChairs = () => {
       sortBy: "newest",
     };
     setFilters(defaultFilters);
-    fetchChairs(defaultFilters, false);
-  }, [setFilters, fetchChairs]);
+  }, [setFilters]);
+
+  // Funções de paginação
+  const goToPage = useCallback((page: number) => {
+    setFilters((prev) => ({ ...prev, page }));
+  }, [setFilters]);
+
+  const nextPage = useCallback(() => {
+    if (pagination.hasNextPage && pagination.nextPage) {
+      setFilters((prev) => ({ ...prev, page: pagination.nextPage! }));
+    }
+  }, [pagination.hasNextPage, pagination.nextPage, setFilters]);
+
+  const prevPage = useCallback(() => {
+    if (pagination.hasPrevPage && pagination.prevPage) {
+      setFilters((prev) => ({ ...prev, page: pagination.prevPage! }));
+    }
+  }, [pagination.hasPrevPage, pagination.prevPage, setFilters]);
+
+  // Buscar cadeiras sempre que filters mudar
+  useEffect(() => {
+    fetchChairs(filters, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
 
   const createChair = useCallback(
     async (chairData: ChairFormData) => {
@@ -130,7 +154,7 @@ export const useChairs = () => {
 
         const newChair = await response.json();
         
-        await fetchChairs(undefined, false);
+        await fetchChairs(filters, false);
         success("Cadeira criada com sucesso!");
         
         return newChair;
@@ -143,7 +167,7 @@ export const useChairs = () => {
         setCreateLoading(false);
       }
     },
-    [fetchChairs, setCreateLoading]
+    [fetchChairs, setCreateLoading, filters]
   );
 
   const updateChair = useCallback(
@@ -165,7 +189,7 @@ export const useChairs = () => {
 
         const updatedChair = await response.json();
         
-        await fetchChairs(undefined, false);
+        await fetchChairs(filters, false);
         success("Cadeira atualizada com sucesso!");
         
         return updatedChair;
@@ -178,7 +202,7 @@ export const useChairs = () => {
         setUpdateLoading(false);
       }
     },
-    [fetchChairs, setUpdateLoading]
+    [fetchChairs, setUpdateLoading, filters]
   );
 
   const deleteChair = useCallback(
@@ -195,9 +219,10 @@ export const useChairs = () => {
         }
 
         if (chairs.length === 1 && pagination.currentPage > 1) {
-          await fetchChairs({ page: pagination.currentPage - 1 }, false);
+          // Passa todos os filtros, só mudando a página
+          await fetchChairs({ ...filters, page: pagination.currentPage - 1 }, false);
         } else {
-          await fetchChairs(undefined, false);
+          await fetchChairs(filters, false);
         }
         
         success("Cadeira excluída com sucesso!");
@@ -211,7 +236,7 @@ export const useChairs = () => {
         setDeleteLoading(false);
       }
     },
-    [chairs.length, pagination.currentPage, fetchChairs, setDeleteLoading]
+    [chairs.length, pagination.currentPage, fetchChairs, setDeleteLoading, filters]
   );
 
   return {

@@ -3,11 +3,34 @@
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Users, Search, Check, X, Clock, Calendar } from "lucide-react";
+import {
+  Users,
+  Search,
+  Check,
+  X,
+  Clock,
+  Calendar,
+  AlertTriangle,
+} from "lucide-react";
 import { type Approval } from "@/app/atoms/userManagementAtoms";
 import { formatDateTime, getRoleByName } from "@/app/lib/utils";
 import { useApprovals } from "@/app/hooks/useApprovals";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
+import GenericFilter from "@/app/components/GenericFilter";
+import EmptyState from "@/app/components/EmptyState";
+
+const statusOptions = [
+  { value: "pending", label: "Pendente" },
+  { value: "approved", label: "Aprovado" },
+  { value: "rejected", label: "Rejeitado" },
+];
+
+const sortOptions = [
+  { value: "newest", label: "Mais recentes" },
+  { value: "oldest", label: "Mais antigas" },
+  { value: "user-asc", label: "Usuário (A-Z)" },
+  { value: "user-desc", label: "Usuário (Z-A)" },
+];
 
 const PendingApprovals = () => {
   const {
@@ -17,6 +40,8 @@ const PendingApprovals = () => {
     filters,
     updateApprovalStatus,
     updateSearch,
+    updateStatusFilter,
+    updateSortBy,
     goToPage,
   } = useApprovals();
 
@@ -27,9 +52,25 @@ const PendingApprovals = () => {
     await updateApprovalStatus(approvalId, status);
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateSearch(e.target.value);
+  // Handlers para o filtro genérico
+  const handleSearchChange = (value: string) => {
+    updateSearch(value);
   };
+  const handleStatusChange = (value: string) => {
+    updateStatusFilter(value as any);
+  };
+  const handleSortChange = (value: string) => {
+    updateSortBy(value as any);
+  };
+  const handleClearFilters = () => {
+    updateSearch("");
+    updateStatusFilter("pending");
+    updateSortBy("newest");
+  };
+  const hasActiveFilters =
+    (filters.search && filters.search.trim() !== "") ||
+    filters.status !== "pending" ||
+    filters.sortBy !== "newest";
 
   const ApprovalComponent = (approval: Approval) => {
     const { date, time } = formatDateTime(approval.createdAt);
@@ -123,34 +164,32 @@ const PendingApprovals = () => {
         )}
       </div>
 
-      <Card>
-        <CardContent>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar por usuário ou role..."
-              value={filters.search}
-              onChange={handleSearchChange}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filtro Genérico */}
+      <GenericFilter
+        searchPlaceholder="Buscar por usuário ou role..."
+        searchValue={filters.search}
+        onSearchChange={handleSearchChange}
+        sortOptions={sortOptions}
+        sortValue={filters.sortBy}
+        onSortChange={handleSortChange}
+        onClearFilters={handleClearFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
 
       <Card>
         <CardContent className="flex justify-center">
           {approvals.length === 0 ? (
-            <div className="text-center flex flex-col gap-2">
-              <Clock className="h-16 w-16 text-gray-300 mx-auto" />
-              <h3 className="text-lg font-medium text-gray-900">
-                Nenhuma aprovação pendente
-              </h3>
-              <p className="text-gray-600">
-                {filters.search.trim()
-                  ? "Não há aprovações pendentes com os termos de busca aplicados."
-                  : "Todas as solicitações foram processadas ou não há novas solicitações pendentes."}
-              </p>
-            </div>
+            <EmptyState
+              icon={<AlertTriangle className="h-16 w-16 text-gray-300" />}
+              title="Nenhuma aprovação pendente encontrada"
+              description={
+                hasActiveFilters
+                  ? "Nenhuma aprovação pendente corresponde aos filtros aplicados."
+                  : "Ainda não há aprovações pendentes."
+              }
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={handleClearFilters}
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full gap-4">
               {approvals.map((approval) => ApprovalComponent(approval))}

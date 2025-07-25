@@ -4,12 +4,17 @@ import React, { useState, useEffect } from "react";
 import { useAtom } from "jotai";
 
 import { Input } from "@/app/components/ui/input";
-import {
-  Card,
-  CardContent,
-} from "@/app/components/ui/card";
+import { Card, CardContent } from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
 
-import { Users, Search, UserCheck, Shield, Calendar } from "lucide-react";
+import {
+  Users,
+  Search,
+  UserCheck,
+  Shield,
+  Calendar,
+  AlertTriangle,
+} from "lucide-react";
 
 import {
   registeredUsersAtom,
@@ -20,6 +25,8 @@ import {
 import { formatDateTime, getRoleNameById, useDebounce } from "@/app/lib/utils";
 import { useUserManagementData } from "@/app/hooks/useUserManagementData";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
+import GenericFilter from "@/app/components/GenericFilter";
+import EmptyState from "@/app/components/EmptyState";
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -74,19 +81,14 @@ const filterUsers = (
 // ============================================================================
 
 const Header = ({ stats }: { stats: any }) => (
-  <div className="flex items-center justify-between">
+  <div className="flex items-center justify-between lg:justify-start gap-4">
     <div className="flex items-center gap-3">
       <UserCheck className="h-6 w-6 text-blue-600" />
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">
-          Usuários Cadastrados
-        </h2>
-        <p className="text-gray-600">{stats.total} usuário(s) no sistema</p>
-      </div>
+      <h2 className="text-xl font-bold text-gray-900">Usuários Cadastrados</h2>
     </div>
 
     <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-      {stats.total} total
+      {stats.total}
     </div>
   </div>
 );
@@ -111,22 +113,6 @@ const SearchBar = ({
       </div>
     </CardContent>
   </Card>
-);
-
-const EmptyState = ({ hasSearchTerm }: { hasSearchTerm: boolean }) => (
-  <div className="text-center py-12 w-full justify-center">
-    <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-    <h3 className="text-lg font-medium text-gray-900 mb-2">
-      {hasSearchTerm
-        ? "Nenhum usuário encontrado"
-        : "Nenhum usuário cadastrado"}
-    </h3>
-    <p className="text-gray-600">
-      {hasSearchTerm
-        ? "Tente ajustar os termos de busca."
-        : "Ainda não há usuários cadastrados no sistema."}
-    </p>
-  </div>
 );
 
 const ErrorMessage = ({ error }: { error: string }) => (
@@ -193,6 +179,20 @@ const UserGrid = ({ users }: { users: RegisteredUser[] }) => (
   </div>
 );
 
+const statusOptions = [
+  { value: "all", label: "Todos" },
+  { value: "approved", label: "Aprovado" },
+  { value: "pending", label: "Pendente" },
+  { value: "rejected", label: "Rejeitado" },
+];
+
+const sortOptions = [
+  { value: "newest", label: "Mais recentes" },
+  { value: "oldest", label: "Mais antigas" },
+  { value: "name-asc", label: "Nome (A-Z)" },
+  { value: "name-desc", label: "Nome (Z-A)" },
+];
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -204,25 +204,61 @@ export const RegisteredUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  const { pagination, stats, updateSearch, goToPage } = useUserManagementData();
+  const {
+    pagination,
+    stats,
+    filters,
+    updateSearch,
+    updateStatusFilter,
+    updateSortBy,
+    goToPage,
+    resetFilters,
+  } = useUserManagementData();
 
   useEffect(() => {
     const filteredUsers = filterUsers(allUsers, debouncedSearchTerm);
     setUsers(filteredUsers);
   }, [allUsers, debouncedSearchTerm]);
 
+  // Handlers para o filtro genérico
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     updateSearch(value);
   };
+  const handleStatusChange = (value: string) => {
+    updateStatusFilter(value);
+  };
+  const handleSortChange = (value: string) => {
+    updateSortBy(value);
+  };
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    resetFilters();
+  };
+  const hasActiveFilters =
+    (filters.search && filters.search.trim() !== "") ||
+    filters.status !== "all" ||
+    filters.sortBy !== "newest";
 
   return (
     <div className="space-y-6">
       {/* Header Section */}
       <Header stats={stats} />
 
-      {/* Search Section */}
-      <SearchBar searchTerm={searchTerm} onSearchChange={handleSearchChange} />
+      {/* Filtro Genérico */}
+      <GenericFilter
+        searchPlaceholder="Buscar por nome ou role..."
+        searchValue={searchTerm}
+        onSearchChange={handleSearchChange}
+        statusOptions={statusOptions}
+        statusValue={filters.status}
+        onStatusChange={handleStatusChange}
+        sortOptions={sortOptions}
+        sortValue={filters.sortBy}
+        onSortChange={handleSortChange}
+        onClearFilters={handleClearFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
 
       {/* Users List Section */}
       <Card className="flex flex-col gap-4 ">
@@ -232,7 +268,17 @@ export const RegisteredUsers = () => {
 
           {/* Empty State or User Grid */}
           {users.length === 0 ? (
-            <EmptyState hasSearchTerm={!!searchTerm} />
+            <EmptyState
+              icon={<AlertTriangle className="h-16 w-16 text-gray-300" />}
+              title="Nenhum usuário encontrado"
+              description={
+                hasActiveFilters
+                  ? "Nenhum usuário corresponde aos filtros aplicados."
+                  : "Ainda não há usuários cadastrados no sistema."
+              }
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={handleClearFilters}
+            />
           ) : (
             <UserGrid users={users} />
           )}
