@@ -30,7 +30,13 @@ export const useAppointments = () => {
         throw new Error(errorData.error || 'Erro ao buscar agendamentos');
       }
 
-      const data: AppointmentListResponse = await response.json();
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar agendamentos');
+      }
+      
+      const data = responseData.data;
       
       setAppointments(data.appointments || []);
       setPagination(data.pagination || {
@@ -66,8 +72,13 @@ export const useAppointments = () => {
         throw new Error(errorData.error || 'Erro ao buscar horários disponíveis');
       }
 
-      const data: AvailableTimesResponse = await response.json();
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar horários disponíveis');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao buscar horários disponíveis:', error);
       throw error;
@@ -107,8 +118,13 @@ export const useAppointments = () => {
         throw new Error(errorData.error || 'Erro ao cancelar agendamento');
       }
 
-      const updatedAppointment = await response.json();
-      return updatedAppointment;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao cancelar agendamento');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao cancelar agendamento:', error);
       throw error;
@@ -126,8 +142,13 @@ export const useAppointments = () => {
         throw new Error(errorData.error || 'Erro ao confirmar agendamento');
       }
 
-      const updatedAppointment = await response.json();
-      return updatedAppointment;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao confirmar agendamento');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao confirmar agendamento:', error);
       throw error;

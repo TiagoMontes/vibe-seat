@@ -44,8 +44,13 @@ export const useUsers = () => {
         throw new Error(errorData.error || 'Erro ao buscar usuários');
       }
 
-      const data: UserListResponse = await response.json();
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar usuários');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
       return null;
@@ -61,8 +66,13 @@ export const useUsers = () => {
         throw new Error(errorData.error || 'Erro ao buscar usuário');
       }
 
-      const data = await response.json();
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar usuário');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao buscar usuário:', error);
       return null;

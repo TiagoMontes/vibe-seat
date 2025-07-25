@@ -53,7 +53,13 @@ export const useApprovals = () => {
         throw new Error(errorData.error || 'Erro ao buscar aprovações');
       }
 
-      const data: ApprovalListResponse = await response.json();
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar aprovações');
+      }
+      
+      const data = responseData.data;
       setApprovals(data.approvals);
       setPagination(data.pagination);
       setStats(data.stats);
@@ -79,8 +85,13 @@ export const useApprovals = () => {
         throw new Error(errorData.error || 'Erro ao buscar aprovação');
       }
 
-      const data = await response.json();
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar aprovação');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao buscar aprovação:', error);
       throw error;
@@ -105,8 +116,13 @@ export const useApprovals = () => {
         throw new Error(errorData.error || 'Erro ao atualizar aprovação');
       }
 
-      const data = await response.json();
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao atualizar aprovação');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao atualizar aprovação:', error);
       throw error;

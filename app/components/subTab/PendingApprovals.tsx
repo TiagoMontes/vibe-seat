@@ -38,8 +38,6 @@ const PendingApprovals: React.FC = () => {
     loading,
   } = useApprovals();
 
-  console.log(approvals);
-
   useEffect(() => {
     listApprovals(filters);
   }, [filters, listApprovals]);

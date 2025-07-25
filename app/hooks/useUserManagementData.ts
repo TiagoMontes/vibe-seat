@@ -75,7 +75,7 @@ export function useUserManagementData() {
     page: 1,
     limit: 8,
     search: '',
-    status: '',
+    status: 'all',
     sortBy: 'newest',
   });
   
@@ -113,7 +113,13 @@ export function useUserManagementData() {
         throw new Error(errorData.error || 'Erro ao buscar usuários');
       }
 
-      const data: UserResponse = await response.json();
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar usuários');
+      }
+      
+      const data = responseData.data;
       
       setUsers(data.users);
       setPagination(data.pagination);

@@ -11,8 +11,13 @@ export const useMyAppointments = () => {
         throw new Error(errorData.error || 'Erro ao buscar meus agendamentos');
       }
 
-      const data: MyAppointmentsResponse = await response.json();
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar meus agendamentos');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao buscar meus agendamentos:', error);
       throw error;

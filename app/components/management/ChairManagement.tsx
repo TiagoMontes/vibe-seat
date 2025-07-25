@@ -64,7 +64,6 @@ const ChairManagement = () => {
   const [isSearchPending, setIsSearchPending] = useState(false);
 
   useEffect(() => {
-    console.log("filters", filters);
     fetchChairs(filters);
   }, [fetchChairs, filters]);
 

@@ -91,9 +91,69 @@ export const scheduleUpdateSchema = yup.object({
     }),
 });
 
-export type ScheduleFormData = yup.InferType<typeof scheduleSchema>;
+// Novos schemas para a estrutura real da API
+export const timeRangeSchema = yup.object({
+  start: yup
+    .string()
+    .matches(timeRegex, "Formato de horário inválido (HH:MM)")
+    .required("Horário de início é obrigatório"),
+  end: yup
+    .string()
+    .matches(timeRegex, "Formato de horário inválido (HH:MM)")
+    .required("Horário de fim é obrigatório")
+    .test("is-after-start", "Horário de fim deve ser após o início", function(value) {
+      const { start } = this.parent;
+      if (!start || !value) return true;
+      return value > start;
+    }),
+});
 
+export const apiScheduleSchema = yup.object({
+  timeRanges: yup
+    .array()
+    .of(timeRangeSchema)
+    .min(1, "Adicione pelo menos um intervalo de horário")
+    .required("Intervalos de horário são obrigatórios"),
+  validFrom: yup
+    .mixed()
+    .nullable()
+    .test("is-valid-date", "Data inválida", function(value) {
+      if (!value) return true;
+      if (typeof value === 'string') {
+        return !isNaN(Date.parse(value));
+      }
+      return value instanceof Date && !isNaN(value.getTime());
+    }),
+  validTo: yup
+    .mixed()
+    .nullable()
+    .test("is-valid-date", "Data inválida", function(value) {
+      if (!value) return true;
+      if (typeof value === 'string') {
+        return !isNaN(Date.parse(value));
+      }
+      return value instanceof Date && !isNaN(value.getTime());
+    })
+    .test("is-after-from", "Data fim deve ser após data início", function(value) {
+      const { validFrom } = this.parent;
+      if (!validFrom || !value) return true;
+      
+      const fromDate = typeof validFrom === 'string' ? new Date(validFrom) : validFrom;
+      const toDate = typeof value === 'string' ? new Date(value) : value;
+      
+      return toDate >= fromDate;
+    }),
+  dayIds: yup
+    .array()
+    .of(yup.number().required().min(1))
+    .min(1, "Selecione pelo menos um dia da semana")
+    .required("Dias da semana são obrigatórios"),
+});
+
+export type ScheduleFormData = yup.InferType<typeof scheduleSchema>;
 export type ScheduleUpdateFormData = yup.InferType<typeof scheduleUpdateSchema>;
+export type ApiScheduleFormData = yup.InferType<typeof apiScheduleSchema>;
+export type TimeRangeFormData = yup.InferType<typeof timeRangeSchema>;
 
 export interface Schedule {
   id: number;

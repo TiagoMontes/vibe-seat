@@ -13,8 +13,13 @@ export const useRoles = () => {
         throw new Error(errorData.error || 'Erro ao buscar roles');
       }
 
-      const data: RoleListResponse = await response.json();
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar roles');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao buscar roles:', error);
       throw error;

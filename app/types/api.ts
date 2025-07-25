@@ -105,7 +105,7 @@ export interface ChairListResponse {
   pagination: Pagination;
 }
 
-export interface ChairFilters {
+export interface Filters {
   page?: number;
   limit?: number;
   search?: string;
@@ -266,7 +266,7 @@ export interface Schedule {
   timeRanges: TimeRange[];
   validFrom: string;
   validTo: string;
-  days: DayOfWeek[];
+  dayIds: number[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -284,6 +284,18 @@ export interface UpdateScheduleRequest {
   validFrom?: string;
   validTo?: string;
   dayIds?: number[];
+}
+
+export interface ScheduleListResponse {
+  schedules: Schedule[];
+  pagination: Pagination;
+}
+
+export interface ScheduleFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: 'newest' | 'oldest' | 'validFrom-asc' | 'validFrom-desc';
 }
 
 // ===== DASHBOARD =====

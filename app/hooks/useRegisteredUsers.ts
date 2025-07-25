@@ -13,8 +13,13 @@ export const useRegisteredUsers = () => {
         throw new Error(errorData.error || 'Erro ao buscar usuários registrados');
       }
 
-      const data: UserListResponse = await response.json();
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar usuários registrados');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao buscar usuários registrados:', error);
       throw error;

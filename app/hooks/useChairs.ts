@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef } from 'react';
-import { ChairFilters, CreateChairRequest, UpdateChairRequest, ChairListResponse, Chair, Pagination } from '@/app/types/api';
+import { Filters, CreateChairRequest, UpdateChairRequest, ChairListResponse, Chair, Pagination } from '@/app/types/api';
 
 export const useChairs = () => {
   const [chairs, setChairs] = useState<Chair[]>([]);
@@ -20,7 +20,7 @@ export const useChairs = () => {
     maintenance: 0,
     inactive: 0,
   });
-  const [filters, setFilters] = useState<ChairFilters>({
+  const [filters, setFilters] = useState<Filters>({
     page: 1,
     limit: 6,
     search: "",
@@ -33,7 +33,7 @@ export const useChairs = () => {
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
 
-  const fetchChairs = useCallback(async (customFilters?: ChairFilters) => {
+  const fetchChairs = useCallback(async (customFilters?: Filters) => {
     setLoading(true);
     try {
       // Usar os filtros passados ou os filtros atuais
@@ -54,7 +54,13 @@ export const useChairs = () => {
         throw new Error(errorData.error || 'Erro ao buscar cadeiras');
       }
 
-      const data: ChairListResponse = await response.json();
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar cadeiras');
+      }
+      
+      const data = responseData.data;
       
       setChairs(data.chairs || []);
       setPagination(data.pagination || {
@@ -72,9 +78,9 @@ export const useChairs = () => {
       // Calcula stats baseado nos dados retornados
       const stats = {
         total: data.pagination?.totalItems || 0,
-        active: data.chairs?.filter(chair => chair.status === "ACTIVE").length || 0,
-        maintenance: data.chairs?.filter(chair => chair.status === "MAINTENANCE").length || 0,
-        inactive: data.chairs?.filter(chair => chair.status === "INACTIVE").length || 0,
+        active: data.chairs?.filter((chair: any) => chair.status === "ACTIVE").length || 0,
+        maintenance: data.chairs?.filter((chair: any) => chair.status === "MAINTENANCE").length || 0,
+        inactive: data.chairs?.filter((chair: any) => chair.status === "INACTIVE").length || 0,
       };
       setChairStatus(stats);
       
@@ -102,12 +108,16 @@ export const useChairs = () => {
         throw new Error(errorData.error || 'Erro ao criar cadeira');
       }
 
-      const newChair = await response.json();
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao criar cadeira');
+      }
       
       // Recarregar os dados com os filtros atuais
       await fetchChairs();
       
-      return newChair;
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao criar cadeira:', error);
       throw error;
@@ -129,12 +139,16 @@ export const useChairs = () => {
         throw new Error(errorData.error || 'Erro ao atualizar cadeira');
       }
 
-      const updatedChair = await response.json();
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao atualizar cadeira');
+      }
       
       // Recarregar os dados com os filtros atuais
       await fetchChairs();
       
-      return updatedChair;
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao atualizar cadeira:', error);
       throw error;
@@ -152,19 +166,23 @@ export const useChairs = () => {
         throw new Error(errorData.error || 'Erro ao excluir cadeira');
       }
 
-      const result = await response.json();
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao excluir cadeira');
+      }
       
       // Recarregar os dados com os filtros atuais
       await fetchChairs();
       
-      return result;
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao excluir cadeira:', error);
       throw error;
     }
   }, [fetchChairs]);
 
-  const setFiltersOptimized = useCallback((newFilters: ChairFilters) => {
+  const setFiltersOptimized = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
   }, []);
 

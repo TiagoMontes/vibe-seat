@@ -1,8 +1,38 @@
-import { useCallback } from 'react';
-import { Schedule, CreateScheduleRequest, UpdateScheduleRequest } from '@/app/types/api';
+import { useCallback, useState, useRef } from 'react';
+import { Schedule, CreateScheduleRequest, UpdateScheduleRequest, ScheduleFilters } from '@/app/types/api';
 
 export const useSchedules = () => {
-  const getSchedule = useCallback(async (id: number): Promise<Schedule | null> => {
+  const [schedule, setSchedule] = useState<Schedule | undefined>();
+  const [loading, setLoading] = useState(false);
+
+  const fetchSchedules = useCallback(async (customFilters?: ScheduleFilters) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/schedules/getAll`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao buscar configurações de horário');
+      }
+
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar configurações de horário');
+      }
+      
+      setSchedule(responseData.data);
+      
+      return responseData.data;
+    } catch (error) {
+      console.error('Erro ao buscar configurações de horário:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Removido as dependências para evitar loops
+
+  const fetchSchedule = useCallback(async (id: number): Promise<Schedule | null> => {
     try {
       const response = await fetch(`/api/schedules/${id}`);
       
@@ -11,8 +41,13 @@ export const useSchedules = () => {
         throw new Error(errorData.error || 'Erro ao buscar configuração de horário');
       }
 
-      const data: Schedule = await response.json();
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar configuração de horário');
+      }
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao buscar configuração de horário:', error);
       throw error;
@@ -34,17 +69,25 @@ export const useSchedules = () => {
         throw new Error(errorData.error || 'Erro ao criar configuração de horário');
       }
 
-      const newSchedule = await response.json();
-      return newSchedule;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao criar configuração de horário');
+      }
+      
+      // Recarregar os dados com os filtros atuais
+      await fetchSchedules();
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao criar configuração de horário:', error);
       throw error;
     }
-  }, []);
+  }, [fetchSchedules]);
 
-  const updateSchedule = useCallback(async (id: number, scheduleData: UpdateScheduleRequest) => {
+  const updateSchedule = useCallback(async (scheduleData: UpdateScheduleRequest) => {
     try {
-      const response = await fetch(`/api/schedules/update/${id}`, {
+      const response = await fetch(`/api/schedules/update/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -54,30 +97,45 @@ export const useSchedules = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Error response:', errorData);
         throw new Error(errorData.error || 'Erro ao atualizar configuração de horário');
       }
 
-      const updatedSchedule = await response.json();
-      return updatedSchedule;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao atualizar configuração de horário');
+      }
+
+      // Recarregar os dados com os filtros atuais
+      await fetchSchedules();
+      
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao atualizar configuração de horário:', error);
       throw error;
     }
-  }, []);
+  }, [fetchSchedules]);
 
-  const deleteSchedule = useCallback(async (id: number) => {
+  const deleteSchedule = useCallback(async () => {
     try {
-      const response = await fetch(`/api/schedules/delete/${id}`, {
+      const response = await fetch(`/api/schedules/delete`, {
         method: 'DELETE',
+        redirect: 'follow',
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao excluir configuração de horário');
+  
+      const responseData = await response.json();
+  
+      if (!response.ok || !responseData.success) {
+        const message = typeof responseData.message === 'string'
+          ? responseData.message
+          : 'Erro ao excluir configuração de horário';
+        throw new Error(message);
       }
-
-      const result = await response.json();
-      return result;
+  
+      // Limpar o schedule atual após deletar
+      setSchedule(undefined);
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao excluir configuração de horário:', error);
       throw error;
@@ -85,9 +143,12 @@ export const useSchedules = () => {
   }, []);
 
   return {
-    getSchedule,
+    fetchSchedules,
+    fetchSchedule,
     createSchedule,
     updateSchedule,
     deleteSchedule,
+    schedule,
+    loading,
   };
 }; 

@@ -1,10 +1,11 @@
 import { atom } from "jotai";
+import { Schedule as ApiSchedule } from "@/app/types/api";
 import { Schedule, ScheduleStats, ScheduleFilters, calculateTimeSlots, isScheduleActive } from "@/app/schemas/scheduleSchema";
 
 // Modal state atoms
 export const scheduleModalOpenAtom = atom(false);
 export const scheduleEditModalOpenAtom = atom(false);
-export const selectedScheduleAtom = atom<Schedule | null>(null);
+export const selectedScheduleAtom = atom<ApiSchedule | null>(null);
 
 // Data atoms
 export const schedulesAtom = atom<Schedule[]>([]);

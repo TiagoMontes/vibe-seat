@@ -21,10 +21,14 @@ export const useDashboard = () => {
         throw new Error(errorData.error || 'Erro ao buscar dados do dashboard');
       }
 
-      const data: DashboardResponse = await response.json();
-      console.log(data)
-      setData(data);
-      return data;
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar dados do dashboard');
+      }
+      
+      setData(responseData.data);
+      return responseData.data;
     } catch (error) {
       console.error('Erro ao buscar dados do dashboard:', error);
       throw error;
