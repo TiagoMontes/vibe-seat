@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    console.log(body);
     const response = await fetch(`${apiUrl}/appointments`, {
       method: "POST",
       headers: {

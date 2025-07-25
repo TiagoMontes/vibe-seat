@@ -4,14 +4,11 @@ import { decode } from 'jsonwebtoken';
 
 interface LoginResponse {
   token: string;
-  [key: string]: unknown;
-}
-
-interface DecodedToken {
-  id?: number;
-  username?: string;
-  role?: string;
-  exp?: number;
+  user: {
+    id: number;
+    username: string;
+    role: string;
+  };
 }
 
 async function loginAPI(username: string, password: string): Promise<LoginResponse> {
@@ -30,8 +27,16 @@ async function loginAPI(username: string, password: string): Promise<LoginRespon
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-      throw new Error(errorData.error || `Erro na autenticação: ${response.status}`);
+      let errorMessage = `Erro na autenticação: ${response.status}`;
+      
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch (parseError) {
+        console.error('Error parsing error response:', parseError);
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data: LoginResponse = await response.json();
@@ -42,6 +47,8 @@ async function loginAPI(username: string, password: string): Promise<LoginRespon
 
     return data;
   } catch (error) {
+    console.error('Login API Error:', error);
+    
     if (error instanceof Error) {
       throw error;
     }
@@ -65,22 +72,21 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const result = await loginAPI(credentials.username, credentials.password)
+          const result = await loginAPI(credentials.username, credentials.password);
 
           if (result.token) {
-            // Decodificar o token para extrair as informações do usuário
-            const decodedToken = decode(result.token) as DecodedToken;
-
+            const user = decode(result.token) as { id: number, username: string, role: string };
             return {
-              id: decodedToken.id?.toString() || '1',
-              username: decodedToken.username || credentials.username,
-              role: decodedToken.role || 'User',
+              id: user.id,
+              username: user.username,
+              role: user.role,
               token: result.token
             };
           }
 
           return null;
         } catch (error) {
+          console.error('Authorization error:', error);
           throw new Error(error instanceof Error ? error.message : 'Erro de autenticação');
         }
       }
@@ -98,15 +104,12 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account }) {
       if (account && user) {
-        const decodedToken = decode(user.token) as DecodedToken;
-        
         return {
           ...token,
           accessToken: user.token,
           id: user.id,
           username: user.username,
           role: user.role,
-          exp: decodedToken.exp
         };
       }
 
@@ -114,21 +117,16 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      // Acessamos as propriedades diretamente sem conversão
-      Object.assign(session, {
+      return {
+        ...session,
         accessToken: token.accessToken,
-        expires: (token.exp as number) * 1000,
-        expiresFormatted: new Date((token.exp as number) * 1000).toLocaleString('pt-BR')
-      });
-      
-      // Atualizamos o objeto user
-      Object.assign(session.user, {
-        username: token.username,
-        role: token.role,
-        id: token.id
-      });
-
-      return session;
+        user: {
+          ...session.user,
+          id: token.id,
+          username: token.username,
+          role: token.role,
+        }
+      };
     }
   },
 

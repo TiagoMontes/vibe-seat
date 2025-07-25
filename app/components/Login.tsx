@@ -33,9 +33,9 @@ const Login = () => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    const success = await login(data);
+    const result = await login(data);
 
-    if (success) {
+    if (result.success) {
       reset(); // Limpar formulário após sucesso
     }
   };
@@ -60,7 +60,9 @@ const Login = () => {
                   id="username"
                   type="text"
                   placeholder="Digite seu usuário"
-                  className={`pl-10 bg-white ${errors.username ? "border-red-500" : ""}`}
+                  className={`pl-10 bg-white ${
+                    errors.username ? "border-red-500" : ""
+                  }`}
                   disabled={isLoading}
                   {...register("username")}
                 />
@@ -80,7 +82,9 @@ const Login = () => {
                   id="password"
                   type="password"
                   placeholder="Digite sua senha"
-                  className={`pl-10 bg-white ${errors.password ? "border-red-500" : ""}`}
+                  className={`pl-10 bg-white ${
+                    errors.password ? "border-red-500" : ""
+                  }`}
                   disabled={isLoading}
                   {...register("password")}
                 />
