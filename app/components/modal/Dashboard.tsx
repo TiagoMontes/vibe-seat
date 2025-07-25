@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useDashboard } from "@/app/hooks/useDashboard";
 import { StatCard } from "@/app/components/dashboard/StatCard";
 import { RecentAppointments } from "@/app/components/dashboard/RecentAppointments";
@@ -22,16 +22,42 @@ import {
   CheckCircle,
   AlertCircle
 } from "lucide-react";
+import { DashboardResponse } from "@/app/types/api";
+import { useUserData } from "@/app/hooks/useUserData";
 
 export const Dashboard: React.FC = () => {
-  const { data, loading, error, refreshData, isAdmin } = useDashboard();
+  const { getDashboard } = useDashboard();
+  const [data, setData] = useState<DashboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useUserData();
 
-  // Memoizar a formatação da data para evitar recálculos
-  const lastUpdated = React.useMemo(() => {
-    if (!data?.lastUpdated) return "";
-    const date = new Date(data.lastUpdated);
-    return date.toLocaleString("pt-BR");
-  }, [data?.lastUpdated]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const result = await getDashboard();
+        setData(result);
+        setLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [getDashboard]);
+
+  const refreshData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getDashboard();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -101,7 +127,7 @@ export const Dashboard: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600">
-            Visão geral do sistema • Última atualização: {lastUpdated}
+            Visão geral do sistema • Última atualização: {data?.lastUpdated}
           </p>
         </div>
         <Button onClick={refreshData} variant="outline">
@@ -133,7 +159,7 @@ export const Dashboard: React.FC = () => {
           color="purple"
           description="Agendamentos realizados"
         />
-        {isAdmin && (
+        {user && user.role === 'admin' && (
           <StatCard
             title="Aprovações Pendentes"
             value={data.overview.pendingApprovals}
@@ -190,7 +216,7 @@ export const Dashboard: React.FC = () => {
         />
       </div>
 
-      {!isAdmin && data.userAppointments && (
+      {user && user.role !== 'admin' && data.userAppointments && (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
           <StatCard
             title="Meus Agendamentos"

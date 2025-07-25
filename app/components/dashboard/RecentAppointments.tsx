@@ -5,16 +5,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { DashboardRecentAppointment } from "@/app/types/dashboard";
 import { Clock, MapPin, User } from "lucide-react";
 import {
   getStatusColor,
   getStatusLabel,
   formatDateTime,
 } from "@/app/lib/utils";
+import { Appointment } from "@/app/types/api";
 
 interface RecentAppointmentsProps {
-  appointments: DashboardRecentAppointment[];
+  appointments: Appointment[];
 }
 
 const RecentAppointmentsComponent: React.FC<RecentAppointmentsProps> = ({
@@ -60,14 +60,14 @@ const RecentAppointmentsComponent: React.FC<RecentAppointmentsProps> = ({
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-gray-500" />
                       <span className="text-sm font-medium text-gray-900 truncate">
-                        {appointment.user.username}
+                        {appointment.user?.username}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-gray-500" />
                       <span className="text-sm text-gray-600 truncate">
-                        {appointment.chair.name}
+                        {appointment.chair?.name}
                       </span>
                     </div>
 
