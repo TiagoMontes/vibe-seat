@@ -3,13 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { useAtom } from "jotai";
 
-import { Input } from "@/app/components/ui/input";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Button } from "@/app/components/ui/button";
 
 import {
   Users,
-  Search,
   UserCheck,
   Shield,
   Calendar,
@@ -91,28 +88,6 @@ const Header = ({ stats }: { stats: any }) => (
       {stats.total}
     </div>
   </div>
-);
-
-const SearchBar = ({
-  searchTerm,
-  onSearchChange,
-}: {
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-}) => (
-  <Card>
-    <CardContent className="pt-6">
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Buscar por nome ou role..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-    </CardContent>
-  </Card>
 );
 
 const ErrorMessage = ({ error }: { error: string }) => (
