@@ -5,10 +5,7 @@ import { useDashboard } from "@/app/hooks/useDashboard";
 import { StatCard } from "@/app/components/dashboard/StatCard";
 import { RecentAppointments } from "@/app/components/dashboard/RecentAppointments";
 import { Button } from "@/app/components/ui/button";
-import {
-  Card,
-  CardContent
-} from "@/app/components/ui/card";
+import { Card, CardContent } from "@/app/components/ui/card";
 import {
   Users,
   Armchair,
@@ -20,43 +17,23 @@ import {
   Wrench,
   XCircle,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
-import { DashboardResponse } from "@/app/types/api";
 import { useUserData } from "@/app/hooks/useUserData";
 
 export const Dashboard: React.FC = () => {
-  const { getDashboard } = useDashboard();
-  const [data, setData] = useState<DashboardResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { getDashboard, data, loading, error } = useDashboard();
   const { user } = useUserData();
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const result = await getDashboard();
-        setData(result);
-        setLoading(false);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
-        setLoading(false);
-      }
+      await getDashboard();
     };
     fetchData();
-  }, [getDashboard]);
+  }, []);
 
   const refreshData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await getDashboard();
-      setData(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
+    await getDashboard();
   };
 
   if (loading) {
@@ -159,7 +136,7 @@ export const Dashboard: React.FC = () => {
           color="purple"
           description="Agendamentos realizados"
         />
-        {user && user.role === 'admin' && (
+        {user && user.role === "admin" && (
           <StatCard
             title="Aprovações Pendentes"
             value={data.overview.pendingApprovals}
@@ -216,7 +193,7 @@ export const Dashboard: React.FC = () => {
         />
       </div>
 
-      {user && user.role !== 'admin' && data.userAppointments && (
+      {user && user.role !== "admin" && data.userAppointments && (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
           <StatCard
             title="Meus Agendamentos"
