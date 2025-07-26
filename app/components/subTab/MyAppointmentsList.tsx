@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import {
   Card,
@@ -8,18 +9,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-
 import {
   CalendarIcon,
   ClockIcon,
-  MapPinIcon,
   AlertCircleIcon,
-  RefreshCwIcon,
   XIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "lucide-react";
-import { useMyAppointments } from "@/app/hooks/useMyAppointments";
+import { useAppointments } from "@/app/hooks/useAppointments";
+import { useToast } from "@/app/hooks/useToast";
+import {
+  myAppointmentsAtom,
+  appointmentPaginationAtom,
+  appointmentCancelLoadingAtom,
+} from "@/app/atoms/appointmentAtoms";
 
 interface MyAppointmentsListProps {
   onAppointmentChange?: () => void;
@@ -28,22 +32,47 @@ interface MyAppointmentsListProps {
 export const MyAppointmentsList = ({
   onAppointmentChange,
 }: MyAppointmentsListProps) => {
-  const {
-    appointments,
-    loading,
-    error,
-    pagination,
-    filters,
-    fetchMyAppointments,
-    cancelAppointment,
-    getStatusLabel,
-    getStatusColor,
-    canCancel,
-    isPast,
-    setFilters,
-  } = useMyAppointments();
+  const { cancelAppointment, fetchMyAppointments } =
+    useAppointments();
+  const { appointmentSuccess, appointmentError } = useToast();
+
+  // Atoms do Jotai
+  const [appointments, setAppointments] = useAtom(myAppointmentsAtom);
+  const [pagination] = useAtom(appointmentPaginationAtom);
+  const [cancelLoading, setCancelLoading] = useAtom(
+    appointmentCancelLoadingAtom
+  );
+
+  const [loading, setLoading] = useState(true); // Começar como true para evitar flash de dados antigos
+  const [error, setError] = useState<string>("");
+  const [filters, setFilters] = useState({
+    status: "all" as string,
+    page: 1,
+    limit: 10,
+  });
 
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+
+  // Fetch appointments on mount
+  useEffect(() => {
+    // Limpar dados antigos e carregar novos
+    setAppointments([]);
+    handleFetchAppointments();
+  }, [filters]);
+
+  const handleFetchAppointments = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      await fetchMyAppointments();
+    } catch (err) {
+      console.error("Erro ao buscar agendamentos:", err);
+      setError("Erro ao carregar agendamentos");
+      appointmentError("Erro ao carregar agendamentos");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStatusFilterChange = (status: string) => {
     setFilters((prev) => ({ ...prev, status, page: 1 }));
@@ -56,14 +85,21 @@ export const MyAppointmentsList = ({
   const handleCancelAppointment = async (id: number) => {
     if (window.confirm("Tem certeza que deseja cancelar este agendamento?")) {
       setCancellingId(id);
-      const success = await cancelAppointment(id);
-      if (success) {
+      setCancelLoading(true);
+      try {
+        await cancelAppointment(id);
+        appointmentSuccess("Agendamento cancelado com sucesso!");
         // Recarregar a lista para garantir sincronização
-        await fetchMyAppointments();
+        await handleFetchAppointments();
         // Notificar o componente pai sobre a mudança
         onAppointmentChange?.();
+      } catch (error) {
+        console.error("Erro ao cancelar agendamento:", error);
+        appointmentError("Erro ao cancelar agendamento");
+      } finally {
+        setCancellingId(null);
+        setCancelLoading(false);
       }
-      setCancellingId(null);
     }
   };
 
@@ -92,6 +128,52 @@ export const MyAppointmentsList = ({
       minute: "2-digit",
     });
   };
+
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      SCHEDULED: "Agendado",
+      CONFIRMED: "Confirmado",
+      COMPLETED: "Concluído",
+      CANCELLED: "Cancelado",
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = {
+      SCHEDULED: "bg-yellow-100 text-yellow-800",
+      CONFIRMED: "bg-green-100 text-green-800",
+      COMPLETED: "bg-blue-100 text-blue-800",
+      CANCELLED: "bg-red-100 text-red-800",
+    };
+    return colorMap[status] || "bg-gray-100 text-gray-800";
+  };
+
+  const canCancel = (appointment: any) => {
+    const appointmentDate = new Date(appointment.datetimeStart);
+    const now = new Date();
+    const hoursDiff =
+      (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return appointment.status === "SCHEDULED" && hoursDiff >= 3;
+  };
+
+  const isPast = (datetime: string) => {
+    const appointmentDate = new Date(datetime);
+    const now = new Date();
+    return appointmentDate < now;
+  };
+
+  // Filter appointments based on status
+  const filteredAppointments = (
+    Array.isArray(appointments) ? appointments : []
+  ).filter((appointment) => {
+    if (filters.status === "all") return true;
+    return appointment.status === filters.status;
+  });
+
+  // Debug log
+  console.log("Appointments in component:", appointments);
+  console.log("Filtered appointments:", filteredAppointments);
 
   return (
     <div className="space-y-6">
@@ -148,7 +230,7 @@ export const MyAppointmentsList = ({
             Carregando agendamentos...
           </div>
         </div>
-      ) : appointments.length === 0 ? (
+      ) : filteredAppointments.length === 0 ? (
         <div className="text-center py-12">
           <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -164,7 +246,7 @@ export const MyAppointmentsList = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {appointments.map((appointment) => {
+          {filteredAppointments.map((appointment) => {
             const { date, time } = formatDateTime(appointment.datetimeStart);
             const isPastAppointment = isPast(appointment.datetimeStart);
 
@@ -227,14 +309,6 @@ export const MyAppointmentsList = ({
 
                       {/* Additional Info */}
                       <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium">Presença:</span>
-                          <span>
-                            {appointment.presenceConfirmed
-                              ? "Confirmada"
-                              : "Não confirmada"}
-                          </span>
-                        </div>
                         {isPastAppointment && (
                           <div className="flex items-center gap-1 text-orange-600">
                             <ClockIcon className="h-4 w-4" />
@@ -251,7 +325,9 @@ export const MyAppointmentsList = ({
                           onClick={() =>
                             handleCancelAppointment(appointment.id)
                           }
-                          disabled={cancellingId === appointment.id}
+                          disabled={
+                            cancellingId === appointment.id || cancelLoading
+                          }
                           variant="outline"
                           size="sm"
                           className="text-red-600 border-red-300 hover:bg-red-50"

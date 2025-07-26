@@ -4,6 +4,9 @@ import { Appointment, Pagination, AppointmentFilters, AvailableTimesResponse } f
 // Lista de appointments do usuário
 export const appointmentsAtom = atom<Appointment[]>([]);
 
+// Lista de appointments do usuário logado (Meus Agendamentos)
+export const myAppointmentsAtom = atom<Appointment[]>([]);
+
 // Informações de paginação
 export const appointmentPaginationAtom = atom<Pagination>({
   currentPage: 1,

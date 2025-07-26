@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useAtom, useSetAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import {
   Card,
@@ -18,7 +19,14 @@ import { useAppointments } from "@/app/hooks/useAppointments";
 import { useChairs } from "@/app/hooks/useChairs";
 import { useSchedules } from "@/app/hooks/useSchedules";
 import { useAuth } from "@/app/hooks/useAuth";
-import { Chair } from "@/app/schemas/chairSchema";
+import { useToast } from "@/app/hooks/useToast";
+import {
+  availableTimesAtom,
+  availableTimesLoadingAtom,
+  appointmentCreateLoadingAtom,
+  appointmentModalOpenAtom,
+} from "@/app/atoms/appointmentAtoms";
+import { Chair } from "@/app/types/api";
 import { MyAppointmentsList } from "@/app/components/subTab/MyAppointmentsList";
 import { ScheduledAppointmentsList } from "@/app/components/subTab/ScheduledAppointmentsList";
 import {
@@ -32,8 +40,8 @@ import {
   ListIcon,
   UsersIcon,
 } from "lucide-react";
-import { PaginationType } from "@/app/types/pagination";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
+import { AppointmentModal } from "@/app/components/modal/AppointmentModal";
 
 interface ChairCardProps {
   chair: Chair;
@@ -331,19 +339,21 @@ const DatePickerModal = ({
 export const AppointmentManagement = () => {
   const { user } = useAuth();
   const { chairs, fetchChairs, loading: chairsLoading } = useChairs();
-  const {
-    schedules,
-    fetchSchedules,
-    getAvailableTimesForDate,
-    hasAvailableSchedules,
-    loading: schedulesLoading,
-  } = useSchedules();
-  const {
-    createAppointment,
-    createLoading,
-    fetchAppointments,
-    fetchAvailableTimes,
-  } = useAppointments();
+  const { fetchSchedules, loading: schedulesLoading } = useSchedules();
+  const { createAppointment, fetchAppointments, fetchAvailableTimes } =
+    useAppointments();
+  const { appointmentSuccess, appointmentError } = useToast();
+
+  // Atoms do Jotai
+  const [availableTimesData, setAvailableTimesData] =
+    useAtom(availableTimesAtom);
+  const [availableTimesLoading, setAvailableTimesLoading] = useAtom(
+    availableTimesLoadingAtom
+  );
+  const [createLoading, setCreateLoading] = useAtom(
+    appointmentCreateLoadingAtom
+  );
+  const [, setModalOpen] = useAtom(appointmentModalOpenAtom);
 
   // Local state
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -351,79 +361,7 @@ export const AppointmentManagement = () => {
   const [activeSection, setActiveSection] = useState<
     "schedule" | "my-appointments" | "scheduled-list"
   >("schedule");
-  const [availableChairsData, setAvailableChairsData] = useState<
-    Array<{
-      chairId: number;
-      chairName: string;
-      chairLocation?: string | null;
-      available: string[];
-      unavailable: string[];
-      totalSlots: number;
-      bookedSlots: number;
-      availableSlots: number;
-    }>
-  >([]);
-  const [loadingAvailableChairs, setLoadingAvailableChairs] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const [pagination, setPagination] = useState<PaginationType>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 9,
-    hasNextPage: false,
-    hasPrevPage: false,
-    nextPage: 2,
-    prevPage: 0,
-    lastPage: 1,
-  });
-
-  const itemsPerPage = 6; // Paginação local para exibição
-
-  // Fetch available chairs with pagination
-  const fetchAvailableChairs = useCallback(
-    async (date: string, page: number = 1, append: boolean = false) => {
-      if (page === 1) {
-        setLoadingAvailableChairs(true);
-      } else {
-        setLoadingMore(true);
-      }
-
-      try {
-        const queryParams = new URLSearchParams();
-        queryParams.set("date", date);
-        queryParams.set("page", page.toString());
-        queryParams.set("limit", "3");
-
-        const response = await fetch(
-          `/api/appointments/available-times?${queryParams.toString()}`
-        );
-
-        if (!response.ok) {
-          console.error("Erro ao buscar cadeiras disponíveis");
-          return;
-        }
-
-        const data = await response.json();
-
-        if (append) {
-          // Adiciona novas cadeiras às existentes
-          setAvailableChairsData((prev) => [...prev, ...data.chairs]);
-        } else {
-          // Substitui as cadeiras existentes
-          setAvailableChairsData(data.chairs);
-        }
-
-        setPagination(data.pagination);
-      } catch (error) {
-        console.error("Erro ao buscar cadeiras disponíveis:", error);
-      } finally {
-        setLoadingAvailableChairs(false);
-        setLoadingMore(false);
-      }
-    },
-    []
-  );
 
   // Fetch chairs and schedules on mount - apenas uma vez
   useEffect(() => {
@@ -437,43 +375,15 @@ export const AppointmentManagement = () => {
     loadInitialData();
   }, [isFirstLoad, fetchChairs, fetchSchedules]);
 
-  // Auto-clear messages - agora usando toasts (não é mais necessário)
-
-  // Fetch available chairs when date is selected
+  // Fetch available times when date is selected
   useEffect(() => {
     if (selectedDate) {
-      // Check if the selected date has available schedules
-      if (hasAvailableSchedules(selectedDate)) {
-        fetchAvailableTimes(selectedDate, 1, false);
-      } else {
-        setAvailableChairsData([]);
-        setPagination({
-          currentPage: 1,
-          totalPages: 1,
-          totalItems: 0,
-          itemsPerPage: 9,
-          hasNextPage: false,
-          hasPrevPage: false,
-          nextPage: 2,
-          prevPage: 0,
-          lastPage: 1,
-        });
-      }
+      // Always try to fetch available times for the selected date
+      handleFetchAvailableTimes(selectedDate, 1);
     } else {
-      setAvailableChairsData([]);
-      setPagination({
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 9,
-        hasNextPage: false,
-        hasPrevPage: false,
-        nextPage: 2,
-        prevPage: 0,
-        lastPage: 1,
-      });
+      setAvailableTimesData(null);
     }
-  }, [selectedDate]); // Removidas dependências que causam re-renders
+  }, [selectedDate]);
 
   // Sincronizar estado quando mudar de seção - apenas quando necessário
   useEffect(() => {
@@ -484,19 +394,48 @@ export const AppointmentManagement = () => {
     ) {
       fetchAppointments();
     }
-  }, [activeSection]);
+  }, [activeSection, fetchAppointments]);
 
-  // Paginate available chairs for display
-  const totalDisplayPages = Math.ceil(
-    availableChairsData.length / itemsPerPage
+  console.log(chairs)
+
+  // Função para buscar horários disponíveis usando o hook
+  const handleFetchAvailableTimes = useCallback(
+    async (date: string, page: number = 1, append: boolean = false) => {
+      setAvailableTimesLoading(true);
+      try {
+        const data = await fetchAvailableTimes(date, page, 3);
+        if (append && availableTimesData?.chairs) {
+          // Adiciona novas cadeiras às existentes
+          setAvailableTimesData({
+            ...data,
+            chairs: [...availableTimesData.chairs, ...data.chairs],
+          });
+        } else {
+          // Substitui as cadeiras existentes
+          setAvailableTimesData(data);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar horários disponíveis:", error);
+        appointmentError("Erro ao buscar horários disponíveis");
+      } finally {
+        setAvailableTimesLoading(false);
+      }
+    },
+    [
+      fetchAvailableTimes,
+      setAvailableTimesData,
+      setAvailableTimesLoading,
+      appointmentError,
+      availableTimesData,
+    ]
   );
-  const startIndex = 0; // Sempre mostra todas as cadeiras carregadas
-  const paginatedChairs = availableChairsData.slice(startIndex);
 
   // Get available times for a specific chair
   const getAvailableTimes = useCallback(
     (chairId: number) => {
-      const chairData = availableChairsData.find(
+      if (!availableTimesData?.chairs) return [];
+
+      const chairData = availableTimesData.chairs.find(
         (chair) => chair.chairId === chairId
       );
       if (!chairData) return [];
@@ -519,19 +458,18 @@ export const AppointmentManagement = () => {
         a.time.localeCompare(b.time)
       );
     },
-    [availableChairsData]
+    [availableTimesData]
   );
 
   const handleDateSelect = useCallback(async (date: string) => {
     setSelectedDate(date);
-    // Não precisamos buscar agendamentos aqui, pois só precisamos dos dados quando mudar de seção
   }, []);
 
   const handleTimeSelect = useCallback(
     async (chairId: number, time: string) => {
       if (!selectedDate) return;
 
-      const chairData = availableChairsData.find(
+      const chairData = availableTimesData?.chairs?.find(
         (chair) => chair.chairId === chairId
       );
       if (!chairData) return;
@@ -543,31 +481,45 @@ export const AppointmentManagement = () => {
       const confirmMessage = `Deseja realmente agendar uma sessão de massagem na ${chairData.chairName} para ${formattedDate} às ${formattedTime}?`;
 
       if (window.confirm(confirmMessage)) {
-        const success = await createAppointment({
-          chairId,
-          datetimeStart: time,
-        });
+        setCreateLoading(true);
+        try {
+          const success = await createAppointment({
+            chairId,
+            datetimeStart: time,
+          });
 
-        // Refresh available chairs only after successful booking
-        if (success) {
-          await fetchAvailableChairs(selectedDate, 1, false);
+          if (success) {
+            appointmentSuccess("Agendamento criado com sucesso!");
+            // Refresh available times after successful booking
+            await handleFetchAvailableTimes(selectedDate, 1);
+          }
+        } catch (error) {
+          console.error("Erro ao criar agendamento:", error);
+          appointmentError("Erro ao criar agendamento");
+        } finally {
+          setCreateLoading(false);
         }
-        // Se não foi bem-sucedido, não recarrega o grid
-        // O toast já foi mostrado pelo useAppointments
       }
     },
-    [selectedDate, availableChairsData, createAppointment]
+    [
+      selectedDate,
+      availableTimesData,
+      createAppointment,
+      setCreateLoading,
+      appointmentSuccess,
+      appointmentError,
+      handleFetchAvailableTimes,
+    ]
   );
 
   const handleLoadMore = useCallback(async () => {
-    if (pagination.hasNextPage && selectedDate) {
-      await fetchAvailableChairs(
+    if (availableTimesData?.pagination.hasNextPage && selectedDate) {
+      await handleFetchAvailableTimes(
         selectedDate,
-        pagination.currentPage + 1,
-        true
+        availableTimesData.pagination.currentPage + 1
       );
     }
-  }, [pagination.hasNextPage, pagination.currentPage, selectedDate]);
+  }, [availableTimesData?.pagination, selectedDate, handleFetchAvailableTimes]);
 
   // Função para atualizar tudo quando clicar no botão atualizar
   const handleRefresh = useCallback(async () => {
@@ -583,9 +535,16 @@ export const AppointmentManagement = () => {
 
     // Se há uma data selecionada, atualizar também as cadeiras disponíveis
     if (selectedDate) {
-      await fetchAvailableChairs(selectedDate, 1, false);
+      await handleFetchAvailableTimes(selectedDate, 1);
     }
-  }, [selectedDate, activeSection]); // Removido fetchAppointments e fetchAvailableChairs das dependências
+  }, [
+    selectedDate,
+    activeSection,
+    fetchChairs,
+    fetchSchedules,
+    fetchAppointments,
+    handleFetchAvailableTimes,
+  ]);
 
   // Função para atualizar agendamentos quando houver mudanças em outras seções
   const handleAppointmentChange = useCallback(async () => {
@@ -599,16 +558,21 @@ export const AppointmentManagement = () => {
 
     // Se há uma data selecionada, atualizar também as cadeiras disponíveis
     if (selectedDate) {
-      await fetchAvailableChairs(selectedDate, 1, false);
+      await handleFetchAvailableTimes(selectedDate, 1);
     }
-  }, [selectedDate, activeSection, fetchAppointments, fetchAvailableChairs]);
+  }, [
+    selectedDate,
+    activeSection,
+    fetchAppointments,
+    handleFetchAvailableTimes,
+  ]);
 
   const formatSelectedDate = (date: string) => {
     return new Date(date).toLocaleDateString("pt-BR");
   };
 
   // Loading específico para o grid de cadeiras
-  const isGridLoading = loadingAvailableChairs;
+  const isGridLoading = availableTimesLoading;
 
   // Loading inicial (apenas na primeira carga)
   const isInitialLoading = chairsLoading || schedulesLoading;
@@ -667,10 +631,16 @@ export const AppointmentManagement = () => {
             <RefreshCwIcon className="h-4 w-4" />
             Atualizar
           </Button>
+          <Button
+            variant="default"
+            onClick={() => setModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <CalendarIcon className="h-4 w-4" />
+            Novo Agendamento
+          </Button>
         </div>
       </div>
-
-      {/* Messages - agora usando toasts */}
 
       {/* Render appropriate section based on activeSection */}
       {activeSection === "schedule" ? (
@@ -750,26 +720,21 @@ export const AppointmentManagement = () => {
                 </Card>
               ))}
             </div>
-          ) : paginatedChairs.length === 0 ? (
+          ) : !availableTimesData?.chairs ||
+            availableTimesData.chairs.length === 0 ? (
             <div className="text-center py-12">
               <MapPinIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Nenhuma cadeira disponível
               </h3>
               <p className="text-gray-600">
-                {hasAvailableSchedules(selectedDate)
-                  ? `Não há cadeiras ativas para ${formatSelectedDate(
-                      selectedDate
-                    )}`
-                  : `Não há configurações de horário para ${formatSelectedDate(
-                      selectedDate
-                    )}`}
+                Não há cadeiras ativas para {formatSelectedDate(selectedDate)}
               </p>
             </div>
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedChairs.map((chairData) => (
+                {availableTimesData.chairs.map((chairData) => (
                   <ChairCard
                     key={chairData.chairId}
                     chair={{
@@ -780,6 +745,7 @@ export const AppointmentManagement = () => {
                       description: "",
                       createdAt: "",
                       updatedAt: "",
+                      deletedAt: null,
                     }}
                     availableTimes={getAvailableTimes(chairData.chairId)}
                     onTimeSelect={handleTimeSelect}
@@ -790,24 +756,24 @@ export const AppointmentManagement = () => {
               </div>
 
               {/* Load More Button */}
-              {pagination.totalItems > 3 && (
+              {availableTimesData.pagination.totalItems > 3 && (
                 <PaginationComponent
-                  hasNextPage={pagination.hasNextPage}
-                  hasPrevPage={pagination.hasPrevPage}
-                  currentPage={pagination.currentPage}
-                  nextPage={pagination.nextPage}
-                  prevPage={pagination.prevPage}
-                  lastPage={pagination.totalPages}
-                  fetchAvailableChairs={fetchAvailableChairs}
+                  hasNextPage={availableTimesData.pagination.hasNextPage}
+                  hasPrevPage={availableTimesData.pagination.hasPrevPage}
+                  currentPage={availableTimesData.pagination.currentPage}
+                  nextPage={availableTimesData.pagination.nextPage || 0}
+                  prevPage={availableTimesData.pagination.prevPage || 0}
+                  lastPage={availableTimesData.pagination.lastPage}
+                  goToPage={handleFetchAvailableTimes}
                   selectedDate={selectedDate}
                 />
               )}
 
               {/* Pagination Info */}
-              {pagination.totalItems > 0 && (
+              {availableTimesData.pagination.totalItems > 0 && (
                 <div className="text-center text-sm text-gray-600">
-                  Mostrando {availableChairsData.length} de{" "}
-                  {pagination.totalItems} cadeiras
+                  Mostrando {availableTimesData.chairs.length} de{" "}
+                  {availableTimesData.pagination.totalItems} cadeiras
                 </div>
               )}
             </>
@@ -828,6 +794,9 @@ export const AppointmentManagement = () => {
           onAppointmentChange={handleAppointmentChange}
         />
       )}
+
+      {/* Appointment Modal */}
+      <AppointmentModal />
     </div>
   );
 };

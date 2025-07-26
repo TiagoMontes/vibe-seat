@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAtom, useSetAtom } from "jotai";
 import {
   Dialog,
   DialogContent,
@@ -18,39 +19,46 @@ import {
 } from "@/app/components/ui/select";
 import { useAppointments } from "@/app/hooks/useAppointments";
 import { useChairs } from "@/app/hooks/useChairs";
-import { Chair } from "@/app/schemas/chairSchema";
+import { useToast } from "@/app/hooks/useToast";
+import {
+  appointmentModalOpenAtom,
+  selectedChairIdAtom,
+  selectedDateAtom,
+  selectedTimeAtom,
+  availableTimesAtom,
+  availableTimesLoadingAtom,
+  appointmentCreateLoadingAtom,
+} from "@/app/atoms/appointmentAtoms";
+import { Chair } from "@/app/types/api";
 import { CalendarIcon, ClockIcon, CheckIcon, XIcon } from "lucide-react";
 
 export const AppointmentModal = () => {
-  const {
-    modalOpen,
-    closeModal,
-    selectedChairId,
-    setSelectedChairId,
-    selectedDate,
-    setSelectedDate,
-    selectedTime,
-    setSelectedTime,
-    availableTimes,
-    fetchAvailableTimes,
-    createAppointment,
-    createLoading,
-    availableTimesLoading,
-    error,
-    successMessage,
-    clearMessages,
-  } = useAppointments();
-
+  const { fetchAvailableTimes, createAppointment } = useAppointments();
   const { chairs, fetchChairs } = useChairs();
+  const { appointmentSuccess, appointmentError } = useToast();
+
+  // Atoms do Jotai
+  const [modalOpen, setModalOpen] = useAtom(appointmentModalOpenAtom);
+  const [selectedChairId, setSelectedChairId] = useAtom(selectedChairIdAtom);
+  const [selectedDate, setSelectedDate] = useAtom(selectedDateAtom);
+  const [selectedTime, setSelectedTime] = useAtom(selectedTimeAtom);
+  const [availableTimesData, setAvailableTimesData] =
+    useAtom(availableTimesAtom);
+  const [availableTimesLoading, setAvailableTimesLoading] = useAtom(
+    availableTimesLoadingAtom
+  );
+  const [createLoading, setCreateLoading] = useAtom(
+    appointmentCreateLoadingAtom
+  );
+
   const [activeChairs, setActiveChairs] = useState<Chair[]>([]);
 
   // Fetch chairs when modal opens
   useEffect(() => {
     if (modalOpen) {
       fetchChairs();
-      clearMessages();
     }
-  }, [modalOpen, fetchChairs, clearMessages]);
+  }, [modalOpen, fetchChairs]);
 
   // Filter active chairs
   useEffect(() => {
@@ -60,9 +68,51 @@ export const AppointmentModal = () => {
   // Fetch available times when chair and date are selected
   useEffect(() => {
     if (selectedChairId && selectedDate) {
-      fetchAvailableTimes(selectedChairId, selectedDate);
+      handleFetchAvailableTimes(selectedDate, 1);
     }
-  }, [selectedChairId, selectedDate, fetchAvailableTimes]);
+  }, [selectedChairId, selectedDate]);
+
+  // Função para buscar horários disponíveis
+  const handleFetchAvailableTimes = async (date: string, page: number = 1) => {
+    setAvailableTimesLoading(true);
+    try {
+      const data = await fetchAvailableTimes(date, page, 10);
+      setAvailableTimesData(data);
+    } catch (error) {
+      console.error("Erro ao buscar horários disponíveis:", error);
+      appointmentError("Erro ao buscar horários disponíveis");
+    } finally {
+      setAvailableTimesLoading(false);
+    }
+  };
+
+  // Get available times for the selected chair
+  const getAvailableTimesForChair = () => {
+    if (!availableTimesData?.chairs || !selectedChairId) return [];
+
+    const chairData = availableTimesData.chairs.find(
+      (chair) => chair.chairId === selectedChairId
+    );
+    if (!chairData) return [];
+
+    // Combina horários disponíveis e indisponíveis com status
+    const availableTimes = chairData.available.map((time) => ({
+      time,
+      available: true,
+      reason: "Disponível",
+    }));
+
+    const unavailableTimes = chairData.unavailable.map((time) => ({
+      time,
+      available: false,
+      reason: "Ocupado",
+    }));
+
+    // Combina e ordena por horário
+    return [...availableTimes, ...unavailableTimes].sort((a, b) =>
+      a.time.localeCompare(b.time)
+    );
+  };
 
   // Get minimum date (today)
   const getMinDate = () => {
@@ -84,18 +134,35 @@ export const AppointmentModal = () => {
 
     const datetimeStart = `${selectedDate}T${selectedTime}:00`;
 
-    await createAppointment({
-      chairId: selectedChairId,
-      datetimeStart,
-    });
+    setCreateLoading(true);
+    try {
+      const success = await createAppointment({
+        chairId: selectedChairId,
+        datetimeStart,
+      });
+
+      if (success) {
+        appointmentSuccess("Agendamento criado com sucesso!");
+        handleClose();
+      }
+    } catch (error) {
+      console.error("Erro ao criar agendamento:", error);
+      appointmentError("Erro ao criar agendamento");
+    } finally {
+      setCreateLoading(false);
+    }
   };
 
   const handleClose = () => {
-    closeModal();
+    setModalOpen(false);
+    setSelectedChairId(null);
+    setSelectedDate("");
     setSelectedTime("");
+    setAvailableTimesData(null);
   };
 
   const isFormValid = selectedChairId && selectedDate && selectedTime;
+  const availableTimes = getAvailableTimesForChair();
 
   return (
     <Dialog open={modalOpen} onOpenChange={handleClose}>
@@ -108,21 +175,6 @@ export const AppointmentModal = () => {
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Error/Success Messages */}
-          {error && (
-            <div className="flex items-center gap-2 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
-              <XIcon className="h-4 w-4" />
-              {error}
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="flex items-center gap-2 p-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
-              <CheckIcon className="h-4 w-4" />
-              {successMessage}
-            </div>
-          )}
-
           {/* Chair Selection */}
           <div className="space-y-2">
             <Label htmlFor="chair">Cadeira</Label>
@@ -185,9 +237,9 @@ export const AppointmentModal = () => {
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                   Carregando horários...
                 </div>
-              ) : availableTimes?.times.length ? (
+              ) : availableTimes.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                  {availableTimes.times.map((timeSlot) => (
+                  {availableTimes.map((timeSlot) => (
                     <button
                       key={timeSlot.time}
                       onClick={() =>

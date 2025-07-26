@@ -181,7 +181,7 @@ export interface AppointmentFilters {
   page?: number;
   limit?: number;
   search?: string;
-  status?: AppointmentStatus;
+  status?: AppointmentStatus | 'all';
   sortBy?: 'newest' | 'oldest' | 'datetime-asc' | 'datetime-desc';
 }
 

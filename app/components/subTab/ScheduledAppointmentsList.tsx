@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import {
   Card,
@@ -20,7 +21,14 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "lucide-react";
-import { useScheduledAppointments } from "@/app/hooks/useScheduledAppointments";
+import { useAppointments } from "@/app/hooks/useAppointments";
+import { useToast } from "@/app/hooks/useToast";
+import {
+  appointmentsAtom,
+  appointmentPaginationAtom,
+  appointmentCancelLoadingAtom,
+  appointmentConfirmLoadingAtom,
+} from "@/app/atoms/appointmentAtoms";
 
 interface ScheduledAppointmentsListProps {
   onAppointmentChange?: () => void;
@@ -29,60 +37,161 @@ interface ScheduledAppointmentsListProps {
 export const ScheduledAppointmentsList = ({
   onAppointmentChange,
 }: ScheduledAppointmentsListProps) => {
-  const {
-    appointments,
-    loading,
-    error,
-    pagination,
-    filters,
-    fetchScheduledAppointments,
-    confirmAppointment,
-    cancelAppointment,
-    getStatusLabel,
-    getStatusColor,
-    formatDateTime,
-    formatCreatedAt,
-    setFilters,
-  } = useScheduledAppointments();
+  const { fetchAppointments, confirmAppointment, cancelAppointment } =
+    useAppointments();
+  const { appointmentSuccess, appointmentError } = useToast();
+
+  // Atoms do Jotai
+  const [appointments, setAppointments] = useAtom(appointmentsAtom);
+  const [pagination, setPagination] = useAtom(appointmentPaginationAtom);
+  const [cancelLoading, setCancelLoading] = useAtom(
+    appointmentCancelLoadingAtom
+  );
+  const [confirmLoading, setConfirmLoading] = useAtom(
+    appointmentConfirmLoadingAtom
+  );
+
+  const [loading, setLoading] = useState(true); // Começar como true para evitar flash de dados antigos
+  const [error, setError] = useState<string>("");
+  const [filters, setFilters] = useState({
+    status: "all" as "all" | "SCHEDULED" | "CONFIRMED" | "CANCELLED",
+    page: 1,
+    limit: 10,
+  });
 
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+
+  // Fetch appointments on mount
+  useEffect(() => {
+    // Limpar dados antigos e carregar novos
+    setAppointments([]);
+    handleFetchAppointments();
+  }, [filters]);
+
+  const handleFetchAppointments = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      await fetchAppointments({
+        page: filters.page,
+        limit: filters.limit,
+        status: filters.status,
+      });
+    } catch (err) {
+      console.error("Erro ao buscar agendamentos:", err);
+      setError("Erro ao carregar agendamentos");
+      appointmentError("Erro ao carregar agendamentos");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePageChange = (page: number) => {
     setFilters((prev) => ({ ...prev, page }));
   };
 
   const handleStatusFilterChange = (status: string) => {
-    setFilters((prev) => ({ ...prev, status: status as any, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      status: status as "all" | "SCHEDULED" | "CONFIRMED" | "CANCELLED",
+      page: 1,
+    }));
   };
 
   const handleConfirmAppointment = async (id: number) => {
     if (window.confirm("Tem certeza que deseja confirmar este agendamento?")) {
       setConfirmingId(id);
-      const success = await confirmAppointment(id);
-      if (success) {
+      setConfirmLoading(true);
+      try {
+        await confirmAppointment(id);
+        appointmentSuccess("Agendamento confirmado com sucesso!");
         // Recarregar a lista para garantir sincronização
-        await fetchScheduledAppointments();
+        await handleFetchAppointments();
         // Notificar o componente pai sobre a mudança
         onAppointmentChange?.();
+      } catch (error) {
+        console.error("Erro ao confirmar agendamento:", error);
+        appointmentError("Erro ao confirmar agendamento");
+      } finally {
+        setConfirmingId(null);
+        setConfirmLoading(false);
       }
-      setConfirmingId(null);
     }
   };
 
   const handleCancelAppointment = async (id: number) => {
     if (window.confirm("Tem certeza que deseja cancelar este agendamento?")) {
       setCancellingId(id);
-      const success = await cancelAppointment(id);
-      if (success) {
+      setCancelLoading(true);
+      try {
+        await cancelAppointment(id);
+        appointmentSuccess("Agendamento cancelado com sucesso!");
         // Recarregar a lista para garantir sincronização
-        await fetchScheduledAppointments();
+        await handleFetchAppointments();
         // Notificar o componente pai sobre a mudança
         onAppointmentChange?.();
+      } catch (error) {
+        console.error("Erro ao cancelar agendamento:", error);
+        appointmentError("Erro ao cancelar agendamento");
+      } finally {
+        setCancellingId(null);
+        setCancelLoading(false);
       }
-      setCancellingId(null);
     }
   };
+
+  const formatDateTime = (datetime: string) => {
+    const date = new Date(datetime);
+    return {
+      date: date.toLocaleDateString("pt-BR", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      time: date.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  };
+
+  const formatCreatedAt = (createdAt: string) => {
+    return new Date(createdAt).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      SCHEDULED: "Agendado",
+      CONFIRMED: "Confirmado",
+      COMPLETED: "Concluído",
+      CANCELLED: "Cancelado",
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = {
+      SCHEDULED: "bg-yellow-100 text-yellow-800",
+      CONFIRMED: "bg-green-100 text-green-800",
+      COMPLETED: "bg-blue-100 text-blue-800",
+      CANCELLED: "bg-red-100 text-red-800",
+    };
+    return colorMap[status] || "bg-gray-100 text-gray-800";
+  };
+
+  // Filter appointments based on status
+  const filteredAppointments = appointments.filter((appointment) => {
+    if (filters.status === "all") return true;
+    return appointment.status === filters.status;
+  });
 
   return (
     <div className="space-y-6">
@@ -141,7 +250,7 @@ export const ScheduledAppointmentsList = ({
             Carregando agendamentos...
           </div>
         </div>
-      ) : appointments.length === 0 ? (
+      ) : filteredAppointments.length === 0 ? (
         <div className="text-center py-12">
           <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -157,7 +266,7 @@ export const ScheduledAppointmentsList = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {appointments.map((appointment) => {
+          {filteredAppointments.map((appointment) => {
             const { date, time } = formatDateTime(appointment.datetimeStart);
 
             return (
@@ -213,14 +322,15 @@ export const ScheduledAppointmentsList = ({
                         <div className="flex items-center gap-2">
                           <UserIcon className="h-4 w-4 text-gray-500" />
                           <span className="text-gray-700">
-                            {appointment.user.username}
+                            {appointment.user?.username ||
+                              "Usuário não informado"}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPinIcon className="h-4 w-4 text-gray-500" />
                           <span className="text-gray-700">
-                            {appointment.chair.name}
-                            {appointment.chair.location && (
+                            {appointment.chair?.name || "Cadeira não informada"}
+                            {appointment.chair?.location && (
                               <span className="text-gray-500">
                                 {" "}
                                 - {appointment.chair.location}
@@ -229,16 +339,6 @@ export const ScheduledAppointmentsList = ({
                           </span>
                         </div>
                       </div>
-
-                      {/* Presence Confirmation */}
-                      {appointment.presenceConfirmed && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <CheckIcon className="h-4 w-4 text-green-600" />
-                          <span className="text-green-700 font-medium">
-                            Presença confirmada
-                          </span>
-                        </div>
-                      )}
                     </div>
 
                     {/* Actions */}
@@ -249,7 +349,9 @@ export const ScheduledAppointmentsList = ({
                           onClick={() =>
                             handleConfirmAppointment(appointment.id)
                           }
-                          disabled={confirmingId === appointment.id}
+                          disabled={
+                            confirmingId === appointment.id || confirmLoading
+                          }
                           variant="outline"
                           size="sm"
                           className="text-green-600 border-green-300 hover:bg-green-50"
@@ -275,7 +377,9 @@ export const ScheduledAppointmentsList = ({
                           onClick={() =>
                             handleCancelAppointment(appointment.id)
                           }
-                          disabled={cancellingId === appointment.id}
+                          disabled={
+                            cancellingId === appointment.id || cancelLoading
+                          }
                           variant="outline"
                           size="sm"
                           className="text-red-600 border-red-300 hover:bg-red-50"

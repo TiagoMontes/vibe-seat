@@ -1,25 +1,27 @@
 import { useCallback } from 'react';
 import { useSetAtom } from 'jotai';
-import { appointmentsAtom, appointmentPaginationAtom } from '@/app/atoms/appointmentAtoms';
+import { appointmentsAtom, myAppointmentsAtom, appointmentPaginationAtom } from '@/app/atoms/appointmentAtoms';
 import { AppointmentFilters, CreateAppointmentRequest, AppointmentListResponse, AvailableTimesResponse } from '@/app/types/api';
 
 export const useAppointments = () => {
   const setAppointments = useSetAtom(appointmentsAtom);
+  const setMyAppointments = useSetAtom(myAppointmentsAtom);
   const setPagination = useSetAtom(appointmentPaginationAtom);
 
-  const fetchAppointments = useCallback(async () => {
+  const fetchAppointments = useCallback(async (customFilters?: Partial<AppointmentFilters>) => {
     try {
       const filters: AppointmentFilters = {
         page: 1,
         limit: 10,
-        status: "SCHEDULED",
+        status: "all", // Mudança: começar com "all" para mostrar todos
+        ...customFilters,
       };
 
       const queryParams = new URLSearchParams();
       
       if (filters.page) queryParams.set('page', filters.page.toString());
       if (filters.limit) queryParams.set('limit', filters.limit.toString());
-      if (filters.status) queryParams.set('status', filters.status);
+      if (filters.status && filters.status !== "all") queryParams.set('status', filters.status);
       if (filters.search) queryParams.set('search', filters.search);
       if (filters.sortBy) queryParams.set('sortBy', filters.sortBy);
 
@@ -57,6 +59,32 @@ export const useAppointments = () => {
       throw error;
     }
   }, [setAppointments, setPagination]);
+
+  const fetchMyAppointments = useCallback(async () => {
+    try {
+      const response = await fetch('/api/appointments/my-appointments');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao buscar agendamentos');
+      }
+
+      const responseData = await response.json();
+
+      if (!responseData.success) {
+        throw new Error(responseData.message || 'Erro ao buscar agendamentos');
+      }
+      
+      // A API retorna { data: { appointments: [...] } }
+      const appointments = responseData.data?.appointments || [];
+      console.log('MyAppointments loaded:', appointments);
+      setMyAppointments(appointments);
+      return appointments;
+    } catch (error) {
+      console.error('Erro ao buscar agendamentos:', error);
+      throw error;
+    }
+  }, [setMyAppointments]);
 
   const fetchAvailableTimes = useCallback(async (date: string, page?: number, limit?: number) => {
     try {
@@ -157,6 +185,7 @@ export const useAppointments = () => {
 
   return {
     fetchAppointments,
+    fetchMyAppointments,
     fetchAvailableTimes,
     createAppointment,
     cancelAppointment,
