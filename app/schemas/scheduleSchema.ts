@@ -1,4 +1,5 @@
 import * as yup from "yup";
+import { z } from "zod";
 
 // Time validation regex (HH:MM format)
 const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -150,10 +151,56 @@ export const apiScheduleSchema = yup.object({
     .required("Dias da semana são obrigatórios"),
 });
 
+// Zod schemas
+export const timeRangeZodSchema = z.object({
+  start: z
+    .string()
+    .min(1, "Horário de início é obrigatório")
+    .regex(timeRegex, "Formato de horário inválido (HH:MM)"),
+  end: z
+    .string()
+    .min(1, "Horário de fim é obrigatório")
+    .regex(timeRegex, "Formato de horário inválido (HH:MM)"),
+}).refine((data) => data.end > data.start, {
+  message: "Horário de fim deve ser após o início",
+  path: ["end"],
+});
+
+export const apiScheduleZodSchema = z.object({
+  timeRanges: z
+    .array(timeRangeZodSchema)
+    .min(1, "Adicione pelo menos um intervalo de horário"),
+  validFrom: z
+    .string()
+    .optional()
+    .refine((value) => {
+      if (!value) return true;
+      return !isNaN(Date.parse(value));
+    }, "Data inválida"),
+  validTo: z
+    .string()
+    .optional()
+    .refine((value) => {
+      if (!value) return true;
+      return !isNaN(Date.parse(value));
+    }, "Data inválida"),
+  dayIds: z
+    .array(z.number().min(1))
+    .min(1, "Selecione pelo menos um dia da semana"),
+}).refine((data) => {
+  if (!data.validFrom || !data.validTo) return true;
+  return new Date(data.validTo) >= new Date(data.validFrom);
+}, {
+  message: "Data fim deve ser após data início",
+  path: ["validTo"],
+});
+
 export type ScheduleFormData = yup.InferType<typeof scheduleSchema>;
 export type ScheduleUpdateFormData = yup.InferType<typeof scheduleUpdateSchema>;
 export type ApiScheduleFormData = yup.InferType<typeof apiScheduleSchema>;
 export type TimeRangeFormData = yup.InferType<typeof timeRangeSchema>;
+export type ApiScheduleZodFormData = z.infer<typeof apiScheduleZodSchema>;
+export type TimeRangeZodFormData = z.infer<typeof timeRangeZodSchema>;
 
 export interface Schedule {
   id: number;

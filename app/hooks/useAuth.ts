@@ -14,7 +14,7 @@ export const useAuth = () => {
   const { data: session } = useSession();
   const setUser = useSetAtom(userAtom);
 
-  const login = async (loginData: LoginRequest): Promise<{ success: boolean; user?: any }> => {
+  const login = async (loginData: LoginRequest): Promise<{ success: boolean; user?: { id: number; username: string; role: string; } }> => {
     setLoading(true);
     setError(null);
     
@@ -54,7 +54,11 @@ export const useAuth = () => {
 
       return { 
         success: true, 
-        user: session?.user 
+        user: session?.user ? {
+          id: Number(session.user.id),
+          username: session.user.username || '',
+          role: session.user.role || ''
+        } : undefined
       };
       
     } catch (error) {

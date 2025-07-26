@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useAtom } from "jotai";
 
 import { Card, CardContent } from "@/app/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 import {
   Users,
@@ -19,7 +20,12 @@ import {
   type RegisteredUser,
 } from "@/app/atoms/userManagementAtoms";
 
-import { formatDateTime, getRoleNameById, useDebounce } from "@/app/lib/utils";
+import {
+  formatDateTime,
+  getRoleNameById,
+  useDebounce,
+  getStatusVariant,
+} from "@/app/lib/utils";
 import { useUserManagementData } from "@/app/hooks/useUserManagementData";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 import GenericFilter from "@/app/components/GenericFilter";
@@ -28,21 +34,6 @@ import EmptyState from "@/app/components/EmptyState";
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
-
-const getStatusBadge = (status: string): string => {
-  const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
-
-  const statusStyles = {
-    pending: "bg-yellow-100 text-yellow-800",
-    approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
-    default: "bg-gray-100 text-gray-800",
-  };
-
-  const statusStyle =
-    statusStyles[status as keyof typeof statusStyles] || statusStyles.default;
-  return `${baseClasses} ${statusStyle}`;
-};
 
 const getStatusLabel = (status: string): string => {
   const statusLabels = {
@@ -77,7 +68,11 @@ const filterUsers = (
 // SUB-COMPONENTS
 // ============================================================================
 
-const Header = ({ stats }: { stats: any }) => (
+const Header = ({
+  stats,
+}: {
+  stats: { total: number; pending: number; approved: number; rejected: number };
+}) => (
   <div className="flex items-center justify-between lg:justify-start gap-4">
     <div className="flex items-center gap-3">
       <UserCheck className="h-6 w-6 text-blue-600" />
@@ -114,9 +109,17 @@ const UserCard = ({ user }: { user: RegisteredUser }) => {
             <h3 className="text-lg font-semibold text-gray-900 truncate">
               {user.username}
             </h3>
-            <span className={getStatusBadge(user.status)}>
+            <Badge
+              variant={
+                getStatusVariant(user.status) as
+                  | "default"
+                  | "secondary"
+                  | "destructive"
+                  | "outline"
+              }
+            >
               {getStatusLabel(user.status)}
-            </span>
+            </Badge>
           </div>
 
           {/* Metadata */}
@@ -251,8 +254,6 @@ export const RegisteredUsers = () => {
                   ? "Nenhum usuário corresponde aos filtros aplicados."
                   : "Ainda não há usuários cadastrados no sistema."
               }
-              hasActiveFilters={hasActiveFilters}
-              onClearFilters={handleClearFilters}
             />
           ) : (
             <UserGrid users={users} />

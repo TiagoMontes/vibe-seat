@@ -141,12 +141,29 @@ export const getStatusColor = (status: string) => {
   }
 };
 
+export const getStatusVariant = (status: string) => {
+  switch (status) {
+    case "SCHEDULED":
+      return "secondary";
+    case "CONFIRMED":
+      return "default";
+    case "COMPLETED":
+      return "default";
+    case "CANCELLED":
+      return "destructive";
+    default:
+      return "outline";
+  }
+};
+
 export const getStatusLabel = (status: string) => {
   switch (status) {
     case "SCHEDULED":
       return "Agendado";
     case "CONFIRMED":
       return "Confirmado";
+    case "COMPLETED":
+      return "Concluído";
     case "CANCELLED":
       return "Cancelado";
     default:

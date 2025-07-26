@@ -5,9 +5,11 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function LoginPage() {
-  const { isAuthenticated, status } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { status } = useSession();
   const [showRegister, setShowRegister] = useState(false);
   const router = useRouter();
 

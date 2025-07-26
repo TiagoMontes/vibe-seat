@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -19,11 +19,15 @@ import {
 } from "lucide-react";
 import { useAppointments } from "@/app/hooks/useAppointments";
 import { useToast } from "@/app/hooks/useToast";
+import { useConfirm } from "@/app/hooks/useConfirm";
 import {
   myAppointmentsAtom,
   appointmentPaginationAtom,
   appointmentCancelLoadingAtom,
 } from "@/app/atoms/appointmentAtoms";
+import { Badge } from "@/components/ui/badge";
+import { getStatusLabel, getStatusVariant } from "@/app/lib/utils";
+import { Appointment } from "@/app/types/api";
 
 interface MyAppointmentsListProps {
   onAppointmentChange?: () => void;
@@ -32,9 +36,9 @@ interface MyAppointmentsListProps {
 export const MyAppointmentsList = ({
   onAppointmentChange,
 }: MyAppointmentsListProps) => {
-  const { cancelAppointment, fetchMyAppointments } =
-    useAppointments();
+  const { cancelAppointment, fetchMyAppointments } = useAppointments();
   const { appointmentSuccess, appointmentError } = useToast();
+  const { confirm, ConfirmComponent } = useConfirm();
 
   // Atoms do Jotai
   const [appointments, setAppointments] = useAtom(myAppointmentsAtom);
@@ -53,26 +57,36 @@ export const MyAppointmentsList = ({
 
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
-  // Fetch appointments on mount
-  useEffect(() => {
-    // Limpar dados antigos e carregar novos
-    setAppointments([]);
-    handleFetchAppointments();
-  }, [filters]);
+  // Use refs to avoid dependency issues
+  const fetchMyAppointmentsRef = useRef(fetchMyAppointments);
+  const appointmentErrorRef = useRef(appointmentError);
+  const setAppointmentsRef = useRef(setAppointments);
 
-  const handleFetchAppointments = async () => {
+  // Update refs when functions change
+  fetchMyAppointmentsRef.current = fetchMyAppointments;
+  appointmentErrorRef.current = appointmentError;
+  setAppointmentsRef.current = setAppointments;
+
+  const handleFetchAppointments = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      await fetchMyAppointments();
+      await fetchMyAppointmentsRef.current();
     } catch (err) {
       console.error("Erro ao buscar agendamentos:", err);
       setError("Erro ao carregar agendamentos");
-      appointmentError("Erro ao carregar agendamentos");
+      appointmentErrorRef.current("Erro ao carregar agendamentos");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Fetch appointments on mount and when filters change
+  useEffect(() => {
+    // Limpar dados antigos e carregar novos
+    setAppointmentsRef.current([]);
+    handleFetchAppointments();
+  }, [filters.status, filters.page, filters.limit, handleFetchAppointments]);
 
   const handleStatusFilterChange = (status: string) => {
     setFilters((prev) => ({ ...prev, status, page: 1 }));
@@ -83,7 +97,16 @@ export const MyAppointmentsList = ({
   };
 
   const handleCancelAppointment = async (id: number) => {
-    if (window.confirm("Tem certeza que deseja cancelar este agendamento?")) {
+    const confirmed = await confirm({
+      title: "Cancelar Agendamento",
+      description:
+        "Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.",
+      confirmText: "Cancelar Agendamento",
+      cancelText: "Manter Agendamento",
+      destructive: true,
+    });
+
+    if (confirmed) {
       setCancellingId(id);
       setCancelLoading(true);
       try {
@@ -129,27 +152,7 @@ export const MyAppointmentsList = ({
     });
   };
 
-  const getStatusLabel = (status: string) => {
-    const statusMap: Record<string, string> = {
-      SCHEDULED: "Agendado",
-      CONFIRMED: "Confirmado",
-      COMPLETED: "Concluído",
-      CANCELLED: "Cancelado",
-    };
-    return statusMap[status] || status;
-  };
-
-  const getStatusColor = (status: string) => {
-    const colorMap: Record<string, string> = {
-      SCHEDULED: "bg-yellow-100 text-yellow-800",
-      CONFIRMED: "bg-green-100 text-green-800",
-      COMPLETED: "bg-blue-100 text-blue-800",
-      CANCELLED: "bg-red-100 text-red-800",
-    };
-    return colorMap[status] || "bg-gray-100 text-gray-800";
-  };
-
-  const canCancel = (appointment: any) => {
+  const canCancel = (appointment: Appointment) => {
     const appointmentDate = new Date(appointment.datetimeStart);
     const now = new Date();
     const hoursDiff =
@@ -171,17 +174,15 @@ export const MyAppointmentsList = ({
     return appointment.status === filters.status;
   });
 
-  // Debug log
-  console.log("Appointments in component:", appointments);
-  console.log("Filtered appointments:", filteredAppointments);
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Meus Agendamentos</h2>
-          <p className="text-gray-600">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            Meus Agendamentos
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600">
             Visualize e gerencie seus agendamentos
           </p>
         </div>
@@ -189,27 +190,27 @@ export const MyAppointmentsList = ({
 
       {/* Error Message */}
       {error && (
-        <div className="flex items-center gap-2 p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
-          <AlertCircleIcon className="h-4 w-4" />
-          {error}
+        <div className="flex items-center gap-2 p-3 sm:p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
+          <AlertCircleIcon className="h-4 w-4 flex-shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-base sm:text-lg">Filtros</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
+        <CardContent className="pt-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
                 Status:
               </label>
               <select
                 value={filters.status}
                 onChange={(e) => handleStatusFilterChange(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Todos</option>
                 <option value="SCHEDULED">Agendado</option>
@@ -224,19 +225,21 @@ export const MyAppointmentsList = ({
 
       {/* Appointments List */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-8 sm:py-12">
           <div className="flex items-center gap-2 text-gray-600">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            Carregando agendamentos...
+            <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-blue-600"></div>
+            <span className="text-sm sm:text-base">
+              Carregando agendamentos...
+            </span>
           </div>
         </div>
       ) : filteredAppointments.length === 0 ? (
-        <div className="text-center py-12">
-          <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <div className="text-center py-8 sm:py-12 px-4">
+          <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
             Nenhum agendamento encontrado
           </h3>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto">
             {filters.status !== "all"
               ? `Não há agendamentos com status "${getStatusLabel(
                   filters.status
@@ -245,7 +248,7 @@ export const MyAppointmentsList = ({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredAppointments.map((appointment) => {
             const { date, time } = formatDateTime(appointment.datetimeStart);
             const isPastAppointment = isPast(appointment.datetimeStart);
@@ -261,66 +264,69 @@ export const MyAppointmentsList = ({
                     : "border-green-200 bg-green-50"
                 }`}
               >
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div className="flex-1 space-y-3">
-                      {/* Header */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2">
-                            <CalendarIcon className="h-5 w-5 text-blue-600" />
-                            <span className="font-medium text-gray-900">
-                              Agendamento #{appointment.id}
-                            </span>
-                          </div>
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                              appointment.status
-                            )}`}
-                          >
-                            {getStatusLabel(appointment.status)}
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-4">
+                    {/* Header */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+                          <span className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                            Agendamento #{appointment.id}
                           </span>
                         </div>
-                        <span className="text-xs text-gray-500">
-                          Criado em {formatCreatedAt(appointment.createdAt)}
-                        </span>
+                        <Badge
+                          variant={
+                            getStatusVariant(appointment.status) as
+                              | "default"
+                              | "secondary"
+                              | "destructive"
+                              | "outline"
+                          }
+                        >
+                          {getStatusLabel(appointment.status)}
+                        </Badge>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        Criado em {formatCreatedAt(appointment.createdAt)}
+                      </span>
+                    </div>
+
+                    {/* Date and Time */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div>
+                        <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                          Data e Horário
+                        </p>
+                        <p className="text-sm sm:text-base text-gray-900">
+                          {date}
+                        </p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">
+                          {time}
+                        </p>
                       </div>
 
-                      {/* Date and Time */}
-                      <div className="flex justify-between">
-                        <div className="flex flex-col items-start gap-2">
-                          <p className="text-sm font-medium text-gray-700">
-                            Data e Horário
-                          </p>
-                          <p className="text-gray-900">
-                            {date}, {time}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-1">
-                          <p className="text-sm font-medium text-gray-700">
-                            Cadeira
-                          </p>
-                          <p className="text-gray-900">
-                            {appointment.chair?.name}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Additional Info */}
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        {isPastAppointment && (
-                          <div className="flex items-center gap-1 text-orange-600">
-                            <ClockIcon className="h-4 w-4" />
-                            <span>Passado</span>
-                          </div>
-                        )}
+                      <div>
+                        <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                          Cadeira
+                        </p>
+                        <p className="text-sm sm:text-base text-gray-900">
+                          {appointment.chair?.name}
+                        </p>
                       </div>
                     </div>
 
+                    {/* Additional Info */}
+                    {isPastAppointment && (
+                      <div className="flex items-center gap-1 text-sm text-orange-600">
+                        <ClockIcon className="h-4 w-4" />
+                        <span>Passado</span>
+                      </div>
+                    )}
+
                     {/* Actions */}
-                    <div className="flex flex-col gap-2">
-                      {canCancel(appointment) && !isPastAppointment && (
+                    {canCancel(appointment) && !isPastAppointment && (
+                      <div className="pt-2 border-t border-gray-200">
                         <Button
                           onClick={() =>
                             handleCancelAppointment(appointment.id)
@@ -330,7 +336,7 @@ export const MyAppointmentsList = ({
                           }
                           variant="outline"
                           size="sm"
-                          className="text-red-600 border-red-300 hover:bg-red-50"
+                          className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50"
                         >
                           {cancellingId === appointment.id ? (
                             <div className="flex items-center gap-2">
@@ -344,8 +350,8 @@ export const MyAppointmentsList = ({
                             </>
                           )}
                         </Button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -356,8 +362,8 @@ export const MyAppointmentsList = ({
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+          <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
             Mostrando{" "}
             {(pagination.currentPage - 1) * pagination.itemsPerPage + 1} a{" "}
             {Math.min(
@@ -373,13 +379,14 @@ export const MyAppointmentsList = ({
               size="sm"
               onClick={() => handlePageChange(pagination.currentPage - 1)}
               disabled={!pagination.hasPrevPage}
+              className="text-xs sm:text-sm"
             >
               <ChevronLeftIcon className="h-4 w-4" />
-              Anterior
+              <span className="hidden sm:inline">Anterior</span>
             </Button>
 
-            <span className="text-sm text-gray-600">
-              Página {pagination.currentPage} de {pagination.totalPages}
+            <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">
+              {pagination.currentPage} de {pagination.totalPages}
             </span>
 
             <Button
@@ -387,13 +394,15 @@ export const MyAppointmentsList = ({
               size="sm"
               onClick={() => handlePageChange(pagination.currentPage + 1)}
               disabled={!pagination.hasNextPage}
+              className="text-xs sm:text-sm"
             >
-              Próxima
+              <span className="hidden sm:inline">Próxima</span>
               <ChevronRightIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
+      <ConfirmComponent />
     </div>
   );
 };

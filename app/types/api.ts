@@ -87,6 +87,21 @@ export interface Chair {
   deletedAt: string | null;
 }
 
+export interface ChairFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: ChairStatus;
+  sortBy?: 'newest' | 'oldest' | 'name-asc' | 'name-desc';
+}
+
+export interface ChairInsights {
+  total: number;
+  active: number;
+  maintenance: number;
+  inactive: number;
+}
+
 export interface CreateChairRequest {
   name: string;
   description?: string;
@@ -266,7 +281,8 @@ export interface Schedule {
   timeRanges: TimeRange[];
   validFrom: string;
   validTo: string;
-  dayIds: number[];
+  dayIds?: number[]; // Optional for backward compatibility
+  days?: DayOfWeek[]; // Actual API response structure
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

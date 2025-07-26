@@ -38,11 +38,7 @@ interface UserFilters {
   sortBy: string;
 }
 
-interface UserResponse {
-  users: any[];
-  pagination: UserPagination;
-  stats: UserStats;
-}
+
 
 export function useUserManagementData() {
   const [, setUsers] = useAtom(registeredUsersAtom);
@@ -137,7 +133,7 @@ export function useUserManagementData() {
     } finally {
       setUsersLoading(false);
     }
-  }, [filters, setUsers, setUsersLoading, setUsersError]);
+  }, [filters, setUsers, setUsersLoading, setUsersError, showError]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -160,7 +156,7 @@ export function useUserManagementData() {
     };
     
     loadData();
-  }, []);
+  }, [fetchUsers, syncUsers]);
 
   // Funções de paginação
   const goToPage = useCallback((page: number) => {

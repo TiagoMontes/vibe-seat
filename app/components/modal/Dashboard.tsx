@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useDashboard } from "@/app/hooks/useDashboard";
+import { useUserData } from "@/app/hooks/useUserData";
 import { StatCard } from "@/app/components/dashboard/StatCard";
 import { RecentAppointments } from "@/app/components/dashboard/RecentAppointments";
 import { Button } from "@/app/components/ui/button";
@@ -19,37 +20,47 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
-import { useUserData } from "@/app/hooks/useUserData";
 
 export const Dashboard: React.FC = () => {
   const { getDashboard, data, loading, error } = useDashboard();
   const { user } = useUserData();
 
   useEffect(() => {
-    const fetchData = async () => {
-      await getDashboard();
-    };
-    fetchData();
-  }, []);
+    getDashboard();
+  }, [getDashboard]);
 
   const refreshData = async () => {
     await getDashboard();
   };
 
+  const renderHeader = (isLoading = false) => (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600">
+          Visão geral do sistema
+          {!isLoading &&
+            data?.lastUpdated &&
+            ` • Última atualização: ${data.lastUpdated}`}
+        </p>
+      </div>
+      <Button
+        onClick={refreshData}
+        variant={isLoading ? "default" : "outline"}
+        disabled={isLoading}
+      >
+        <RefreshCw
+          className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+        />
+        {isLoading ? "Carregando..." : "Atualizar"}
+      </Button>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600">Visão geral do sistema</p>
-          </div>
-          <Button disabled>
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            Carregando...
-          </Button>
-        </div>
-
+        {renderHeader(true)}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
@@ -67,17 +78,7 @@ export const Dashboard: React.FC = () => {
   if (error || !data) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600">Visão geral do sistema</p>
-          </div>
-          <Button onClick={refreshData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Tentar Novamente
-          </Button>
-        </div>
-
+        {renderHeader()}
         <Card>
           <CardContent className="p-12 text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
@@ -98,23 +99,12 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">
-            Visão geral do sistema • Última atualização: {data?.lastUpdated}
-          </p>
-        </div>
-        <Button onClick={refreshData} variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Atualizar
-        </Button>
-      </div>
+      {renderHeader()}
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Visão geral */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total de Usuários"
           value={data.overview.totalUsers}
@@ -136,7 +126,7 @@ export const Dashboard: React.FC = () => {
           color="purple"
           description="Agendamentos realizados"
         />
-        {user && user.role === "admin" && (
+        {user?.role === "admin" && (
           <StatCard
             title="Aprovações Pendentes"
             value={data.overview.pendingApprovals}
@@ -147,7 +137,7 @@ export const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Today and Tomorrow */}
+      {/* Hoje e Amanhã */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <StatCard
           title="Agendamentos Hoje"
@@ -165,8 +155,8 @@ export const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Chairs Status */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Status das cadeiras */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total de Cadeiras"
           value={data.chairs.total}
@@ -193,8 +183,9 @@ export const Dashboard: React.FC = () => {
         />
       </div>
 
-      {user && user.role !== "admin" && data.userAppointments && (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+      {/* Meus agendamentos (somente para não admins) */}
+      {user?.role !== "admin" && data.userAppointments && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
           <StatCard
             title="Meus Agendamentos"
             value={data.userAppointments.total}
@@ -234,6 +225,7 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Agendamentos recentes */}
       <RecentAppointments appointments={data.recentAppointments} />
     </div>
   );

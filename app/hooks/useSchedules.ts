@@ -1,11 +1,11 @@
-import { useCallback, useState, useRef } from 'react';
-import { Schedule, CreateScheduleRequest, UpdateScheduleRequest, ScheduleFilters } from '@/app/types/api';
+import { useCallback, useState } from 'react';
+import { Schedule, CreateScheduleRequest, UpdateScheduleRequest } from '@/app/types/api';
 
 export const useSchedules = () => {
   const [schedule, setSchedule] = useState<Schedule | undefined>();
   const [loading, setLoading] = useState(false);
 
-  const fetchSchedules = useCallback(async (customFilters?: ScheduleFilters) => {
+  const fetchSchedules = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/schedules/getAll`);
@@ -75,8 +75,8 @@ export const useSchedules = () => {
         throw new Error(responseData.message || 'Erro ao criar configuração de horário');
       }
       
-      // Recarregar os dados com os filtros atuais
-      await fetchSchedules();
+      // Update the state immediately with the created schedule data
+      setSchedule(responseData.data);
       
       return responseData.data;
     } catch (error) {
@@ -85,9 +85,9 @@ export const useSchedules = () => {
     }
   }, [fetchSchedules]);
 
-  const updateSchedule = useCallback(async (scheduleData: UpdateScheduleRequest) => {
+  const updateSchedule = useCallback(async (scheduleData: UpdateScheduleRequest, id: number) => {
     try {
-      const response = await fetch(`/api/schedules/update/`, {
+      const response = await fetch(`/api/schedules/update/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -107,8 +107,8 @@ export const useSchedules = () => {
         throw new Error(responseData.message || 'Erro ao atualizar configuração de horário');
       }
 
-      // Recarregar os dados com os filtros atuais
-      await fetchSchedules();
+      // Update the state immediately with the updated schedule data
+      setSchedule(responseData.data);
       
       return responseData.data;
     } catch (error) {
@@ -117,9 +117,9 @@ export const useSchedules = () => {
     }
   }, [fetchSchedules]);
 
-  const deleteSchedule = useCallback(async () => {
+  const deleteSchedule = useCallback(async (id: number) => {
     try {
-      const response = await fetch(`/api/schedules/delete`, {
+      const response = await fetch(`/api/schedules/delete/${id}`, {
         method: 'DELETE',
         redirect: 'follow',
       });

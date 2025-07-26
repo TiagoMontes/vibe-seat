@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAtom, useSetAtom } from "jotai";
+import { useEffect, useState, useCallback } from "react";
+import { useAtom } from "jotai";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,7 @@ import {
   appointmentCreateLoadingAtom,
 } from "@/app/atoms/appointmentAtoms";
 import { Chair } from "@/app/types/api";
-import { CalendarIcon, ClockIcon, CheckIcon, XIcon } from "lucide-react";
+import { CalendarIcon, ClockIcon } from "lucide-react";
 
 export const AppointmentModal = () => {
   const { fetchAvailableTimes, createAppointment } = useAppointments();
@@ -65,26 +65,34 @@ export const AppointmentModal = () => {
     setActiveChairs(chairs.filter((chair) => chair.status === "ACTIVE"));
   }, [chairs]);
 
+  // Função para buscar horários disponíveis
+  const handleFetchAvailableTimes = useCallback(
+    async (date: string, page: number = 1) => {
+      setAvailableTimesLoading(true);
+      try {
+        const data = await fetchAvailableTimes(date, page, 10);
+        setAvailableTimesData(data);
+      } catch (error) {
+        console.error("Erro ao buscar horários disponíveis:", error);
+        appointmentError("Erro ao buscar horários disponíveis");
+      } finally {
+        setAvailableTimesLoading(false);
+      }
+    },
+    [
+      fetchAvailableTimes,
+      setAvailableTimesData,
+      setAvailableTimesLoading,
+      appointmentError,
+    ]
+  );
+
   // Fetch available times when chair and date are selected
   useEffect(() => {
     if (selectedChairId && selectedDate) {
       handleFetchAvailableTimes(selectedDate, 1);
     }
-  }, [selectedChairId, selectedDate]);
-
-  // Função para buscar horários disponíveis
-  const handleFetchAvailableTimes = async (date: string, page: number = 1) => {
-    setAvailableTimesLoading(true);
-    try {
-      const data = await fetchAvailableTimes(date, page, 10);
-      setAvailableTimesData(data);
-    } catch (error) {
-      console.error("Erro ao buscar horários disponíveis:", error);
-      appointmentError("Erro ao buscar horários disponíveis");
-    } finally {
-      setAvailableTimesLoading(false);
-    }
-  };
+  }, [selectedChairId, selectedDate, handleFetchAvailableTimes]);
 
   // Get available times for the selected chair
   const getAvailableTimesForChair = () => {

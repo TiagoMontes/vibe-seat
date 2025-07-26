@@ -1,4 +1,5 @@
 import * as yup from "yup";
+import { z } from "zod";
 import { CreateUserRequest } from "@/app/types/api";
 
 export const registerSchema = yup.object({
@@ -26,7 +27,34 @@ export const registerSchema = yup.object({
     .min(1, "Tipo de usuário inválido"),
 });
 
+export const registerZodSchema = z.object({
+  username: z
+    .string()
+    .min(1, "Usuário é obrigatório")
+    .min(3, "Usuário deve ter pelo menos 3 caracteres")
+    .max(50, "Usuário deve ter no máximo 50 caracteres")
+    .regex(
+      /^[a-zA-Z0-9._-]+$/,
+      "Usuário deve conter apenas letras, números, pontos, hífens ou underscores"
+    ),
+  password: z
+    .string()
+    .min(1, "Senha é obrigatória")
+    .min(6, "Senha deve ter pelo menos 6 caracteres")
+    .max(100, "Senha deve ter no máximo 100 caracteres"),
+  confirmPassword: z
+    .string()
+    .min(1, "Confirmação de senha é obrigatória"),
+  roleId: z
+    .number()
+    .min(1, "Tipo de usuário inválido"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Senhas devem ser iguais",
+  path: ["confirmPassword"],
+});
+
 export type RegisterFormData = yup.InferType<typeof registerSchema>;
+export type RegisterZodFormData = z.infer<typeof registerZodSchema>;
 
 // Type guard para verificar se os dados são do tipo CreateUserRequest
 export const isCreateUserRequest = (data: unknown): data is CreateUserRequest => {

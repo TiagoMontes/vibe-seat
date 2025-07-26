@@ -138,9 +138,7 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         )}
 
-        <div className={cn("p-4 sm:p-6", isMobile && "pt-0")}>
-          {activeTabComponent}
-        </div>
+        <div className={cn("p-4 sm:p-6")}>{activeTabComponent}</div>
       </main>
     </div>
   );

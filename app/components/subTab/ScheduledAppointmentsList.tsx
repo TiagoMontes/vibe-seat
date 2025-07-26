@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -9,13 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   CalendarIcon,
   ClockIcon,
   MapPinIcon,
   UserIcon,
   AlertCircleIcon,
-  RefreshCwIcon,
   CheckIcon,
   XIcon,
   ChevronLeftIcon,
@@ -23,12 +23,14 @@ import {
 } from "lucide-react";
 import { useAppointments } from "@/app/hooks/useAppointments";
 import { useToast } from "@/app/hooks/useToast";
+import { useConfirm } from "@/app/hooks/useConfirm";
 import {
   appointmentsAtom,
   appointmentPaginationAtom,
   appointmentCancelLoadingAtom,
   appointmentConfirmLoadingAtom,
 } from "@/app/atoms/appointmentAtoms";
+import { getStatusVariant } from "@/app/lib/utils";
 
 interface ScheduledAppointmentsListProps {
   onAppointmentChange?: () => void;
@@ -40,10 +42,11 @@ export const ScheduledAppointmentsList = ({
   const { fetchAppointments, confirmAppointment, cancelAppointment } =
     useAppointments();
   const { appointmentSuccess, appointmentError } = useToast();
+  const { confirm, ConfirmComponent } = useConfirm();
 
   // Atoms do Jotai
   const [appointments, setAppointments] = useAtom(appointmentsAtom);
-  const [pagination, setPagination] = useAtom(appointmentPaginationAtom);
+  const [pagination] = useAtom(appointmentPaginationAtom);
   const [cancelLoading, setCancelLoading] = useAtom(
     appointmentCancelLoadingAtom
   );
@@ -62,18 +65,21 @@ export const ScheduledAppointmentsList = ({
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
-  // Fetch appointments on mount
-  useEffect(() => {
-    // Limpar dados antigos e carregar novos
-    setAppointments([]);
-    handleFetchAppointments();
-  }, [filters]);
+  // Use refs to avoid dependency issues
+  const fetchAppointmentsRef = useRef(fetchAppointments);
+  const appointmentErrorRef = useRef(appointmentError);
+  const setAppointmentsRef = useRef(setAppointments);
 
-  const handleFetchAppointments = async () => {
+  // Update refs when functions change
+  fetchAppointmentsRef.current = fetchAppointments;
+  appointmentErrorRef.current = appointmentError;
+  setAppointmentsRef.current = setAppointments;
+
+  const handleFetchAppointments = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      await fetchAppointments({
+      await fetchAppointmentsRef.current({
         page: filters.page,
         limit: filters.limit,
         status: filters.status,
@@ -81,11 +87,18 @@ export const ScheduledAppointmentsList = ({
     } catch (err) {
       console.error("Erro ao buscar agendamentos:", err);
       setError("Erro ao carregar agendamentos");
-      appointmentError("Erro ao carregar agendamentos");
+      appointmentErrorRef.current("Erro ao carregar agendamentos");
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.page, filters.limit, filters.status]);
+
+  // Fetch appointments on mount and when filters change
+  useEffect(() => {
+    // Limpar dados antigos e carregar novos
+    setAppointmentsRef.current([]);
+    handleFetchAppointments();
+  }, [filters.status, filters.page, filters.limit, handleFetchAppointments]);
 
   const handlePageChange = (page: number) => {
     setFilters((prev) => ({ ...prev, page }));
@@ -100,7 +113,16 @@ export const ScheduledAppointmentsList = ({
   };
 
   const handleConfirmAppointment = async (id: number) => {
-    if (window.confirm("Tem certeza que deseja confirmar este agendamento?")) {
+    const confirmed = await confirm({
+      title: "Confirmar Agendamento",
+      description:
+        "Tem certeza que deseja confirmar este agendamento? O usuário será notificado sobre a confirmação.",
+      confirmText: "Confirmar",
+      cancelText: "Cancelar",
+      destructive: false,
+    });
+
+    if (confirmed) {
       setConfirmingId(id);
       setConfirmLoading(true);
       try {
@@ -121,7 +143,16 @@ export const ScheduledAppointmentsList = ({
   };
 
   const handleCancelAppointment = async (id: number) => {
-    if (window.confirm("Tem certeza que deseja cancelar este agendamento?")) {
+    const confirmed = await confirm({
+      title: "Cancelar Agendamento",
+      description:
+        "Tem certeza que deseja cancelar este agendamento? O usuário será notificado sobre o cancelamento.",
+      confirmText: "Cancelar Agendamento",
+      cancelText: "Manter Agendamento",
+      destructive: true,
+    });
+
+    if (confirmed) {
       setCancellingId(id);
       setCancelLoading(true);
       try {
@@ -177,16 +208,6 @@ export const ScheduledAppointmentsList = ({
     return statusMap[status] || status;
   };
 
-  const getStatusColor = (status: string) => {
-    const colorMap: Record<string, string> = {
-      SCHEDULED: "bg-yellow-100 text-yellow-800",
-      CONFIRMED: "bg-green-100 text-green-800",
-      COMPLETED: "bg-blue-100 text-blue-800",
-      CANCELLED: "bg-red-100 text-red-800",
-    };
-    return colorMap[status] || "bg-gray-100 text-gray-800";
-  };
-
   // Filter appointments based on status
   const filteredAppointments = appointments.filter((appointment) => {
     if (filters.status === "all") return true;
@@ -194,14 +215,14 @@ export const ScheduledAppointmentsList = ({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
             Lista de Agendamentos
           </h2>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
             Gerencie todos os agendamentos do sistema
           </p>
         </div>
@@ -209,54 +230,54 @@ export const ScheduledAppointmentsList = ({
 
       {/* Error Message */}
       {error && (
-        <div className="flex items-center gap-2 p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
-          <AlertCircleIcon className="h-4 w-4" />
-          {error}
+        <div className="flex items-center gap-2 p-3 sm:p-4 text-xs sm:text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
+          <AlertCircleIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+          <span className="break-words">{error}</span>
         </div>
       )}
 
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-base sm:text-lg">Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
-                Status:
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => handleStatusFilterChange(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">Todos</option>
-                <option value="SCHEDULED">Agendado</option>
-                <option value="CONFIRMED">Confirmado</option>
-                <option value="COMPLETED">Concluído</option>
-                <option value="CANCELLED">Cancelado</option>
-              </select>
-            </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
+              Status:
+            </label>
+            <select
+              value={filters.status}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
+              className="w-full sm:w-auto px-2 sm:px-3 py-2 border border-gray-300 rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">Todos</option>
+              <option value="SCHEDULED">Agendado</option>
+              <option value="CONFIRMED">Confirmado</option>
+              <option value="COMPLETED">Concluído</option>
+              <option value="CANCELLED">Cancelado</option>
+            </select>
           </div>
         </CardContent>
       </Card>
 
       {/* Appointments List */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-8 sm:py-12">
           <div className="flex items-center gap-2 text-gray-600">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            Carregando agendamentos...
+            <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-blue-600"></div>
+            <span className="text-sm sm:text-base">
+              Carregando agendamentos...
+            </span>
           </div>
         </div>
       ) : filteredAppointments.length === 0 ? (
-        <div className="text-center py-12">
-          <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <div className="text-center py-8 sm:py-12">
+          <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
             Nenhum agendamento encontrado
           </h3>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             {filters.status !== "all"
               ? `Não há agendamentos com status "${getStatusLabel(
                   filters.status
@@ -265,7 +286,7 @@ export const ScheduledAppointmentsList = ({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {filteredAppointments.map((appointment) => {
             const { date, time } = formatDateTime(appointment.datetimeStart);
 
@@ -277,102 +298,136 @@ export const ScheduledAppointmentsList = ({
                     ? "border-red-200 bg-red-50"
                     : appointment.status === "CONFIRMED"
                     ? "border-green-200 bg-green-50"
+                    : appointment.status === "SCHEDULED"
+                    ? "border-blue-200 bg-blue-50"
                     : "border-yellow-200 bg-yellow-50"
                 }`}
               >
-                <CardContent>
-                  <div className="flex flex-col w-full lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div className="flex flex-col w-full justify-between">
-                      {/* Header */}
-                      <div className="flex flex-col justify-between">
-                        <div className="flex items-center gap-3">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="space-y-4">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <CalendarIcon className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <h3 className="font-semibold text-sm sm:text-base text-gray-900">
+                            Agendamento #{appointment.id}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            Criado em {formatCreatedAt(appointment.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Badge
+                        variant={
+                          getStatusVariant(appointment.status) as
+                            | "default"
+                            | "secondary"
+                            | "destructive"
+                            | "outline"
+                        }
+                        className="whitespace-nowrap"
+                      >
+                        {getStatusLabel(appointment.status)}
+                      </Badge>
+                    </div>
+
+                    {/* Date and Time */}
+                    <div className="bg-white rounded-lg p-3 border border-gray-100">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <CalendarIcon className="h-5 w-5 text-blue-600" />
-                            <span className="font-medium text-gray-900">
-                              Agendamento #{appointment.id}
+                            <CalendarIcon className="h-4 w-4 text-gray-500" />
+                            <span className="text-xs font-medium text-gray-600">
+                              Data
                             </span>
                           </div>
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                              appointment.status
-                            )}`}
-                          >
-                            {getStatusLabel(appointment.status)}
-                          </span>
+                          <p className="text-sm text-gray-900 pl-6">{date}</p>
                         </div>
-                        <span className="text-xs text-gray-500">
-                          Criado em {formatCreatedAt(appointment.createdAt)}
-                        </span>
-                      </div>
 
-                      {/* Date and Time */}
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <CalendarIcon className="h-4 w-4 text-gray-500" />
-                          <span className="text-gray-700">{date}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <ClockIcon className="h-4 w-4 text-gray-500" />
-                          <span className="text-gray-700">{time}</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <ClockIcon className="h-4 w-4 text-gray-500" />
+                            <span className="text-xs font-medium text-gray-600">
+                              Horário
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-900 pl-6">{time}</p>
                         </div>
                       </div>
+                    </div>
 
-                      {/* User and Chair Info */}
-                      <div className="flex items-center gap-4 text-sm">
+                    {/* User and Chair Info */}
+                    <div className="space-y-3">
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <UserIcon className="h-4 w-4 text-gray-500" />
-                          <span className="text-gray-700">
-                            {appointment.user?.username ||
-                              "Usuário não informado"}
+                          <span className="text-xs font-medium text-gray-600">
+                            Usuário
                           </span>
                         </div>
+                        <p className="text-sm text-gray-900 pl-6 break-words">
+                          {appointment.user?.username ||
+                            "Usuário não informado"}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <MapPinIcon className="h-4 w-4 text-gray-500" />
-                          <span className="text-gray-700">
-                            {appointment.chair?.name || "Cadeira não informada"}
-                            {appointment.chair?.location && (
-                              <span className="text-gray-500">
-                                {" "}
-                                - {appointment.chair.location}
-                              </span>
-                            )}
+                          <span className="text-xs font-medium text-gray-600">
+                            Cadeira
                           </span>
+                        </div>
+                        <div className="pl-6">
+                          <p className="text-sm text-gray-900 break-words">
+                            {appointment.chair?.name || "Cadeira não informada"}
+                          </p>
+                          {appointment.chair?.location && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {appointment.chair.location}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-col gap-2">
-                      {/* Confirm Button - only for SCHEDULED appointments */}
-                      {appointment.status === "SCHEDULED" && (
-                        <Button
-                          onClick={() =>
-                            handleConfirmAppointment(appointment.id)
-                          }
-                          disabled={
-                            confirmingId === appointment.id || confirmLoading
-                          }
-                          variant="outline"
-                          size="sm"
-                          className="text-green-600 border-green-300 hover:bg-green-50"
-                        >
-                          {confirmingId === appointment.id ? (
-                            <div className="flex items-center gap-2">
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
-                              Confirmando...
-                            </div>
-                          ) : (
-                            <>
-                              <CheckIcon className="h-4 w-4" />
-                              Confirmar
-                            </>
-                          )}
-                        </Button>
-                      )}
+                    {(appointment.status === "SCHEDULED" ||
+                      appointment.status === "CONFIRMED") && (
+                      <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-200">
+                        {/* Confirm Button - only for SCHEDULED appointments */}
+                        {appointment.status === "SCHEDULED" && (
+                          <Button
+                            onClick={() =>
+                              handleConfirmAppointment(appointment.id)
+                            }
+                            disabled={
+                              confirmingId === appointment.id || confirmLoading
+                            }
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 border-green-300 hover:bg-green-50 text-xs sm:text-sm h-9 w-full sm:flex-1"
+                          >
+                            {confirmingId === appointment.id ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
+                                <span className="hidden sm:inline">
+                                  Confirmando...
+                                </span>
+                                <span className="sm:hidden">...</span>
+                              </div>
+                            ) : (
+                              <>
+                                <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                                <span className="ml-1">Confirmar</span>
+                              </>
+                            )}
+                          </Button>
+                        )}
 
-                      {/* Cancel Button - only for SCHEDULED and CONFIRMED appointments */}
-                      {(appointment.status === "SCHEDULED" ||
-                        appointment.status === "CONFIRMED") && (
+                        {/* Cancel Button - for SCHEDULED and CONFIRMED appointments */}
                         <Button
                           onClick={() =>
                             handleCancelAppointment(appointment.id)
@@ -382,22 +437,25 @@ export const ScheduledAppointmentsList = ({
                           }
                           variant="outline"
                           size="sm"
-                          className="text-red-600 border-red-300 hover:bg-red-50"
+                          className="text-red-600 border-red-300 hover:bg-red-50 text-xs sm:text-sm h-9 w-full sm:flex-1"
                         >
                           {cancellingId === appointment.id ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
-                              Cancelando...
+                              <span className="hidden sm:inline">
+                                Cancelando...
+                              </span>
+                              <span className="sm:hidden">...</span>
                             </div>
                           ) : (
                             <>
-                              <XIcon className="h-4 w-4" />
-                              Cancelar
+                              <XIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                              <span className="ml-1">Cancelar</span>
                             </>
                           )}
                         </Button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -409,23 +467,24 @@ export const ScheduledAppointmentsList = ({
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                 Mostrando página {pagination.currentPage} de{" "}
                 {pagination.totalPages} ({pagination.totalItems} agendamentos)
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center sm:justify-end gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={!pagination.hasPrevPage}
+                  className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
                 >
-                  <ChevronLeftIcon className="h-4 w-4" />
-                  Anterior
+                  <ChevronLeftIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline ml-1">Anterior</span>
                 </Button>
-                <span className="text-sm text-gray-600">
+                <span className="text-xs sm:text-sm text-gray-600 px-2">
                   {pagination.currentPage} / {pagination.totalPages}
                 </span>
                 <Button
@@ -433,15 +492,17 @@ export const ScheduledAppointmentsList = ({
                   size="sm"
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={!pagination.hasNextPage}
+                  className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
                 >
-                  Próxima
-                  <ChevronRightIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline mr-1">Próxima</span>
+                  <ChevronRightIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
+      <ConfirmComponent />
     </div>
   );
 };

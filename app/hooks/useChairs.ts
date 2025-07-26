@@ -1,7 +1,13 @@
 import { useCallback, useState, useRef } from 'react';
-import { Filters, CreateChairRequest, UpdateChairRequest, ChairListResponse, Chair, Pagination } from '@/app/types/api';
+import { Filters, CreateChairRequest, UpdateChairRequest, Chair, Pagination, ChairInsights } from '@/app/types/api';
 
 export const useChairs = () => {
+  const [chairsInsights, setChairsInsights] = useState<ChairInsights>({
+    total: 0,
+    active: 0,
+    maintenance: 0,
+    inactive: 0,
+  });
   const [chairs, setChairs] = useState<Chair[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     currentPage: 1,
@@ -78,9 +84,9 @@ export const useChairs = () => {
       // Calcula stats baseado nos dados retornados
       const stats = {
         total: data.pagination?.totalItems || 0,
-        active: data.chairs?.filter((chair: any) => chair.status === "ACTIVE").length || 0,
-        maintenance: data.chairs?.filter((chair: any) => chair.status === "MAINTENANCE").length || 0,
-        inactive: data.chairs?.filter((chair: any) => chair.status === "INACTIVE").length || 0,
+        active: data.chairs?.filter((chair: Chair) => chair.status === "ACTIVE").length || 0,
+        maintenance: data.chairs?.filter((chair: Chair) => chair.status === "MAINTENANCE").length || 0,
+        inactive: data.chairs?.filter((chair: Chair) => chair.status === "INACTIVE").length || 0,
       };
       setChairStatus(stats);
       
@@ -182,6 +188,18 @@ export const useChairs = () => {
     }
   }, [fetchChairs]);
 
+  const fetchChairsInsights = useCallback(async () => {
+    const response = await fetch('/api/chairs/insights');
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao buscar insights das cadeiras');
+    }
+
+    const responseData = await response.json();
+    setChairsInsights(responseData.data);
+  }, []);
+
   const setFiltersOptimized = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
   }, []);
@@ -193,6 +211,8 @@ export const useChairs = () => {
     deleteChair,
     setChairStatus,
     setFilters: setFiltersOptimized,
+    fetchChairsInsights,
+    chairsInsights,
     chairs,
     pagination,
     chairStatus,

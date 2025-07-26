@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Armchair,
   Plus,
@@ -22,12 +23,13 @@ import {
   selectedChairAtom,
   computedChairStatsAtom,
 } from "@/app/atoms/chairAtoms";
+import { useConfirm } from "@/app/hooks/useConfirm";
 import {
   ChairStatusKey,
   getStatusLabel,
-  getStatusColor,
   getStatusOptions,
 } from "@/app/schemas/chairSchema";
+import { getStatusVariant } from "@/app/lib/utils";
 import ChairModal from "@/app/components/modal/ChairModal";
 import GenericFilter from "@/app/components/GenericFilter";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
@@ -48,15 +50,17 @@ const ChairManagement = () => {
   const [sortInput, setSortInput] = useState<SortOption>("newest");
 
   const {
+    fetchChairsInsights,
     fetchChairs,
-    createChair,
     deleteChair,
     setFilters,
+    chairsInsights,
     chairs,
     pagination,
     filters,
     loading,
   } = useChairs();
+  const { confirm, ConfirmComponent } = useConfirm();
 
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
     null
@@ -82,12 +86,16 @@ const ChairManagement = () => {
     };
   }, [searchTimeout]);
 
+  useEffect(() => {
+    fetchChairsInsights();
+  }, [fetchChairsInsights]);
+
   const handleStatusChange = useCallback(
     (value: StatusFilter) => {
       setStatusInput(value);
       setFilters({ ...filters, status: value, page: 1 });
     },
-    [setFilters]
+    [setFilters, filters]
   );
 
   const handleSearchChange = (value: string) => {
@@ -142,7 +150,14 @@ const ChairManagement = () => {
   };
 
   const handleDeleteChair = async (id: number) => {
-    if (window.confirm("Tem certeza que deseja excluir esta cadeira?")) {
+    const confirmed = await confirm({
+      title: "Excluir cadeira",
+      description: "Tem certeza que deseja excluir esta cadeira? Esta ação não pode ser desfeita.",
+      confirmText: "Excluir",
+      destructive: true,
+    });
+    
+    if (confirmed) {
       try {
         await deleteChair(id);
         // Toast já é gerenciado pelo hook useChairs
@@ -153,19 +168,6 @@ const ChairManagement = () => {
     }
   };
 
-  const getStatusColorClass = (status: string) => {
-    const colorName = getStatusColor(status as ChairStatusKey);
-    switch (colorName) {
-      case "green":
-        return "bg-green-100 text-green-800";
-      case "yellow":
-        return "bg-yellow-100 text-yellow-800";
-      case "red":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   const getStatusText = (status: string) => {
     return getStatusLabel(status as ChairStatusKey);
@@ -213,7 +215,7 @@ const ChairManagement = () => {
           {
             key: "total",
             label: "Total",
-            value: chairStats.total,
+            value: chairsInsights.total,
             icon: Armchair,
             valueColor: "text-black",
             iconColor: "text-gray-400",
@@ -221,7 +223,7 @@ const ChairManagement = () => {
           {
             key: "active",
             label: getStatusLabel("ACTIVE"),
-            value: chairStats.active,
+            value: chairsInsights.active,
             icon: Activity,
             valueColor: "text-green-600",
             iconColor: "text-green-400",
@@ -229,7 +231,7 @@ const ChairManagement = () => {
           {
             key: "maintenance",
             label: getStatusLabel("MAINTENANCE"),
-            value: chairStats.maintenance,
+            value: chairsInsights.maintenance,
             icon: Wrench,
             valueColor: "text-yellow-600",
             iconColor: "text-yellow-400",
@@ -237,7 +239,7 @@ const ChairManagement = () => {
           {
             key: "inactive",
             label: getStatusLabel("INACTIVE"),
-            value: chairStats.inactive,
+            value: chairsInsights.inactive,
             icon: XCircle,
             valueColor: "text-red-600",
             iconColor: "text-red-400",
@@ -311,8 +313,6 @@ const ChairManagement = () => {
                   ? "Nenhuma cadeira corresponde aos filtros aplicados."
                   : "Ainda não há cadeiras cadastradas no sistema."
               }
-              hasActiveFilters={!!hasActiveFilters}
-              onClearFilters={handleClearFilters}
             />
           ) : loading ? (
             <div className="flex items-center justify-center py-8">
@@ -334,14 +334,10 @@ const ChairManagement = () => {
                             {chair.name}
                           </h3>
                         </div>
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColorClass(
-                            chair.status
-                          )}`}
-                        >
+                        <Badge variant={getStatusVariant(chair.status) as "default" | "secondary" | "destructive" | "outline"} className="inline-flex items-center gap-1">
                           {getStatusIcon(chair.status)}
                           {getStatusText(chair.status)}
-                        </span>
+                        </Badge>
                       </div>
 
                       {chair.description && (
@@ -405,6 +401,7 @@ const ChairManagement = () => {
       </Card>
 
       <ChairModal />
+      <ConfirmComponent />
     </div>
   );
 };

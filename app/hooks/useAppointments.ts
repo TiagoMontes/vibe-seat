@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useSetAtom } from 'jotai';
 import { appointmentsAtom, myAppointmentsAtom, appointmentPaginationAtom } from '@/app/atoms/appointmentAtoms';
-import { AppointmentFilters, CreateAppointmentRequest, AppointmentListResponse, AvailableTimesResponse } from '@/app/types/api';
+import { AppointmentFilters, CreateAppointmentRequest } from '@/app/types/api';
 
 export const useAppointments = () => {
   const setAppointments = useSetAtom(appointmentsAtom);
@@ -77,7 +77,6 @@ export const useAppointments = () => {
       
       // A API retorna { data: { appointments: [...] } }
       const appointments = responseData.data?.appointments || [];
-      console.log('MyAppointments loaded:', appointments);
       setMyAppointments(appointments);
       return appointments;
     } catch (error) {

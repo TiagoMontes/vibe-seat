@@ -2,6 +2,7 @@
 
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Users,
   Check,
@@ -12,7 +13,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { type Approval } from "@/app/atoms/userManagementAtoms";
-import { formatDateTime, getRoleByName } from "@/app/lib/utils";
+import {
+  formatDateTime,
+  getRoleByName,
+  getStatusVariant,
+} from "@/app/lib/utils";
 import { useApprovals } from "@/app/hooks/useApprovals";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 import GenericFilter from "@/app/components/GenericFilter";
@@ -54,7 +59,10 @@ const PendingApprovals: React.FC = () => {
   };
 
   const handleSortChange = (value: string) => {
-    setFilters({ ...filters, sortBy: value as any });
+    setFilters({
+      ...filters,
+      sortBy: value as "newest" | "oldest" | "user-asc" | "user-desc",
+    });
   };
 
   const handleClearFilters = () => {
@@ -95,9 +103,17 @@ const PendingApprovals: React.FC = () => {
               >
                 {approval.user.username}
               </h3>
-              <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium shrink-0">
+              <Badge
+                variant={
+                  getStatusVariant("pending") as
+                    | "default"
+                    | "secondary"
+                    | "destructive"
+                    | "outline"
+                }
+              >
                 Pendente
-              </span>
+              </Badge>
             </div>
 
             {/* Role */}
@@ -194,8 +210,6 @@ const PendingApprovals: React.FC = () => {
                       ? "Nenhuma aprovação pendente corresponde aos filtros aplicados."
                       : "Ainda não há aprovações pendentes."
                   }
-                  hasActiveFilters={hasActiveFilters}
-                  onClearFilters={handleClearFilters}
                 />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full gap-4">

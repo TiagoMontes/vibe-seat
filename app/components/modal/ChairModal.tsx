@@ -2,11 +2,18 @@
 
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Dialog,
   DialogContent,
@@ -28,13 +35,13 @@ import {
   selectedChairAtom,
 } from "@/app/atoms/chairAtoms";
 import {
-  chairSchema,
-  chairUpdateSchema,
+  chairZodSchema,
+  chairUpdateZodSchema,
   getStatusOptions,
   getStatusLabel,
   ChairStatusKey,
-  ChairFormData,
-  ChairUpdateFormData,
+  ChairZodFormData,
+  ChairUpdateZodFormData,
 } from "@/app/schemas/chairSchema";
 import { CreateChairRequest, UpdateChairRequest } from "@/app/types/api";
 
@@ -43,21 +50,13 @@ const ChairModal = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useAtom(chairEditModalOpenAtom);
   const [selectedChair, setSelectedChair] = useAtom(selectedChairAtom);
 
-  const { createChair, updateChair, loading } =
-    useChairs();
+  const { createChair, updateChair, loading } = useChairs();
 
   const isEdit = isEditModalOpen && selectedChair;
   const isOpen = isCreateModalOpen || isEditModalOpen;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-    watch,
-  } = useForm({
-    resolver: yupResolver(isEdit ? chairUpdateSchema : chairSchema),
+  const form = useForm<ChairZodFormData | ChairUpdateZodFormData>({
+    resolver: zodResolver(isEdit ? chairUpdateZodSchema : chairZodSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -66,32 +65,35 @@ const ChairModal = () => {
     },
   });
 
-  const watchedStatus = watch("status");
-
   useEffect(() => {
     if (isEdit && selectedChair) {
-      setValue("name", selectedChair.name);
-      setValue("description", selectedChair.description || "");
-      setValue("location", selectedChair.location || "");
-      setValue("status", selectedChair.status);
+      form.setValue("name", selectedChair.name);
+      form.setValue("description", selectedChair.description || "");
+      form.setValue("location", selectedChair.location || "");
+      form.setValue(
+        "status",
+        selectedChair.status === "all" ? "ACTIVE" : selectedChair.status
+      );
     } else if (isCreateModalOpen) {
-      reset({
+      form.reset({
         name: "",
         description: "",
         location: "",
         status: "ACTIVE",
       });
     }
-  }, [isEdit, selectedChair, isCreateModalOpen, setValue, reset]);
+  }, [isEdit, selectedChair, isCreateModalOpen, form]);
 
   const handleClose = () => {
     setIsCreateModalOpen(false);
     setIsEditModalOpen(false);
     setSelectedChair(null);
-    reset();
+    form.reset();
   };
 
-  const onSubmit = async (formData: ChairFormData | ChairUpdateFormData) => {
+  const onSubmit = async (
+    formData: ChairZodFormData | ChairUpdateZodFormData
+  ) => {
     try {
       if (isEdit && selectedChair) {
         await updateChair(selectedChair.id, formData as UpdateChairRequest);
@@ -123,99 +125,110 @@ const ChairModal = () => {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome *</Label>
-            <Input
-              id="name"
-              {...register("name")}
-              placeholder="Digite o nome da cadeira"
-              className={errors.name ? "border-red-500" : ""}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4 w-full"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Digite o nome da cadeira" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.name && (
-              <p className="text-sm text-red-500">{errors.name.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Input
-              id="description"
-              {...register("description")}
-              placeholder="Digite uma descrição (opcional)"
-              className={errors.description ? "border-red-500" : ""}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Digite uma descrição (opcional)"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.description && (
-              <p className="text-sm text-red-500">
-                {errors.description.message}
-              </p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="location">Localização</Label>
-            <Input
-              id="location"
-              {...register("location")}
-              placeholder="Digite a localização (opcional)"
-              className={errors.location ? "border-red-500" : ""}
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Localização</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Digite a localização (opcional)"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.location && (
-              <p className="text-sm text-red-500">{errors.location.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status *</Label>
-            <Select
-              value={watchedStatus}
-              onValueChange={(value) => setValue("status", value)}
-            >
-              <SelectTrigger className={errors.status ? "border-red-500" : ""}>
-                <span>
-                  {watchedStatus
-                    ? getStatusLabel(watchedStatus as ChairStatusKey)
-                    : "Selecione o status"}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.status && (
-              <p className="text-sm text-red-500">{errors.status.message}</p>
-            )}
-          </div>
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status *</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <span>
+                          {field.value
+                            ? getStatusLabel(field.value as ChairStatusKey)
+                            : "Selecione o status"}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="flex items-center gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={loading}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="flex-1"
-            >
-              {loading
-                ? isEdit
-                  ? "Atualizando..."
-                  : "Criando..."
-                : isEdit
-                ? "Atualizar"
-                : "Criar"}
-            </Button>
-          </div>
-        </form>
+            <div className="flex items-center gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={loading}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading
+                  ? isEdit
+                    ? "Atualizando..."
+                    : "Criando..."
+                  : isEdit
+                  ? "Atualizar"
+                  : "Criar"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
