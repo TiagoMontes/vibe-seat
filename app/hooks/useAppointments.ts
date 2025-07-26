@@ -125,14 +125,21 @@ export const useAppointments = () => {
     }
   }, [setMyAppointments, setMyPagination, setMyLoading]);
 
-  const fetchAvailableTimes = useCallback(async (date: string, page?: number, limit?: number) => {
+  const fetchAvailableTimes = useCallback(async (date: string, chairIds?: number[], page?: number, limit?: number) => {
     try {
+      // Build query string for pagination parameters
       const queryParams = new URLSearchParams();
       queryParams.set('date', date);
       if (page) queryParams.set('page', page.toString());
       if (limit) queryParams.set('limit', limit.toString());
 
-      const response = await fetch(`/api/appointments/available-times?${queryParams.toString()}`);
+      const response = await fetch(`/api/appointments/available-times?${queryParams.toString()}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ chairIds }),
+      });
       
       if (!response.ok) {
         const errorData = await response.json();

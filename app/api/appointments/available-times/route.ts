@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -18,8 +18,12 @@ export async function GET(request: NextRequest) {
     // Extract query parameters
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date");
-    const page = searchParams.get("page") || "1";
-    const limit = searchParams.get("limit") || "9";
+    const page = searchParams.get("page");
+    const limit = searchParams.get("limit");
+
+    // Extract request body for chairIds
+    const body = await request.json().catch(() => ({}));
+    const { chairIds } = body;
 
     if (!date) {
       return NextResponse.json(
@@ -31,15 +35,16 @@ export async function GET(request: NextRequest) {
     // Build query string
     const queryParams = new URLSearchParams();
     queryParams.set("date", date);
-    queryParams.set("page", page);
-    queryParams.set("limit", limit);
+    if (page) queryParams.set("page", page);
+    if (limit) queryParams.set("limit", limit);
 
     const response = await fetch(`${apiUrl}/appointments/available-times?${queryParams.toString()}`, {
-      method: "GET",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
       },
+      body: JSON.stringify({ chairIds }),
     });
 
     if (!response.ok) {
