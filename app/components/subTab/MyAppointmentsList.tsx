@@ -6,16 +6,12 @@ import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/app/components/ui/card";
 import {
   CalendarIcon,
   ClockIcon,
   AlertCircleIcon,
   XIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
 } from "lucide-react";
 import { useAppointments } from "@/app/hooks/useAppointments";
 import { useToast } from "@/app/hooks/useToast";
@@ -30,6 +26,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { getStatusLabel, getStatusVariant } from "@/app/lib/utils";
 import { Appointment } from "@/app/types/api";
+import GenericFilter from "@/app/components/GenericFilter";
+import { PaginationComponent } from "@/app/components/PaginationComponent";
 
 interface MyAppointmentsListProps {
   onAppointmentChange?: () => void;
@@ -46,13 +44,27 @@ export const MyAppointmentsList = ({
   const [appointments, setAppointments] = useAtom(myAppointmentsAtom);
   const [pagination] = useAtom(myAppointmentPaginationAtom);
   const [filters, setFilters] = useAtom(myAppointmentFiltersAtom);
-  const [loading, setLoading] = useAtom(myAppointmentsLoadingAtom);
+  const [loading] = useAtom(myAppointmentsLoadingAtom);
   const [cancelLoading, setCancelLoading] = useAtom(
     appointmentCancelLoadingAtom
   );
 
   const [error, setError] = useState<string>("");
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+
+  // Status and sort options
+  const statusOptions = [
+    { value: "all", label: "Todos" },
+    { value: "SCHEDULED", label: "Agendado" },
+    { value: "CONFIRMED", label: "Confirmado" },
+    { value: "COMPLETED", label: "Concluído" },
+    { value: "CANCELLED", label: "Cancelado" },
+  ];
+
+  const sortOptions = [
+    { value: "newest", label: "Mais recentes" },
+    { value: "oldest", label: "Mais antigos" },
+  ];
 
   // Use refs to avoid dependency issues
   const fetchMyAppointmentsRef = useRef(fetchMyAppointments);
@@ -71,20 +83,22 @@ export const MyAppointmentsList = ({
         page: filters.page,
         limit: filters.limit,
         status: filters.status,
+        search: filters.search,
+        sortBy: filters.sortBy,
       });
     } catch (err) {
       console.error("Erro ao buscar agendamentos:", err);
       setError("Erro ao carregar agendamentos");
       appointmentErrorRef.current("Erro ao carregar agendamentos");
     }
-  }, [filters.page, filters.limit, filters.status]);
+  }, [filters.page, filters.limit, filters.status, filters.search, filters.sortBy]);
 
   // Fetch appointments on mount and when filters change
   useEffect(() => {
     // Limpar dados antigos e carregar novos
     setAppointmentsRef.current([]);
     handleFetchMyAppointments();
-  }, [filters.status, filters.page, filters.limit, handleFetchMyAppointments]);
+  }, [filters.status, filters.page, filters.limit, filters.search, filters.sortBy, handleFetchMyAppointments]);
 
   const handleStatusFilterChange = (status: string) => {
     setFilters((prev) => ({
@@ -94,9 +108,44 @@ export const MyAppointmentsList = ({
     }));
   };
 
+  const handleSearchChange = (search: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      search,
+      page: 1,
+    }));
+  };
+
+  const handleSortChange = (sortBy: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      sortBy: sortBy as "newest" | "oldest",
+      page: 1,
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters((prev) => ({
+      ...prev,
+      search: "",
+      status: "all",
+      sortBy: "newest",
+      page: 1,
+    }));
+  };
+
   const handlePageChange = (page: number) => {
     setFilters((prev) => ({ ...prev, page }));
   };
+
+  const goToPage = (page: number) => {
+    handlePageChange(page);
+  };
+
+  const hasActiveFilters =
+    (filters.search && filters.search.trim() !== "") ||
+    filters.status !== "all" ||
+    filters.sortBy !== "newest";
 
   const handleCancelAppointment = async (id: number) => {
     const confirmed = await confirm({
@@ -168,13 +217,8 @@ export const MyAppointmentsList = ({
     return appointmentDate < now;
   };
 
-  // Filter appointments based on status
-  const filteredAppointments = (
-    Array.isArray(appointments) ? appointments : []
-  ).filter((appointment) => {
-    if (filters.status === "all") return true;
-    return appointment.status === filters.status;
-  });
+  // Use appointments directly since filtering is done on the server
+  const filteredAppointments = Array.isArray(appointments) ? appointments : [];
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
@@ -198,32 +242,22 @@ export const MyAppointmentsList = ({
         </div>
       )}
 
-      {/* Filters */}
-      <Card>
-        <CardHeader className="pb-3 sm:pb-4">
-          <CardTitle className="text-base sm:text-lg">Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                Status:
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => handleStatusFilterChange(e.target.value)}
-                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">Todos</option>
-                <option value="SCHEDULED">Agendado</option>
-                <option value="CONFIRMED">Confirmado</option>
-                <option value="COMPLETED">Concluído</option>
-                <option value="CANCELLED">Cancelado</option>
-              </select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Generic Filter */}
+      <GenericFilter
+        searchPlaceholder="Buscar agendamentos..."
+        searchValue={filters.search || ""}
+        onSearchChange={handleSearchChange}
+        statusOptions={statusOptions}
+        statusValue={filters.status}
+        onStatusChange={handleStatusFilterChange}
+        statusLabel="Status"
+        sortOptions={sortOptions}
+        sortValue={filters.sortBy}
+        onSortChange={handleSortChange}
+        sortLabel="Ordenar por"
+        onClearFilters={handleClearFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
 
       {/* Appointments List */}
       {loading ? (
@@ -364,45 +398,15 @@ export const MyAppointmentsList = ({
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-          <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
-            Mostrando{" "}
-            {(pagination.currentPage - 1) * pagination.itemsPerPage + 1} a{" "}
-            {Math.min(
-              pagination.currentPage * pagination.itemsPerPage,
-              pagination.totalItems
-            )}{" "}
-            de {pagination.totalItems} agendamentos
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.currentPage - 1)}
-              disabled={!pagination.hasPrevPage}
-              className="text-xs sm:text-sm"
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Anterior</span>
-            </Button>
-
-            <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">
-              {pagination.currentPage} de {pagination.totalPages}
-            </span>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.currentPage + 1)}
-              disabled={!pagination.hasNextPage}
-              className="text-xs sm:text-sm"
-            >
-              <span className="hidden sm:inline">Próxima</span>
-              <ChevronRightIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <PaginationComponent
+          hasNextPage={pagination.hasNextPage}
+          hasPrevPage={pagination.hasPrevPage}
+          currentPage={pagination.currentPage}
+          lastPage={pagination.lastPage}
+          goToPage={(_, page) => goToPage(page)}
+          selectedDate=""
+          totalItems={pagination.totalItems}
+        />
       )}
       <ConfirmComponent />
     </div>

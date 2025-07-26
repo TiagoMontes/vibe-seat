@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Pegar parâmetros de query para paginação e filtros
     const { searchParams } = new URL(request.url);
     const page = searchParams.get("page") || "1";
-    const limit = searchParams.get("limit") || "10";
+    const limit = searchParams.get("limit") || "6";
     const status = searchParams.get("status") || "";
 
     const queryParams = new URLSearchParams();

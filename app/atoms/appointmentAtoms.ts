@@ -16,7 +16,7 @@ export const appointmentPaginationAtom = atom<Pagination>({
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
-  itemsPerPage: 10,
+  itemsPerPage: 6,
   hasNextPage: false,
   hasPrevPage: false,
   nextPage: null,
@@ -29,7 +29,7 @@ export const myAppointmentPaginationAtom = atom<Pagination>({
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
-  itemsPerPage: 10,
+  itemsPerPage: 6,
   hasNextPage: false,
   hasPrevPage: false,
   nextPage: null,
@@ -42,14 +42,14 @@ export const myAppointmentPaginationAtom = atom<Pagination>({
 // Filtros para ScheduledAppointmentsList (admin)
 export const appointmentFiltersAtom = atom<AppointmentFilters>({
   page: 1,
-  limit: 10,
+  limit: 6,
   status: "SCHEDULED",
 });
 
 // Filtros para MyAppointmentsList (usuário logado)
 export const myAppointmentFiltersAtom = atom<AppointmentFilters>({
   page: 1,
-  limit: 10,
+  limit: 6,
   status: "all",
 });
 

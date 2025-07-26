@@ -267,8 +267,6 @@ export const RegisteredUsers = () => {
           hasNextPage={pagination.hasNextPage}
           hasPrevPage={pagination.hasPrevPage}
           currentPage={pagination.currentPage}
-          nextPage={pagination.nextPage || 0}
-          prevPage={pagination.prevPage || 0}
           lastPage={pagination.lastPage}
           goToPage={(_, page: number) => goToPage(page)}
           selectedDate=""

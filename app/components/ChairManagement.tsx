@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Armchair,
   Plus,
@@ -14,26 +14,33 @@ import {
   Wrench,
   XCircle,
   MapPin,
-  AlertTriangle,
+  Search,
+  Filter,
+  ArrowUpDown,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/app/components/ui/select";
+import { Pagination } from "@/app/components/ui/pagination";
 import { useChairs } from "@/app/hooks/useChairs";
+import { useToast } from "@/app/hooks/useToast";
 import {
   chairModalOpenAtom,
   chairEditModalOpenAtom,
   selectedChairAtom,
+  computedChairStatsAtom,
 } from "@/app/atoms/chairAtoms";
-import { useConfirm } from "@/app/hooks/useConfirm";
 import {
+  Chair,
   ChairStatusKey,
   getStatusLabel,
+  getStatusColor,
   getStatusOptions,
 } from "@/app/schemas/chairSchema";
-import { getStatusVariant } from "@/app/lib/utils";
-import ChairModal from "@/app/components/modal/ChairModal";
-import GenericFilter from "@/app/components/GenericFilter";
-import { PaginationComponent } from "@/app/components/PaginationComponent";
-import EmptyState from "@/app/components/EmptyState";
-import { Chair } from "@/app/types/api";
+import ChairModal from "./ChairModal";
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc";
 type StatusFilter = "all" | "ACTIVE" | "MAINTENANCE" | "INACTIVE";
@@ -42,23 +49,28 @@ const ChairManagement = () => {
   const [, setIsCreateModalOpen] = useAtom(chairModalOpenAtom);
   const [, setIsEditModalOpen] = useAtom(chairEditModalOpenAtom);
   const [, setSelectedChair] = useAtom(selectedChairAtom);
+  const [chairStats] = useAtom(computedChairStatsAtom);
+
+  const { success, error } = useToast();
 
   const [searchInput, setSearchInput] = useState("");
   const [statusInput, setStatusInput] = useState<StatusFilter>("all");
   const [sortInput, setSortInput] = useState<SortOption>("newest");
 
   const {
-    fetchChairsInsights,
-    fetchChairs,
-    deleteChair,
-    setFilters,
-    chairsInsights,
     chairs,
     pagination,
     filters,
     loading,
+    deleteLoading,
+    fetchChairs,
+    updateFilters,
+    resetFilters,
+    goToPage,
+    nextPage,
+    prevPage,
+    deleteChair,
   } = useChairs();
-  const { confirm, ConfirmComponent } = useConfirm();
 
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
     null
@@ -66,81 +78,59 @@ const ChairManagement = () => {
   const [isSearchPending, setIsSearchPending] = useState(false);
 
   useEffect(() => {
-    fetchChairs(filters);
-  }, [filters]); // Remove fetchChairs da dependência para evitar loops
+    fetchChairs(undefined, true);
+  }, [fetchChairs]);
 
   useEffect(() => {
-    setSearchInput(filters.search || "");
-    setStatusInput(filters.status || "all");
-    setSortInput(filters.sortBy || "newest");
+    setSearchInput(filters.search);
+    setStatusInput(filters.status);
+    setSortInput(filters.sortBy);
   }, [filters]);
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchInput(value);
+
       if (searchTimeout) {
         clearTimeout(searchTimeout);
       }
-    };
-  }, [searchTimeout]);
 
-  useEffect(() => {
-    fetchChairsInsights();
-  }, []); // Remove fetchChairsInsights da dependência
+      setIsSearchPending(value !== filters.search && value.length > 0);
+
+      const DEBOUNCE_DELAY = 500;
+
+      const timeout = setTimeout(() => {
+        setIsSearchPending(false);
+        updateFilters({ search: value });
+      }, DEBOUNCE_DELAY);
+
+      setSearchTimeout(timeout);
+    },
+    [searchTimeout, updateFilters, filters.search]
+  );
 
   const handleStatusChange = useCallback(
     (value: StatusFilter) => {
       setStatusInput(value);
-      setFilters({ ...filters, status: value, page: 1 });
+      updateFilters({ status: value });
     },
-    [setFilters, filters]
+    [updateFilters]
   );
 
-  const handleSearchChange = (value: string) => {
-    setSearchInput(value);
-    setIsSearchPending(true);
+  const handleSortChange = useCallback(
+    (value: SortOption) => {
+      setSortInput(value);
+      updateFilters({ sortBy: value });
+    },
+    [updateFilters]
+  );
 
-    // Clear previous timeout
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    // Set new timeout for debounced search
-    const newTimeout = setTimeout(() => {
-      setFilters({ ...filters, search: value, page: 1 });
-      setIsSearchPending(false);
-    }, 500);
-
-    setSearchTimeout(newTimeout);
-  };
-
-  const handleSortChange = (value: string) => {
-    setSortInput(value as SortOption);
-    setFilters({ ...filters, sortBy: value as SortOption, page: 1 });
-  };
-
-  const handleClearFilters = () => {
-    // Clear timeout if exists
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
+  const handleClearFilters = useCallback(() => {
     setSearchInput("");
     setStatusInput("all");
     setSortInput("newest");
-    setIsSearchPending(false);
-    setFilters({
-      page: 1,
-      limit: 9,
-      search: "",
-      status: "all",
-      sortBy: "newest",
-    });
-  };
-
-  const goToPage = (page: number) => {
-    setFilters({ ...filters, page });
-  };
+    resetFilters();
+  }, [resetFilters]);
 
   const handleEditChair = (chair: Chair) => {
     setSelectedChair(chair);
@@ -148,15 +138,7 @@ const ChairManagement = () => {
   };
 
   const handleDeleteChair = async (id: number) => {
-    const confirmed = await confirm({
-      title: "Excluir cadeira",
-      description:
-        "Tem certeza que deseja excluir esta cadeira? Esta ação não pode ser desfeita.",
-      confirmText: "Excluir",
-      destructive: true,
-    });
-
-    if (confirmed) {
+    if (window.confirm("Tem certeza que deseja excluir esta cadeira?")) {
       try {
         await deleteChair(id);
         // Toast já é gerenciado pelo hook useChairs
@@ -164,6 +146,20 @@ const ChairManagement = () => {
         // Toast já é gerenciado pelo hook useChairs
         console.error(err);
       }
+    }
+  };
+
+  const getStatusColorClass = (status: string) => {
+    const colorName = getStatusColor(status as ChairStatusKey);
+    switch (colorName) {
+      case "green":
+        return "bg-green-100 text-green-800";
+      case "yellow":
+        return "bg-yellow-100 text-yellow-800";
+      case "red":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -184,12 +180,32 @@ const ChairManagement = () => {
     }
   };
 
+  const getSortText = (option: SortOption) => {
+    switch (option) {
+      case "newest":
+        return "Mais recentes";
+      case "oldest":
+        return "Mais antigas";
+      case "name-asc":
+        return "Nome (A-Z)";
+      case "name-desc":
+        return "Nome (Z-A)";
+      default:
+        return "";
+    }
+  };
+
+  const getStatusFilterText = (status: StatusFilter) => {
+    if (status === "all") return "Todos";
+    return getStatusLabel(status as ChairStatusKey);
+  };
+
   const hasActiveFilters =
     searchInput || statusInput !== "all" || sortInput !== "newest";
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-col lg:flex-row gap-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Armchair className="h-8 w-8 text-black" />
           <div>
@@ -201,7 +217,7 @@ const ChairManagement = () => {
         </div>
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex w-full lg:w-auto items-center gap-2"
+          className="flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
           Nova Cadeira
@@ -213,7 +229,7 @@ const ChairManagement = () => {
           {
             key: "total",
             label: "Total",
-            value: chairsInsights.total,
+            value: chairStats.total,
             icon: Armchair,
             valueColor: "text-black",
             iconColor: "text-gray-400",
@@ -221,7 +237,7 @@ const ChairManagement = () => {
           {
             key: "active",
             label: getStatusLabel("ACTIVE"),
-            value: chairsInsights.active,
+            value: chairStats.active,
             icon: Activity,
             valueColor: "text-green-600",
             iconColor: "text-green-400",
@@ -229,7 +245,7 @@ const ChairManagement = () => {
           {
             key: "maintenance",
             label: getStatusLabel("MAINTENANCE"),
-            value: chairsInsights.maintenance,
+            value: chairStats.maintenance,
             icon: Wrench,
             valueColor: "text-yellow-600",
             iconColor: "text-yellow-400",
@@ -237,7 +253,7 @@ const ChairManagement = () => {
           {
             key: "inactive",
             label: getStatusLabel("INACTIVE"),
-            value: chairsInsights.inactive,
+            value: chairStats.inactive,
             icon: XCircle,
             valueColor: "text-red-600",
             iconColor: "text-red-400",
@@ -270,31 +286,83 @@ const ChairManagement = () => {
         })}
       </div>
 
-      <GenericFilter
-        searchPlaceholder="Pesquisar por nome, descrição ou localização..."
-        searchValue={searchInput}
-        onSearchChange={handleSearchChange}
-        isSearchPending={isSearchPending}
-        statusOptions={[
-          { value: "all", label: "Todos" },
-          ...getStatusOptions().map((option) => ({
-            value: option.value,
-            label: option.label,
-          })),
-        ]}
-        statusValue={statusInput}
-        onStatusChange={(value) => handleStatusChange(value as StatusFilter)}
-        sortOptions={[
-          { value: "newest", label: "Mais recentes" },
-          { value: "oldest", label: "Mais antigas" },
-          { value: "name-asc", label: "Nome (A-Z)" },
-          { value: "name-desc", label: "Nome (Z-A)" },
-        ]}
-        sortValue={sortInput}
-        onSortChange={(value) => handleSortChange(value as SortOption)}
-        onClearFilters={handleClearFilters}
-        hasActiveFilters={!!hasActiveFilters}
-      />
+      <Card>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="relative flex-1">
+              <Search
+                className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors ${
+                  isSearchPending
+                    ? "text-blue-500 animate-pulse"
+                    : "text-gray-400"
+                }`}
+              />
+              <Input
+                placeholder="Pesquisar por nome, descrição ou localização..."
+                value={searchInput}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className={`pl-10 transition-colors ${
+                  isSearchPending ? "border-blue-300 ring-1 ring-blue-200" : ""
+                }`}
+              />
+              {isSearchPending && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-600" />
+              <Select
+                value={statusInput}
+                onValueChange={(value) =>
+                  handleStatusChange(value as StatusFilter)
+                }
+              >
+                <SelectTrigger className="w-40">
+                  <span>{getStatusFilterText(statusInput)}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {getStatusOptions().map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="h-4 w-4 text-gray-600" />
+              <Select
+                value={sortInput}
+                onValueChange={(value) => handleSortChange(value as SortOption)}
+              >
+                <SelectTrigger className="w-40">
+                  <span>{getSortText(sortInput)}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Mais recentes</SelectItem>
+                  <SelectItem value="oldest">Mais antigas</SelectItem>
+                  <SelectItem value="name-asc">Nome (A-Z)</SelectItem>
+                  <SelectItem value="name-desc">Nome (Z-A)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              className="whitespace-nowrap"
+            >
+              Limpar Filtros
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent>
@@ -303,15 +371,34 @@ const ChairManagement = () => {
           </h2>
 
           {chairs.length === 0 && !loading ? (
-            <EmptyState
-              icon={<AlertTriangle className="h-16 w-16 text-gray-300" />}
-              title="Nenhuma cadeira encontrada"
-              description={
-                hasActiveFilters
-                  ? "Nenhuma cadeira corresponde aos filtros aplicados."
-                  : "Ainda não há cadeiras cadastradas no sistema."
-              }
-            />
+            <div className="text-center py-8">
+              <Armchair className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              {pagination.totalItems === 0 ? (
+                <>
+                  <p className="text-gray-500">Nenhuma cadeira cadastrada</p>
+                  <Button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="mt-4"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Cadastrar primeira cadeira
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-500">
+                    Nenhuma cadeira encontrada com os filtros aplicados
+                  </p>
+                  <Button
+                    onClick={handleClearFilters}
+                    variant="outline"
+                    className="mt-4"
+                  >
+                    Limpar Filtros
+                  </Button>
+                </>
+              )}
+            </div>
           ) : loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-gray-500">Carregando...</div>
@@ -332,19 +419,14 @@ const ChairManagement = () => {
                             {chair.name}
                           </h3>
                         </div>
-                        <Badge
-                          variant={
-                            getStatusVariant(chair.status) as
-                              | "default"
-                              | "secondary"
-                              | "destructive"
-                              | "outline"
-                          }
-                          className="inline-flex items-center gap-1"
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColorClass(
+                            chair.status
+                          )}`}
                         >
                           {getStatusIcon(chair.status)}
                           {getStatusText(chair.status)}
-                        </Badge>
+                        </span>
                       </div>
 
                       {chair.description && (
@@ -380,6 +462,7 @@ const ChairManagement = () => {
                           onClick={() => handleDeleteChair(chair.id)}
                           size="sm"
                           variant="destructive"
+                          disabled={deleteLoading}
                           className="flex items-center gap-1"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -396,9 +479,11 @@ const ChairManagement = () => {
                 hasNextPage={pagination.hasNextPage}
                 hasPrevPage={pagination.hasPrevPage}
                 currentPage={pagination.currentPage}
+                nextPage={pagination.nextPage}
+                prevPage={pagination.prevPage}
                 lastPage={pagination.totalPages}
-                goToPage={(_, page: number) => goToPage(page)}
-                selectedDate=""
+                fetchAvailableChairs={fetchAvailableChairs}
+                selectedDate={selectedDate}
               />
             </>
           )}
@@ -406,7 +491,6 @@ const ChairManagement = () => {
       </Card>
 
       <ChairModal />
-      <ConfirmComponent />
     </div>
   );
 };

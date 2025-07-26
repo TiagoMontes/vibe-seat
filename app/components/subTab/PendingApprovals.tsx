@@ -19,10 +19,11 @@ import {
   getStatusVariant,
 } from "@/app/lib/utils";
 import { useApprovals } from "@/app/hooks/useApprovals";
+import { useToast } from "@/app/hooks/useToast";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 import GenericFilter from "@/app/components/GenericFilter";
 import EmptyState from "@/app/components/EmptyState";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const sortOptions = [
   { value: "newest", label: "Mais recentes" },
@@ -42,6 +43,11 @@ const PendingApprovals: React.FC = () => {
     filters,
     loading,
   } = useApprovals();
+  const { success, error } = useToast();
+
+  // Loading states para feedback visual imediato
+  const [approvingId, setApprovingId] = useState<number | null>(null);
+  const [rejectingId, setRejectingId] = useState<number | null>(null);
 
   useEffect(() => {
     listApprovals(filters);
@@ -51,7 +57,32 @@ const PendingApprovals: React.FC = () => {
     approvalId: number,
     status: "approved" | "rejected"
   ) => {
-    await updateApproval(approvalId, { status });
+    try {
+      // Set loading state para feedback visual imediato
+      if (status === "approved") {
+        setApprovingId(approvalId);
+      } else {
+        setRejectingId(approvalId);
+      }
+
+      await updateApproval(approvalId, { status });
+
+      // Toast de sucesso
+      const action = status === "approved" ? "aprovado" : "rejeitado";
+      success(`Usuário ${action} com sucesso!`);
+
+      // Atualizar a lista imediatamente
+      await listApprovals(filters);
+    } catch (err) {
+      // Toast de erro
+      const action = status === "approved" ? "aprovar" : "rejeitar";
+      error(`Erro ao ${action} usuário`);
+      console.error(`Erro ao ${action} usuário:`, err);
+    } finally {
+      // Limpar loading states
+      setApprovingId(null);
+      setRejectingId(null);
+    }
   };
 
   const handleSearchChange = (value: string) => {
@@ -143,17 +174,31 @@ const PendingApprovals: React.FC = () => {
             variant="destructive"
             size="sm"
             className="w-full sm:w-auto"
+            disabled={
+              rejectingId === approval.id || approvingId === approval.id
+            }
           >
-            <X className="h-4 w-4" />
-            Rejeitar
+            {rejectingId === approval.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <X className="h-4 w-4" />
+            )}
+            {rejectingId === approval.id ? "Rejeitando..." : "Rejeitar"}
           </Button>
           <Button
             onClick={() => handleApproval(approval.id, "approved")}
             className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
             size="sm"
+            disabled={
+              approvingId === approval.id || rejectingId === approval.id
+            }
           >
-            <Check className="h-4 w-4" />
-            Aprovar
+            {approvingId === approval.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
+            {approvingId === approval.id ? "Aprovando..." : "Aprovar"}
           </Button>
         </div>
       </div>

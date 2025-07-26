@@ -114,7 +114,7 @@ const ChairModal = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="relative w-full max-w-[400px] min-w-[350px] sm:min-w-[400px]">
+      <DialogContent className="relative w-full max-w-[500px] min-w-[300px] rounded-lg">
         <DialogClose onClose={handleClose} />
 
         <DialogHeader>

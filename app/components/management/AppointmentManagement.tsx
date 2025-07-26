@@ -33,7 +33,6 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
-import { AppointmentModal } from "@/app/components/modal/AppointmentModal";
 import { GenericFilter } from "@/app/components/GenericFilter";
 
 interface ChairCardProps {
@@ -197,7 +196,7 @@ export const AppointmentManagement = () => {
     "schedule" | "my-appointments" | "scheduled-list"
   >("schedule");
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  
+
   // Filter state
   const [searchValue, setSearchValue] = useState("");
   const [sortValue, setSortValue] = useState("newest");
@@ -217,35 +216,48 @@ export const AppointmentManagement = () => {
 
   // Function to fetch chairs with pagination and filters
   const handleFetchChairs = useCallback(
-    async (date: string, page: number = 1, append: boolean = false, filters?: { search?: string; sortBy?: string }) => {
+    async (
+      date: string,
+      page: number = 1,
+      append: boolean = false,
+      filters?: { search?: string; sortBy?: string }
+    ) => {
       setAvailableTimesLoading(true);
       try {
         const currentSearch = filters?.search || searchValue || "";
         const currentSort = filters?.sortBy || sortValue || "newest";
-        
+
         // First, get sorted and filtered chairs from chairs API
         const chairFilters = {
           page,
           limit: 3,
           search: currentSearch,
-          status: "", // Empty to get all active chairs
-          sortBy: currentSort
+          status: undefined, // Empty to get all active chairs
+          sortBy: currentSort as
+            | "newest"
+            | "oldest"
+            | "name-asc"
+            | "name-desc"
+            | undefined,
         };
-        
+
         const chairsResult = await fetchChairs(chairFilters);
-        
+
         // If no chairs found, return empty result
         if (!chairsResult.chairs || chairsResult.chairs.length === 0) {
           const emptyData = {
             chairs: [],
-            pagination: chairsResult.pagination
+            pagination: chairsResult.pagination,
+            totalSlots: 0,
+            bookedSlots: 0,
+            availableSlots: 0,
           };
-          
+
           setChairsData(emptyData);
           setAvailableTimesData(emptyData);
           return;
         }
-        
+
         // Update chairs data
         setChairsData((prevData: any) => {
           if (append && prevData?.chairs) {
@@ -257,33 +269,41 @@ export const AppointmentManagement = () => {
             return chairsResult;
           }
         });
-        
+
         // Now fetch availability for these specific chairs
         setAvailabilityLoading(true);
         const chairIds = chairsResult.chairs.map((chair: any) => chair.id);
         const availableTimesData = await fetchAvailableTimes(date, chairIds);
-        
+
         // Combine chair data with available times data
-        const combinedChairs = chairsResult.chairs?.map((chair: any) => {
-          // Find matching chair in available times data
-          const availableTimesChair = availableTimesData.chairs?.find(
-            (atChair: { chairId: number; available?: string[]; unavailable?: string[] }) => atChair.chairId === chair.id
-          );
-          
-          return {
-            chairId: chair.id,
-            chairName: chair.name,
-            chairLocation: chair.location,
-            available: availableTimesChair?.available || [],
-            unavailable: availableTimesChair?.unavailable || []
-          };
-        }) || [];
-        
+        const combinedChairs =
+          chairsResult.chairs?.map((chair: any) => {
+            // Find matching chair in available times data
+            const availableTimesChair = availableTimesData.chairs?.find(
+              (atChair: {
+                chairId: number;
+                available?: string[];
+                unavailable?: string[];
+              }) => atChair.chairId === chair.id
+            );
+
+            return {
+              chairId: chair.id,
+              chairName: chair.name,
+              chairLocation: chair.location,
+              available: availableTimesChair?.available || [],
+              unavailable: availableTimesChair?.unavailable || [],
+            };
+          }) || [];
+
         const transformedData = {
           chairs: combinedChairs,
-          pagination: chairsResult.pagination
+          pagination: chairsResult.pagination,
+          totalSlots: availableTimesData.totalSlots || 0,
+          bookedSlots: availableTimesData.bookedSlots || 0,
+          availableSlots: availableTimesData.availableSlots || 0,
         };
-        
+
         setAvailableTimesData((prevData) => {
           if (append && prevData?.chairs) {
             // Adiciona novas cadeiras às existentes
@@ -296,7 +316,6 @@ export const AppointmentManagement = () => {
             return transformedData;
           }
         });
-        
       } catch (error) {
         console.error("Erro ao buscar cadeiras e horários disponíveis:", error);
         appointmentError("Erro ao buscar cadeiras e horários disponíveis");
@@ -323,7 +342,7 @@ export const AppointmentManagement = () => {
       const dateStr = selectedDate.toISOString().split("T")[0];
       handleFetchChairs(dateStr, 1, false, {
         search: searchValue,
-        sortBy: sortValue
+        sortBy: sortValue,
       });
     } else {
       setChairsData(null);
@@ -334,13 +353,12 @@ export const AppointmentManagement = () => {
   // Sincronizar estado quando mudar de seção - apenas quando necessário
   useEffect(() => {
     // Atualizar agendamentos apenas quando mudar para seções que precisam dos dados
-    if (
-      activeSection === "my-appointments" ||
-      activeSection === "scheduled-list"
-    ) {
+    if (activeSection === "my-appointments") {
+      fetchMyAppointments();
+    } else if (activeSection === "scheduled-list") {
       fetchAppointments();
     }
-  }, [activeSection]); // Remove fetchAppointments da dependência
+  }, [activeSection, fetchMyAppointments, fetchAppointments]);
 
   // Get available times for a specific chair
   const getAvailableTimes = (chairId: number) => {
@@ -457,7 +475,6 @@ export const AppointmentManagement = () => {
     setTimeout(() => setIsSearchPending(false), 500);
   }, []);
 
-
   const handleSortChange = useCallback((value: string) => {
     setSortValue(value);
   }, []);
@@ -474,7 +491,7 @@ export const AppointmentManagement = () => {
     { value: "newest", label: "Mais Recente" },
     { value: "oldest", label: "Mais Antigo" },
     { value: "name", label: "Nome A-Z" },
-    { value: "name_desc", label: "Nome Z-A" }
+    { value: "name_desc", label: "Nome Z-A" },
   ];
 
   // Loading específico para o grid de cadeiras
@@ -644,71 +661,80 @@ export const AppointmentManagement = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-                {chairsData?.chairs && chairsData.chairs.map((chair: any) => {
-                  // Check if we have availability data for this chair
-                  const chairAvailabilityData = availableTimesData?.chairs?.find(
-                    (chairData: any) => chairData.chairId === chair.id
-                  );
-                  
-                  if (availabilityLoading || !chairAvailabilityData) {
-                    // Show chair with skeleton loading for availability
+                {chairsData?.chairs &&
+                  chairsData.chairs.map((chair: any) => {
+                    // Check if we have availability data for this chair
+                    const chairAvailabilityData =
+                      availableTimesData?.chairs?.find(
+                        (chairData: any) => chairData.chairId === chair.id
+                      );
+
+                    if (availabilityLoading || !chairAvailabilityData) {
+                      // Show chair with skeleton loading for availability
+                      return (
+                        <Card
+                          key={chair.id}
+                          className="h-full border border-gray-200 p-2 sm:p-4 flex flex-col justify-between"
+                        >
+                          <CardHeader className="pb-2 sm:pb-3 px-0 sm:px-6">
+                            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                              {chair.name}
+                            </CardTitle>
+                            {chair.location && (
+                              <p className="text-xs sm:text-sm text-gray-600">
+                                {chair.location}
+                              </p>
+                            )}
+                          </CardHeader>
+                          <CardContent className="px-0 sm:px-6">
+                            <div className="space-y-2 sm:space-y-3">
+                              <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700">
+                                <ClockIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                                Carregando horários...
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2">
+                                {Array.from({ length: 6 }).map(
+                                  (_, timeIndex) => (
+                                    <div
+                                      key={timeIndex}
+                                      className="h-10 sm:h-12 bg-gray-200 rounded animate-pulse"
+                                    ></div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+
                     return (
-                      <Card key={chair.id} className="h-full border border-gray-200 p-2 sm:p-4 flex flex-col justify-between">
-                        <CardHeader className="pb-2 sm:pb-3 px-0 sm:px-6">
-                          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                            {chair.name}
-                          </CardTitle>
-                          {chair.location && (
-                            <p className="text-xs sm:text-sm text-gray-600">{chair.location}</p>
-                          )}
-                        </CardHeader>
-                        <CardContent className="px-0 sm:px-6">
-                          <div className="space-y-2 sm:space-y-3">
-                            <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700">
-                              <ClockIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-                              Carregando horários...
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2">
-                              {Array.from({ length: 6 }).map((_, timeIndex) => (
-                                <div
-                                  key={timeIndex}
-                                  className="h-10 sm:h-12 bg-gray-200 rounded animate-pulse"
-                                ></div>
-                              ))}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <ChairCard
+                        key={chair.id}
+                        chair={{
+                          id: chair.id,
+                          name: chair.name,
+                          location: chair.location || "",
+                          status: "ACTIVE",
+                          description: "",
+                          createdAt: "",
+                          updatedAt: "",
+                          deletedAt: null,
+                        }}
+                        availableTimes={getAvailableTimes(chair.id)}
+                        onTimeSelect={handleTimeSelect}
+                        createLoading={createLoading}
+                        selectedDate={selectedDate}
+                      />
                     );
-                  }
-                  
-                  return (
-                    <ChairCard
-                      key={chair.id}
-                      chair={{
-                        id: chair.id,
-                        name: chair.name,
-                        location: chair.location || "",
-                        status: "ACTIVE",
-                        description: "",
-                        createdAt: "",
-                        updatedAt: "",
-                        deletedAt: null,
-                      }}
-                      availableTimes={getAvailableTimes(chair.id)}
-                      onTimeSelect={handleTimeSelect}
-                      createLoading={createLoading}
-                      selectedDate={selectedDate}
-                    />
-                  );
-                })}
-                
+                  })}
+
                 {/* If we don't have chairs data yet but we're not loading, show skeletons */}
-                {!chairsData?.chairs && availableTimesLoading && (
+                {!chairsData?.chairs &&
+                  availableTimesLoading &&
                   Array.from({ length: 3 }).map((_, index) => (
                     <ChairCardSkeleton key={index} />
-                  ))
-                )}
+                  ))}
               </div>
 
               {/* Load More Button */}
@@ -718,8 +744,6 @@ export const AppointmentManagement = () => {
                     hasNextPage={availableTimesData.pagination.hasNextPage}
                     hasPrevPage={availableTimesData.pagination.hasPrevPage}
                     currentPage={availableTimesData.pagination.currentPage}
-                    nextPage={availableTimesData.pagination.nextPage || 0}
-                    prevPage={availableTimesData.pagination.prevPage || 0}
                     lastPage={availableTimesData.pagination.lastPage}
                     goToPage={handleFetchChairs}
                     selectedDate={
@@ -728,14 +752,6 @@ export const AppointmentManagement = () => {
                         : ""
                     }
                   />
-                </div>
-              )}
-
-              {/* Pagination Info */}
-              {availableTimesData.pagination.totalItems > 0 && (
-                <div className="text-center text-xs sm:text-sm text-gray-600">
-                  Mostrando {availableTimesData.chairs.length} de{" "}
-                  {availableTimesData.pagination.totalItems} cadeiras
                 </div>
               )}
             </>
@@ -749,8 +765,6 @@ export const AppointmentManagement = () => {
         />
       )}
 
-      {/* Appointment Modal */}
-      <AppointmentModal />
       <ConfirmComponent />
     </div>
   );

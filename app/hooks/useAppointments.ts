@@ -5,7 +5,6 @@ import {
   myAppointmentsAtom, 
   appointmentPaginationAtom,
   myAppointmentPaginationAtom,
-  myAppointmentFiltersAtom,
   myAppointmentsLoadingAtom
 } from '@/app/atoms/appointmentAtoms';
 import { AppointmentFilters, CreateAppointmentRequest } from '@/app/types/api';
@@ -15,14 +14,13 @@ export const useAppointments = () => {
   const setMyAppointments = useSetAtom(myAppointmentsAtom);
   const setPagination = useSetAtom(appointmentPaginationAtom);
   const setMyPagination = useSetAtom(myAppointmentPaginationAtom);
-  const setMyFilters = useSetAtom(myAppointmentFiltersAtom);
   const setMyLoading = useSetAtom(myAppointmentsLoadingAtom);
 
   const fetchAppointments = useCallback(async (customFilters?: Partial<AppointmentFilters>) => {
     try {
       const filters: AppointmentFilters = {
         page: 1,
-        limit: 10,
+        limit: 6,
         status: "all", // Mudança: começar com "all" para mostrar todos
         ...customFilters,
       };
@@ -55,7 +53,7 @@ export const useAppointments = () => {
         currentPage: 1,
         totalPages: 1,
         totalItems: 0,
-        itemsPerPage: 10,
+        itemsPerPage: 6,
         hasNextPage: false,
         hasPrevPage: false,
         nextPage: null,
@@ -75,7 +73,7 @@ export const useAppointments = () => {
     try {
       const filters: AppointmentFilters = {
         page: 1,
-        limit: 10,
+        limit: 6,
         status: "all",
         ...customFilters,
       };
@@ -108,7 +106,7 @@ export const useAppointments = () => {
         currentPage: 1,
         totalPages: 1,
         totalItems: 0,
-        itemsPerPage: 10,
+        itemsPerPage: 6,
         hasNextPage: false,
         hasPrevPage: false,
         nextPage: null,

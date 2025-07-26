@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Extract query parameters
     const { searchParams } = new URL(request.url);
     const page = searchParams.get("page") || "1";
-    const limit = searchParams.get("limit") || "10";
+    const limit = searchParams.get("limit") || "6";
     const status = searchParams.get("status") || "";
     const search = searchParams.get("search") || "";
     const sortBy = searchParams.get("sortBy") || "newest";
