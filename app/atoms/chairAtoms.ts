@@ -1,5 +1,5 @@
 import { atom } from "jotai";
-import { Chair, DashboardChairs, Pagination, ChairFilters } from "@/app/types/api";
+import { Chair, Pagination, ChairFilters } from "@/app/types/api";
 
 // Lista de cadeiras (agora paginada)
 export const chairsAtom = atom<Chair[]>([]);
@@ -26,14 +26,6 @@ export const chairFiltersAtom = atom<ChairFilters>({
   sortBy: "newest",
 });
 
-// Estatísticas das cadeiras (agora vem do backend)
-export const chairStatsAtom = atom<DashboardChairs>({
-  total: 0,
-  active: 0,
-  maintenance: 0,
-  inactive: 0,
-});
-
 // Estados de loading
 export const chairsLoadingAtom = atom<boolean>(false);
 export const chairCreateLoadingAtom = atom<boolean>(false);
@@ -44,24 +36,3 @@ export const chairDeleteLoadingAtom = atom<boolean>(false);
 export const chairModalOpenAtom = atom<boolean>(false);
 export const chairEditModalOpenAtom = atom<boolean>(false);
 export const selectedChairAtom = atom<Chair | null>(null);
-
-// Átomo derivado para calcular as estatísticas automaticamente (fallback para client-side)
-export const computedChairStatsAtom = atom((get) => {
-  const backendStats = get(chairStatsAtom);
-  const chairs = get(chairsAtom);
-  
-  // Se temos stats do backend, usa elas
-  if (backendStats.total > 0) {
-    return backendStats;
-  }
-  
-  // Fallback para cálculo client-side (quando não há paginação)
-  const stats: DashboardChairs = {
-    total: chairs.length,
-    active: chairs.filter((chair) => chair.status === "ACTIVE").length,
-    maintenance: chairs.filter((chair) => chair.status === "MAINTENANCE").length,
-    inactive: chairs.filter((chair) => chair.status === "INACTIVE").length,
-  };
-  
-  return stats;
-}); 

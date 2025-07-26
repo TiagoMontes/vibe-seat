@@ -68,7 +68,7 @@ const formatDateTime = (
       time: formattedTime,
     };
   } catch (error) {
-    // Se houver erro na formatação, retorna valores padrão
+    console.error("Erro ao formatar data e hora:", error);
     return {
       date: "Data inválida",
       time: "Horário inválido",
@@ -218,7 +218,7 @@ export const AppointmentManagement = () => {
     } else {
       setAvailableTimesData(null);
     }
-  }, [selectedDate]);
+  }, [selectedDate, handleFetchAvailableTimes, setAvailableTimesData]);
 
   // Sincronizar estado quando mudar de seção - apenas quando necessário
   useEffect(() => {

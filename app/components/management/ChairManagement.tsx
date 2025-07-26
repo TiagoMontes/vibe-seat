@@ -21,7 +21,6 @@ import {
   chairModalOpenAtom,
   chairEditModalOpenAtom,
   selectedChairAtom,
-  computedChairStatsAtom,
 } from "@/app/atoms/chairAtoms";
 import { useConfirm } from "@/app/hooks/useConfirm";
 import {
@@ -43,7 +42,6 @@ const ChairManagement = () => {
   const [, setIsCreateModalOpen] = useAtom(chairModalOpenAtom);
   const [, setIsEditModalOpen] = useAtom(chairEditModalOpenAtom);
   const [, setSelectedChair] = useAtom(selectedChairAtom);
-  const [chairStats] = useAtom(computedChairStatsAtom);
 
   const [searchInput, setSearchInput] = useState("");
   const [statusInput, setStatusInput] = useState<StatusFilter>("all");

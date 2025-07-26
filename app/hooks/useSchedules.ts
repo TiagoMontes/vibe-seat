@@ -83,7 +83,7 @@ export const useSchedules = () => {
       console.error('Erro ao criar configuração de horário:', error);
       throw error;
     }
-  }, [fetchSchedules]);
+  }, []);
 
   const updateSchedule = useCallback(async (scheduleData: UpdateScheduleRequest, id: number) => {
     try {
@@ -115,7 +115,7 @@ export const useSchedules = () => {
       console.error('Erro ao atualizar configuração de horário:', error);
       throw error;
     }
-  }, [fetchSchedules]);
+  }, []);
 
   const deleteSchedule = useCallback(async (id: number) => {
     try {
