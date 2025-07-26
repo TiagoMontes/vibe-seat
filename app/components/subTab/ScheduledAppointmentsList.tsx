@@ -223,24 +223,36 @@ export const ScheduledAppointmentsList = ({
     }
   };
 
-  const formatDateTime = (datetime: string) => {
-    const date = new Date(datetime);
+  const formatDateTime = (datetimeStart: string, datetimeEnd: string) => {
+    // Remove 'Z' and parse as local time to avoid UTC conversion
+    const startDateStr = datetimeStart.replace('Z', '').replace('T', ' ');
+    const endDateStr = datetimeEnd.replace('Z', '').replace('T', ' ');
+    
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    
     return {
-      date: date.toLocaleDateString("pt-BR", {
+      date: startDate.toLocaleDateString("pt-BR", {
         weekday: "long",
         year: "numeric",
         month: "long",
         day: "numeric",
       }),
-      time: date.toLocaleTimeString("pt-BR", {
+      timeRange: `${startDate.toLocaleTimeString("pt-BR", {
         hour: "2-digit",
         minute: "2-digit",
-      }),
+      })} - ${endDate.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`,
     };
   };
 
   const formatCreatedAt = (createdAt: string) => {
-    return new Date(createdAt).toLocaleDateString("pt-BR", {
+    // Remove 'Z' and parse as local time to avoid UTC conversion
+    const dateStr = createdAt.replace('Z', '').replace('T', ' ');
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -328,7 +340,7 @@ export const ScheduledAppointmentsList = ({
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {filteredAppointments.map((appointment) => {
-            const { date, time } = formatDateTime(appointment.datetimeStart);
+            const { date, timeRange } = formatDateTime(appointment.datetimeStart, appointment.datetimeEnd);
 
             return (
               <Card
@@ -393,7 +405,7 @@ export const ScheduledAppointmentsList = ({
                               Horário
                             </span>
                           </div>
-                          <p className="text-sm text-gray-900 pl-6">{time}</p>
+                          <p className="text-sm text-gray-900 pl-6">{timeRange}</p>
                         </div>
                       </div>
                     </div>
