@@ -28,6 +28,8 @@ import {
 import { useRoles } from "@/app/hooks/useRoles";
 import { useUsers } from "@/app/hooks/useUsers";
 import { Role } from "@/app/types/api";
+import { getRoleNameById } from "../lib/utils";
+import { useToast } from "@/app/hooks/useToast";
 
 interface RegisterProps {
   onBackToLogin: () => void;
@@ -40,6 +42,7 @@ const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
   const [rolesLoading, setRolesLoading] = useState(false);
   const [rolesError, setRolesError] = useState<string | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
+  const { success, error } = useToast();
 
   const form = useForm<RegisterZodFormData>({
     resolver: zodResolver(registerZodSchema),
@@ -58,12 +61,13 @@ const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
       setRolesError(null);
       try {
         const response = await getRoles();
+
         if (response) {
-          setRoles(response.roles);
+          setRoles(response);
         }
-      } catch (error) {
-        setRolesError("Erro ao carregar tipos de acesso");
-        console.error("Erro ao buscar roles:", error);
+      } catch (err) {
+        error("Erro ao carregar tipos de acesso");
+        console.error("Erro ao buscar roles:", err);
       } finally {
         setRolesLoading(false);
       }
@@ -75,21 +79,20 @@ const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
   const onSubmit = async (data: RegisterZodFormData) => {
     setCreateLoading(true);
     try {
-      const success = await createUser({
+      const response = await createUser({
         username: data.username,
         password: data.password,
         roleId: data.roleId,
       });
 
-      if (success) {
+      if (response) {
+        success("Usuário criado com sucesso");
         form.reset();
-        // Voltar para login após sucesso
-        setTimeout(() => {
-          onBackToLogin();
-        }, 2000);
+        onBackToLogin();
       }
-    } catch (error) {
-      console.error("Erro ao criar usuário:", error);
+    } catch (err) {
+      error("Erro ao criar usuário");
+      console.error("Erro ao criar usuário:", err);
     } finally {
       setCreateLoading(false);
     }
@@ -204,7 +207,7 @@ const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
                         <option value="">Selecione um tipo de acesso</option>
                         {roles.map((role) => (
                           <option key={role.id} value={role.id}>
-                            {role.name}
+                            {getRoleNameById(Number(role.id))}
                           </option>
                         ))}
                       </select>

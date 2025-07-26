@@ -71,7 +71,6 @@ const PendingApprovals: React.FC = () => {
 
   const goToPage = (page: number) => {
     setFilters({ ...filters, page });
-    listApprovals(filters);
   };
 
   const hasActiveFilters =
@@ -226,11 +225,10 @@ const PendingApprovals: React.FC = () => {
               hasNextPage={pagination.hasNextPage}
               hasPrevPage={pagination.hasPrevPage}
               currentPage={pagination.currentPage}
-              nextPage={pagination.nextPage || 0}
-              prevPage={pagination.prevPage || 0}
               lastPage={pagination.lastPage}
               goToPage={(_, page) => goToPage(page)}
               selectedDate=""
+              totalItems={pagination.totalItems}
             />
           )}
         </>

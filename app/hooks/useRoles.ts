@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback } from 'react';
-import { RoleListResponse } from '@/app/types/api';
+import { SetStateAction, useCallback } from 'react';
+import { Role, RoleListResponse } from '@/app/types/api';
 
 export const useRoles = () => {
-  const getRoles = useCallback(async (): Promise<RoleListResponse | null> => {
+  const getRoles = useCallback(async (): Promise<SetStateAction<Role[]> | null> => {
     try {
       const response = await fetch('/api/roles/getAll');
       
