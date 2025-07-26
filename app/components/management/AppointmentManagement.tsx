@@ -622,23 +622,6 @@ export const AppointmentManagement = () => {
               Lista de Agendamentos
             </Button>
           )}
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={chairsLoading || schedulesLoading}
-            className="flex items-center gap-2"
-          >
-            <RefreshCwIcon className="h-4 w-4" />
-            Atualizar
-          </Button>
-          <Button
-            variant="default"
-            onClick={() => setModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <CalendarIcon className="h-4 w-4" />
-            Novo Agendamento
-          </Button>
         </div>
       </div>
 
