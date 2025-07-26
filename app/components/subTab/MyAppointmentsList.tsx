@@ -22,7 +22,9 @@ import { useToast } from "@/app/hooks/useToast";
 import { useConfirm } from "@/app/hooks/useConfirm";
 import {
   myAppointmentsAtom,
-  appointmentPaginationAtom,
+  myAppointmentPaginationAtom,
+  myAppointmentFiltersAtom,
+  myAppointmentsLoadingAtom,
   appointmentCancelLoadingAtom,
 } from "@/app/atoms/appointmentAtoms";
 import { Badge } from "@/components/ui/badge";
@@ -36,25 +38,20 @@ interface MyAppointmentsListProps {
 export const MyAppointmentsList = ({
   onAppointmentChange,
 }: MyAppointmentsListProps) => {
-  const { cancelAppointment, fetchMyAppointments } = useAppointments();
+  const { fetchMyAppointments, cancelAppointment } = useAppointments();
   const { appointmentSuccess, appointmentError } = useToast();
   const { confirm, ConfirmComponent } = useConfirm();
 
   // Atoms do Jotai
   const [appointments, setAppointments] = useAtom(myAppointmentsAtom);
-  const [pagination] = useAtom(appointmentPaginationAtom);
+  const [pagination] = useAtom(myAppointmentPaginationAtom);
+  const [filters, setFilters] = useAtom(myAppointmentFiltersAtom);
+  const [loading, setLoading] = useAtom(myAppointmentsLoadingAtom);
   const [cancelLoading, setCancelLoading] = useAtom(
     appointmentCancelLoadingAtom
   );
 
-  const [loading, setLoading] = useState(true); // Começar como true para evitar flash de dados antigos
   const [error, setError] = useState<string>("");
-  const [filters, setFilters] = useState({
-    status: "all" as string,
-    page: 1,
-    limit: 10,
-  });
-
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   // Use refs to avoid dependency issues
@@ -67,29 +64,34 @@ export const MyAppointmentsList = ({
   appointmentErrorRef.current = appointmentError;
   setAppointmentsRef.current = setAppointments;
 
-  const handleFetchAppointments = useCallback(async () => {
-    setLoading(true);
+  const handleFetchMyAppointments = useCallback(async () => {
     setError("");
     try {
-      await fetchMyAppointmentsRef.current();
+      await fetchMyAppointmentsRef.current({
+        page: filters.page,
+        limit: filters.limit,
+        status: filters.status,
+      });
     } catch (err) {
       console.error("Erro ao buscar agendamentos:", err);
       setError("Erro ao carregar agendamentos");
       appointmentErrorRef.current("Erro ao carregar agendamentos");
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [filters.page, filters.limit, filters.status]);
 
   // Fetch appointments on mount and when filters change
   useEffect(() => {
     // Limpar dados antigos e carregar novos
     setAppointmentsRef.current([]);
-    handleFetchAppointments();
-  }, [filters.status, filters.page, filters.limit, handleFetchAppointments]);
+    handleFetchMyAppointments();
+  }, [filters.status, filters.page, filters.limit, handleFetchMyAppointments]);
 
   const handleStatusFilterChange = (status: string) => {
-    setFilters((prev) => ({ ...prev, status, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      status: status as "all" | "SCHEDULED" | "CONFIRMED" | "CANCELLED",
+      page: 1,
+    }));
   };
 
   const handlePageChange = (page: number) => {
@@ -113,7 +115,7 @@ export const MyAppointmentsList = ({
         await cancelAppointment(id);
         appointmentSuccess("Agendamento cancelado com sucesso!");
         // Recarregar a lista para garantir sincronização
-        await handleFetchAppointments();
+        await handleFetchMyAppointments();
         // Notificar o componente pai sobre a mudança
         onAppointmentChange?.();
       } catch (error) {
@@ -242,7 +244,7 @@ export const MyAppointmentsList = ({
           <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto">
             {filters.status !== "all"
               ? `Não há agendamentos com status "${getStatusLabel(
-                  filters.status
+                  filters.status || "unknown"
                 )}"`
               : "Você ainda não possui agendamentos"}
           </p>

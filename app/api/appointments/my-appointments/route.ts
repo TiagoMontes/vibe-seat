@@ -33,7 +33,7 @@ export async function GET() {
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || "Erro ao buscar agendamentos" },
+        { error: errorData.message || "Erro ao buscar agendamentos" },
         { status: response.status }
       );
     }

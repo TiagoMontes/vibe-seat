@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json().catch(() => ({ error: "Erro desconhecido" }));
       return NextResponse.json(
-        { error: errorData.error || errorData.message || "Erro ao criar configuração" },
+        { error: errorData.message || errorData.message || "Erro ao criar configuração" },
         { status: backendResponse.status }
       );
     }

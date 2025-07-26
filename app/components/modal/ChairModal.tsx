@@ -50,10 +50,12 @@ const ChairModal = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useAtom(chairEditModalOpenAtom);
   const [selectedChair, setSelectedChair] = useAtom(selectedChairAtom);
 
-  const { createChair, updateChair, loading } = useChairs();
+  const { createChair, updateChair, createLoading, updateLoading } =
+    useChairs();
 
   const isEdit = isEditModalOpen && selectedChair;
   const isOpen = isCreateModalOpen || isEditModalOpen;
+  const isLoading = createLoading || updateLoading;
 
   const form = useForm<ChairZodFormData | ChairUpdateZodFormData>({
     resolver: zodResolver(isEdit ? chairUpdateZodSchema : chairZodSchema),
@@ -100,6 +102,7 @@ const ChairModal = () => {
       } else {
         await createChair(formData as CreateChairRequest);
       }
+
       handleClose();
     } catch (err) {
       console.error("Error saving chair:", err);
@@ -212,13 +215,13 @@ const ChairModal = () => {
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                disabled={loading}
+                disabled={isLoading}
                 className="flex-1"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading
+              <Button type="submit" disabled={isLoading} className="flex-1">
+                {isLoading
                   ? isEdit
                     ? "Atualizando..."
                     : "Criando..."

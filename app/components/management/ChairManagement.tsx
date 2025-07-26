@@ -67,7 +67,7 @@ const ChairManagement = () => {
 
   useEffect(() => {
     fetchChairs(filters);
-  }, [fetchChairs, filters]);
+  }, [filters]); // Remove fetchChairs da dependência para evitar loops
 
   useEffect(() => {
     setSearchInput(filters.search || "");
@@ -86,7 +86,7 @@ const ChairManagement = () => {
 
   useEffect(() => {
     fetchChairsInsights();
-  }, [fetchChairsInsights]);
+  }, []); // Remove fetchChairsInsights da dependência
 
   const handleStatusChange = useCallback(
     (value: StatusFilter) => {
@@ -150,11 +150,12 @@ const ChairManagement = () => {
   const handleDeleteChair = async (id: number) => {
     const confirmed = await confirm({
       title: "Excluir cadeira",
-      description: "Tem certeza que deseja excluir esta cadeira? Esta ação não pode ser desfeita.",
+      description:
+        "Tem certeza que deseja excluir esta cadeira? Esta ação não pode ser desfeita.",
       confirmText: "Excluir",
       destructive: true,
     });
-    
+
     if (confirmed) {
       try {
         await deleteChair(id);
@@ -165,7 +166,6 @@ const ChairManagement = () => {
       }
     }
   };
-
 
   const getStatusText = (status: string) => {
     return getStatusLabel(status as ChairStatusKey);
@@ -332,7 +332,16 @@ const ChairManagement = () => {
                             {chair.name}
                           </h3>
                         </div>
-                        <Badge variant={getStatusVariant(chair.status) as "default" | "secondary" | "destructive" | "outline"} className="inline-flex items-center gap-1">
+                        <Badge
+                          variant={
+                            getStatusVariant(chair.status) as
+                              | "default"
+                              | "secondary"
+                              | "destructive"
+                              | "outline"
+                          }
+                          className="inline-flex items-center gap-1"
+                        >
                           {getStatusIcon(chair.status)}
                           {getStatusText(chair.status)}
                         </Badge>

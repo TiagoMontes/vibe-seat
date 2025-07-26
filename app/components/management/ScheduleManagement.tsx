@@ -100,7 +100,8 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                 Configuração de Horários
               </h3>
               <p className="text-sm text-gray-600">
-                {(schedule.days?.length || schedule.dayIds?.length || 0)} dia(s) configurado(s)
+                {schedule.days?.length || schedule.dayIds?.length || 0} dia(s)
+                configurado(s)
               </p>
             </div>
           </div>
@@ -136,25 +137,23 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
             Dias da Semana:
           </p>
           <div className="flex flex-wrap gap-2">
-            {schedule.days ? (
-              schedule.days.map((day) => (
-                <span
-                  key={day.id}
-                  className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                >
-                  {day.name}
-                </span>
-              ))
-            ) : (
-              (schedule.dayIds || []).map((dayId: number) => (
-                <span
-                  key={dayId}
-                  className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                >
-                  Dia {dayId}
-                </span>
-              ))
-            )}
+            {schedule.days
+              ? schedule.days.map((day) => (
+                  <span
+                    key={day.id}
+                    className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                  >
+                    {day.name}
+                  </span>
+                ))
+              : (schedule.dayIds || []).map((dayId: number) => (
+                  <span
+                    key={dayId}
+                    className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                  >
+                    Dia {dayId}
+                  </span>
+                ))}
           </div>
         </div>
 
@@ -231,13 +230,14 @@ const ScheduleManagement: React.FC = () => {
   const [, setIsEditModalOpen] = useAtom(scheduleEditModalOpenAtom);
   const [, setSelectedSchedule] = useAtom(selectedScheduleAtom);
 
-  const { fetchSchedules, deleteSchedule, schedule, loading } = useSchedules();
-  const { success, error: showError } = useToast();
+  const { fetchSchedules, deleteSchedule, schedule, loading, deleteLoading } =
+    useSchedules();
+  const { error: showError } = useToast();
   const { confirm, ConfirmComponent } = useConfirm();
 
   useEffect(() => {
     fetchSchedules();
-  }, [fetchSchedules]);
+  }, []); // Remove fetchSchedules da dependência para evitar loops
 
   const handleEditSchedule = (schedule: Schedule) => {
     setSelectedSchedule(schedule);
@@ -257,7 +257,7 @@ const ScheduleManagement: React.FC = () => {
     if (confirmed) {
       try {
         await deleteSchedule(id);
-        success("Configuração excluída com sucesso!");
+        // Toast já é gerenciado pelo hook useSchedules
       } catch (err) {
         console.error(err);
         showError("Erro ao excluir configuração");

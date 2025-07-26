@@ -16,7 +16,7 @@ export const useUsers = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao criar usuário');
+        throw new Error(errorData.message || 'Erro ao criar usuário');
       }
 
       return true;
@@ -41,7 +41,7 @@ export const useUsers = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar usuários');
+        throw new Error(errorData.message || 'Erro ao buscar usuários');
       }
 
       const responseData = await response.json();
@@ -63,7 +63,7 @@ export const useUsers = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar usuário');
+        throw new Error(errorData.message || 'Erro ao buscar usuário');
       }
 
       const responseData = await response.json();
@@ -87,7 +87,7 @@ export const useUsers = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao excluir usuário');
+        throw new Error(errorData.message || 'Erro ao excluir usuário');
       }
 
       return true;

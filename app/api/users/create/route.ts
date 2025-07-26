@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || `Erro ao criar usuário: ${response.status}` },
+        { error: errorData.message || `Erro ao criar usuário: ${response.status}` },
         { status: response.status }
       );
     }

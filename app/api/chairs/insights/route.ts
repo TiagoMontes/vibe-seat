@@ -33,7 +33,7 @@ export async function GET() {
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || `Erro ao buscar insights das cadeiras: ${response.status}` },
+        { error: errorData.message || `Erro ao buscar insights das cadeiras: ${response.status}` },
         { status: response.status }
       );
     }

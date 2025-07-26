@@ -8,7 +8,7 @@ export const useMyAppointments = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar meus agendamentos');
+        throw new Error(errorData.message || 'Erro ao buscar meus agendamentos');
       }
 
       const responseData = await response.json();

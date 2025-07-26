@@ -38,7 +38,7 @@ export async function PATCH(
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || "Erro ao cancelar agendamento" },
+        { error: errorData.message || "Erro ao cancelar agendamento" },
         { status: response.status }
       );
     }

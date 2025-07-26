@@ -1,12 +1,22 @@
 import { useCallback } from 'react';
 import { useSetAtom } from 'jotai';
-import { appointmentsAtom, myAppointmentsAtom, appointmentPaginationAtom } from '@/app/atoms/appointmentAtoms';
+import { 
+  appointmentsAtom, 
+  myAppointmentsAtom, 
+  appointmentPaginationAtom,
+  myAppointmentPaginationAtom,
+  myAppointmentFiltersAtom,
+  myAppointmentsLoadingAtom
+} from '@/app/atoms/appointmentAtoms';
 import { AppointmentFilters, CreateAppointmentRequest } from '@/app/types/api';
 
 export const useAppointments = () => {
   const setAppointments = useSetAtom(appointmentsAtom);
   const setMyAppointments = useSetAtom(myAppointmentsAtom);
   const setPagination = useSetAtom(appointmentPaginationAtom);
+  const setMyPagination = useSetAtom(myAppointmentPaginationAtom);
+  const setMyFilters = useSetAtom(myAppointmentFiltersAtom);
+  const setMyLoading = useSetAtom(myAppointmentsLoadingAtom);
 
   const fetchAppointments = useCallback(async (customFilters?: Partial<AppointmentFilters>) => {
     try {
@@ -29,7 +39,7 @@ export const useAppointments = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar agendamentos');
+        throw new Error(errorData.message || 'Erro ao buscar agendamentos');
       }
 
       const responseData = await response.json();
@@ -60,30 +70,60 @@ export const useAppointments = () => {
     }
   }, [setAppointments, setPagination]);
 
-  const fetchMyAppointments = useCallback(async () => {
+  const fetchMyAppointments = useCallback(async (customFilters?: Partial<AppointmentFilters>) => {
+    setMyLoading(true);
     try {
-      const response = await fetch('/api/appointments/my-appointments');
+      const filters: AppointmentFilters = {
+        page: 1,
+        limit: 10,
+        status: "all",
+        ...customFilters,
+      };
 
+      const queryParams = new URLSearchParams();
+      
+      if (filters.page) queryParams.set('page', filters.page.toString());
+      if (filters.limit) queryParams.set('limit', filters.limit.toString());
+      if (filters.status && filters.status !== "all") queryParams.set('status', filters.status);
+      if (filters.search) queryParams.set('search', filters.search);
+      if (filters.sortBy) queryParams.set('sortBy', filters.sortBy);
+
+      const response = await fetch(`/api/appointments/my-appointments?${queryParams.toString()}`);
+      
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar agendamentos');
+        throw new Error(errorData.message || 'Erro ao buscar meus agendamentos');
       }
 
       const responseData = await response.json();
 
       if (!responseData.success) {
-        throw new Error(responseData.message || 'Erro ao buscar agendamentos');
+        throw new Error(responseData.message || 'Erro ao buscar meus agendamentos');
       }
       
-      // A API retorna { data: { appointments: [...] } }
-      const appointments = responseData.data?.appointments || [];
-      setMyAppointments(appointments);
-      return appointments;
+      const data = responseData.data;
+      
+      setMyAppointments(data.appointments || []);
+      setMyPagination(data.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 10,
+        hasNextPage: false,
+        hasPrevPage: false,
+        nextPage: null,
+        prevPage: null,
+        lastPage: 1,
+      });
+      
+      return data;
     } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error);
+      console.error('Erro ao buscar meus agendamentos:', error);
       throw error;
+    } finally {
+      setMyLoading(false);
     }
-  }, [setMyAppointments]);
+  }, [setMyAppointments, setMyPagination, setMyLoading]);
 
   const fetchAvailableTimes = useCallback(async (date: string, page?: number, limit?: number) => {
     try {
@@ -96,7 +136,7 @@ export const useAppointments = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar horários disponíveis');
+        throw new Error(errorData.message || 'Erro ao buscar horários disponíveis');
       }
 
       const responseData = await response.json();
@@ -124,7 +164,7 @@ export const useAppointments = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao criar agendamento');
+        throw new Error(errorData.message || 'Erro ao criar agendamento');
       }
 
       return true;
@@ -142,7 +182,7 @@ export const useAppointments = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao cancelar agendamento');
+        throw new Error(errorData.message || 'Erro ao cancelar agendamento');
       }
 
       const responseData = await response.json();
@@ -166,7 +206,7 @@ export const useAppointments = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao confirmar agendamento');
+        throw new Error(errorData.message || 'Erro ao confirmar agendamento');
       }
 
       const responseData = await response.json();

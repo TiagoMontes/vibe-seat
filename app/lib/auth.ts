@@ -31,7 +31,7 @@ async function loginAPI(username: string, password: string): Promise<LoginRespon
       
       try {
         const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
+        errorMessage = errorData.message || errorData.message || errorMessage;
       } catch (parseError) {
         console.error('Error parsing error response:', parseError);
       }

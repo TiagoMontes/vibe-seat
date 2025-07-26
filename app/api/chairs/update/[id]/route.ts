@@ -40,7 +40,7 @@ export async function PATCH(
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || "Erro ao atualizar cadeira" },
+        { error: errorData.message || "Erro ao atualizar cadeira" },
         { status: response.status }
       );
     }

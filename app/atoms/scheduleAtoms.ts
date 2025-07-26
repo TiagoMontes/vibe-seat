@@ -2,6 +2,8 @@ import { atom } from "jotai";
 import { Schedule as ApiSchedule } from "@/app/types/api";
 import { Schedule, ScheduleStats, ScheduleFilters, calculateTimeSlots, isScheduleActive } from "@/app/schemas/scheduleSchema";
 
+// ===== ESTADOS PRINCIPAIS =====
+
 // Modal state atoms
 export const scheduleModalOpenAtom = atom(false);
 export const scheduleEditModalOpenAtom = atom(false);
@@ -11,9 +13,39 @@ export const selectedScheduleAtom = atom<ApiSchedule | null>(null);
 export const schedulesAtom = atom<Schedule[]>([]);
 export const scheduleFiltersAtom = atom<ScheduleFilters>({});
 
-// Loading and error states
+// Estado principal do schedule (para compatibilidade com o código existente)
+export const currentScheduleAtom = atom<ApiSchedule | undefined>(undefined);
+
+// ===== ESTADOS DE LOADING =====
 export const schedulesLoadingAtom = atom<boolean>(false);
+export const scheduleCreateLoadingAtom = atom<boolean>(false);
+export const scheduleUpdateLoadingAtom = atom<boolean>(false);
+export const scheduleDeleteLoadingAtom = atom<boolean>(false);
 export const schedulesErrorAtom = atom<string>("");
+
+// ===== ATOMS PARA OPERAÇÕES =====
+
+// Trigger para forçar atualizações
+export const schedulesUpdateTriggerAtom = atom<number>(0);
+
+// Função para incrementar o trigger
+export const incrementSchedulesUpdateTriggerAtom = atom(
+  null,
+  (get, set) => {
+    const current = get(schedulesUpdateTriggerAtom);
+    set(schedulesUpdateTriggerAtom, current + 1);
+  }
+);
+
+// ===== ATOMS DERIVADOS =====
+
+// Estado combinado de loading (qualquer operação)
+export const isAnyScheduleLoadingAtom = atom((get) => {
+  return get(schedulesLoadingAtom) || 
+         get(scheduleCreateLoadingAtom) || 
+         get(scheduleUpdateLoadingAtom) || 
+         get(scheduleDeleteLoadingAtom);
+});
 
 // Computed stats atom
 export const computedScheduleStatsAtom = atom<ScheduleStats>((get) => {

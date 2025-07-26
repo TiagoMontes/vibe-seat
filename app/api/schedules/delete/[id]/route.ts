@@ -42,7 +42,7 @@ export async function DELETE(
       return NextResponse.json(
         { 
           success: false,
-          message: errorData.error || errorData.message || "Erro ao excluir configuração" 
+          message: errorData.message 
         },
         { status: backendResponse.status }
       );

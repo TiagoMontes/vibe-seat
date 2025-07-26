@@ -43,7 +43,7 @@ export async function PATCH(
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json().catch(() => ({ error: "Erro desconhecido" }));
       return NextResponse.json(
-        { error: errorData.error || errorData.message || "Erro ao atualizar configuração" },
+        { error: errorData.message || errorData.message || "Erro ao atualizar configuração" },
         { status: backendResponse.status }
       );
     }

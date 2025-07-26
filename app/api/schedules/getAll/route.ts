@@ -33,7 +33,7 @@ export async function GET() {
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json().catch(() => ({ error: "Erro desconhecido" }));
       return NextResponse.json(
-        { error: errorData.error || "Erro ao buscar configurações" },
+        { error: errorData.message || "Erro ao buscar configurações" },
         { status: backendResponse.status }
       );
     }

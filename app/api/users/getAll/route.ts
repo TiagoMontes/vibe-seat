@@ -64,7 +64,7 @@ export async function GET(request: Request) {
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || `Erro ao buscar usuários: ${response.status}` },
+        { error: errorData.message || `Erro ao buscar usuários: ${response.status}` },
         { status: response.status }
       );
     }

@@ -1,48 +1,51 @@
-import { useCallback, useState, useRef } from 'react';
-import { Filters, CreateChairRequest, UpdateChairRequest, Chair, Pagination, ChairInsights } from '@/app/types/api';
+import { useCallback, useRef } from 'react';
+import { useAtom, useSetAtom } from 'jotai';
+import { 
+  CreateChairRequest, 
+  UpdateChairRequest, 
+  Chair, 
+  Pagination, 
+  ChairInsights,
+  Filters 
+} from '@/app/types/api';
+import { useToast } from '@/app/hooks/useToast';
+import {
+  chairsAtom,
+  paginationAtom,
+  chairFiltersAtom,
+  chairsInsightsAtom,
+  chairsLoadingAtom,
+  chairCreateLoadingAtom,
+  chairUpdateLoadingAtom,
+  chairDeleteLoadingAtom,
+  incrementChairsUpdateTriggerAtom,
+} from '@/app/atoms/chairAtoms';
 
 export const useChairs = () => {
-  const [chairsInsights, setChairsInsights] = useState<ChairInsights>({
-    total: 0,
-    active: 0,
-    maintenance: 0,
-    inactive: 0,
-  });
-  const [chairs, setChairs] = useState<Chair[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 6,
-    hasNextPage: false,
-    hasPrevPage: false,
-    nextPage: null,
-    prevPage: null,
-    lastPage: 1,
-  });
-  const [chairStatus, setChairStatus] = useState({
-    total: 0,
-    active: 0,
-    maintenance: 0,
-    inactive: 0,
-  });
-  const [filters, setFilters] = useState<Filters>({
-    page: 1,
-    limit: 6,
-    search: "",
-    status: "all",
-    sortBy: "newest",
-  });
-  const [loading, setLoading] = useState(false);
+  const { success, error } = useToast();
+
+  // ===== ESTADOS GLOBAIS =====
+  const [chairs, setChairs] = useAtom(chairsAtom);
+  const [pagination, setPagination] = useAtom(paginationAtom);
+  const [filters, setFilters] = useAtom(chairFiltersAtom);
+  const [chairsInsights, setChairsInsights] = useAtom(chairsInsightsAtom);
+  const [loading, setLoading] = useAtom(chairsLoadingAtom);
+  const [createLoading, setCreateLoading] = useAtom(chairCreateLoadingAtom);
+  const [updateLoading, setUpdateLoading] = useAtom(chairUpdateLoadingAtom);
+  const [deleteLoading, setDeleteLoading] = useAtom(chairDeleteLoadingAtom);
+  
+  // ===== AÇÕES =====
+  const incrementUpdateTrigger = useSetAtom(incrementChairsUpdateTriggerAtom);
 
   // Usar useRef para manter a referência dos filtros atuais
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
 
+  // ===== FUNÇÕES PRINCIPAIS =====
+
   const fetchChairs = useCallback(async (customFilters?: Filters) => {
     setLoading(true);
     try {
-      // Usar os filtros passados ou os filtros atuais
       const currentFilters = customFilters || filtersRef.current;
       
       const queryParams = new URLSearchParams();
@@ -57,7 +60,7 @@ export const useChairs = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar cadeiras');
+        throw new Error(errorData.message || 'Erro ao buscar cadeiras');
       }
 
       const responseData = await response.json();
@@ -81,15 +84,6 @@ export const useChairs = () => {
         lastPage: 1,
       });
       
-      // Calcula stats baseado nos dados retornados
-      const stats = {
-        total: data.pagination?.totalItems || 0,
-        active: data.chairs?.filter((chair: Chair) => chair.status === "ACTIVE").length || 0,
-        maintenance: data.chairs?.filter((chair: Chair) => chair.status === "MAINTENANCE").length || 0,
-        inactive: data.chairs?.filter((chair: Chair) => chair.status === "INACTIVE").length || 0,
-      };
-      setChairStatus(stats);
-      
       return data;
     } catch (error) {
       console.error('Erro ao buscar cadeiras:', error);
@@ -100,6 +94,7 @@ export const useChairs = () => {
   }, []); // Removido as dependências para evitar loops
 
   const createChair = useCallback(async (chairData: CreateChairRequest) => {
+    setCreateLoading(true);
     try {
       const response = await fetch('/api/chairs/create', {
         method: 'POST',
@@ -111,7 +106,7 @@ export const useChairs = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao criar cadeira');
+        throw new Error(errorData.message || 'Erro ao criar cadeira');
       }
 
       const responseData = await response.json();
@@ -123,14 +118,25 @@ export const useChairs = () => {
       // Recarregar os dados com os filtros atuais
       await fetchChairs();
       
+      // Força atualização global
+      incrementUpdateTrigger();
+      
+      // Toast de sucesso
+      success('Cadeira criada com sucesso!');
+      
       return responseData.data;
-    } catch (error) {
-      console.error('Erro ao criar cadeira:', error);
-      throw error;
+    } catch (err) {
+      console.error('Erro ao criar cadeira:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar cadeira';
+      error(errorMessage);
+      throw err;
+    } finally {
+      setCreateLoading(false);
     }
-  }, [fetchChairs]);
+  }, [fetchChairs, incrementUpdateTrigger, success, error]);
 
   const updateChair = useCallback(async (id: number, chairData: UpdateChairRequest) => {
+    setUpdateLoading(true);
     try {
       const response = await fetch(`/api/chairs/update/${id}`, {
         method: 'PATCH',
@@ -142,7 +148,7 @@ export const useChairs = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao atualizar cadeira');
+        throw new Error(errorData.message || 'Erro ao atualizar cadeira');
       }
 
       const responseData = await response.json();
@@ -154,14 +160,25 @@ export const useChairs = () => {
       // Recarregar os dados com os filtros atuais
       await fetchChairs();
       
+      // Força atualização global
+      incrementUpdateTrigger();
+      
+      // Toast de sucesso
+      success('Cadeira atualizada com sucesso!');
+      
       return responseData.data;
-    } catch (error) {
-      console.error('Erro ao atualizar cadeira:', error);
-      throw error;
+    } catch (err) {
+      console.error('Erro ao atualizar cadeira:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar cadeira';
+      error(errorMessage);
+      throw err;
+    } finally {
+      setUpdateLoading(false);
     }
-  }, [fetchChairs]);
+  }, [fetchChairs, incrementUpdateTrigger, success, error]);
 
   const deleteChair = useCallback(async (id: number) => {
+    setDeleteLoading(true);
     try {
       const response = await fetch(`/api/chairs/delete/${id}`, {
         method: 'DELETE',
@@ -169,7 +186,7 @@ export const useChairs = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao excluir cadeira');
+        throw new Error(errorData.message || 'Erro ao excluir cadeira');
       }
 
       const responseData = await response.json();
@@ -181,42 +198,59 @@ export const useChairs = () => {
       // Recarregar os dados com os filtros atuais
       await fetchChairs();
       
+      // Toast de sucesso
+      success('Cadeira excluída com sucesso!');
+      
       return responseData.data;
-    } catch (error) {
-      console.error('Erro ao excluir cadeira:', error);
-      throw error;
+    } catch (err) {
+      console.error('Erro ao excluir cadeira:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir cadeira';
+      error(errorMessage);
+      throw err;
+    } finally {
+      setDeleteLoading(false);
     }
-  }, [fetchChairs]);
+  }, [fetchChairs, success, error]);
 
   const fetchChairsInsights = useCallback(async () => {
-    const response = await fetch('/api/chairs/insights');
+    try {
+      const response = await fetch('/api/chairs/insights');
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Erro ao buscar insights das cadeiras');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao buscar insights das cadeiras');
+      }
+
+      const responseData = await response.json();
+      setChairsInsights(responseData.data);
+    } catch (err) {
+      console.error('Erro ao buscar insights das cadeiras:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar insights das cadeiras';
+      error(errorMessage);
     }
-
-    const responseData = await response.json();
-    setChairsInsights(responseData.data);
-  }, []);
+  }, [setChairsInsights, error]);
 
   const setFiltersOptimized = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
-  }, []);
+  }, [setFilters]);
 
   return {
+    // Estados
+    chairs,
+    pagination,
+    filters,
+    chairsInsights,
+    loading,
+    createLoading,
+    updateLoading,
+    deleteLoading,
+    
+    // Funções
     fetchChairs,
     createChair,
     updateChair,
     deleteChair,
-    setChairStatus,
-    setFilters: setFiltersOptimized,
     fetchChairsInsights,
-    chairsInsights,
-    chairs,
-    pagination,
-    chairStatus,
-    filters,
-    loading,
+    setFilters: setFiltersOptimized,
   };
 };

@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || `Erro ao buscar horários disponíveis: ${response.status}` },
+        { error: errorData.message || `Erro ao buscar horários disponíveis: ${response.status}` },
         { status: response.status }
       );
     }

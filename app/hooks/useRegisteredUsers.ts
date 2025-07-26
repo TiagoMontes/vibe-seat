@@ -10,7 +10,7 @@ export const useRegisteredUsers = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar usuários registrados');
+        throw new Error(errorData.message || 'Erro ao buscar usuários registrados');
       }
 
       const responseData = await response.json();

@@ -50,7 +50,7 @@ export async function PATCH(request: NextRequest) {
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || `Erro ao atualizar approval: ${response.status}` },
+        { error: errorData.message || `Erro ao atualizar approval: ${response.status}` },
         { status: response.status }
       );
     }

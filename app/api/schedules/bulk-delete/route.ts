@@ -56,7 +56,7 @@ export async function DELETE(request: NextRequest) {
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json().catch(() => ({ error: "Erro desconhecido" }));
       return NextResponse.json(
-        { error: errorData.error || errorData.message || "Erro ao excluir configurações" },
+        { error: errorData.message || errorData.message || "Erro ao excluir configurações" },
         { status: backendResponse.status }
       );
     }

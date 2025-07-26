@@ -38,7 +38,7 @@ export async function DELETE(
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || "Erro ao excluir cadeira" },
+        { message: errorData.message || "Erro ao excluir cadeira" },
         { status: response.status }
       );
     }

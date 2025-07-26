@@ -57,10 +57,11 @@ const formatDateTime = (
       year: "numeric",
     });
 
-    // Formata o horário para hh:mm
+    // Formata o horário para hh:mm - tratando como UTC
     const formattedTime = date.toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "UTC", // Força o uso de UTC
     });
 
     return {
@@ -142,8 +143,12 @@ export const AppointmentManagement = () => {
   const { user } = useAuth();
   const { fetchChairs, loading: chairsLoading } = useChairs();
   const { fetchSchedules, loading: schedulesLoading } = useSchedules();
-  const { createAppointment, fetchAppointments, fetchAvailableTimes } =
-    useAppointments();
+  const {
+    createAppointment,
+    fetchAppointments,
+    fetchAvailableTimes,
+    fetchMyAppointments,
+  } = useAppointments();
   const { appointmentSuccess, appointmentError } = useToast();
   const { confirm, ConfirmComponent } = useConfirm();
 
@@ -174,7 +179,7 @@ export const AppointmentManagement = () => {
     };
 
     loadInitialData();
-  }, [isFirstLoad, fetchChairs, fetchSchedules]);
+  }, [isFirstLoad]); // Remove fetchChairs e fetchSchedules da dependência
 
   // Função para buscar horários disponíveis usando o hook
   const handleFetchAvailableTimes = useCallback(
@@ -182,7 +187,7 @@ export const AppointmentManagement = () => {
       setAvailableTimesLoading(true);
       try {
         const data = await fetchAvailableTimes(date, page, 3);
-        setAvailableTimesData(prevData => {
+        setAvailableTimesData((prevData) => {
           if (append && prevData?.chairs) {
             // Adiciona novas cadeiras às existentes
             return {
@@ -218,7 +223,7 @@ export const AppointmentManagement = () => {
     } else {
       setAvailableTimesData(null);
     }
-  }, [selectedDate, handleFetchAvailableTimes, setAvailableTimesData]);
+  }, [selectedDate]); // Remove handleFetchAvailableTimes da dependência
 
   // Sincronizar estado quando mudar de seção - apenas quando necessário
   useEffect(() => {
@@ -229,7 +234,7 @@ export const AppointmentManagement = () => {
     ) {
       fetchAppointments();
     }
-  }, [activeSection, fetchAppointments]);
+  }, [activeSection]); // Remove fetchAppointments da dependência
 
   // Get available times for a specific chair
   const getAvailableTimes = (chairId: number) => {
@@ -302,16 +307,7 @@ export const AppointmentManagement = () => {
         }
       }
     },
-    [
-      selectedDate,
-      availableTimesData,
-      createAppointment,
-      setCreateLoading,
-      appointmentSuccess,
-      appointmentError,
-      handleFetchAvailableTimes,
-      confirm,
-    ]
+    [selectedDate, availableTimesData, confirm] // Simplifica as dependências
   );
 
   // Função para atualizar agendamentos quando houver mudanças em outras seções
@@ -321,7 +317,11 @@ export const AppointmentManagement = () => {
       activeSection === "my-appointments" ||
       activeSection === "scheduled-list"
     ) {
-      await fetchAppointments();
+      if (activeSection === "my-appointments") {
+        await fetchMyAppointments();
+      } else {
+        await fetchAppointments();
+      }
     }
 
     // Se há uma data selecionada, atualizar também as cadeiras disponíveis
@@ -341,6 +341,7 @@ export const AppointmentManagement = () => {
   }, [
     selectedDate,
     activeSection,
+    fetchMyAppointments,
     fetchAppointments,
     fetchAvailableTimes,
     setAvailableTimesData,

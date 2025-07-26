@@ -33,7 +33,7 @@ export async function GET() {
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || "Erro ao buscar dias da semana" },
+        { error: errorData.message || "Erro ao buscar dias da semana" },
         { status: response.status }
       );
     }

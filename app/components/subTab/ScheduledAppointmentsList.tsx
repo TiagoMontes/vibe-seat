@@ -215,7 +215,7 @@ export const ScheduledAppointmentsList = ({
   });
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-0">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:gap-4">
         <div>

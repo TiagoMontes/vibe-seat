@@ -18,7 +18,7 @@ export const useDashboard = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar dados do dashboard');
+        throw new Error(errorData.message || 'Erro ao buscar dados do dashboard');
       }
 
       const responseData = await response.json();

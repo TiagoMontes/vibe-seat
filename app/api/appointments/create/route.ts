@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.error || "Erro ao criar agendamento" },
+        { error: errorData.message || "Erro ao criar agendamento" },
         { status: response.status }
       );
     }

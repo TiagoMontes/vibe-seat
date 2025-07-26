@@ -1,9 +1,30 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef } from 'react';
+import { useAtom, useSetAtom } from 'jotai';
 import { Schedule, CreateScheduleRequest, UpdateScheduleRequest } from '@/app/types/api';
+import { useToast } from '@/app/hooks/useToast';
+import {
+  currentScheduleAtom,
+  schedulesLoadingAtom,
+  scheduleCreateLoadingAtom,
+  scheduleUpdateLoadingAtom,
+  scheduleDeleteLoadingAtom,
+  incrementSchedulesUpdateTriggerAtom,
+} from '@/app/atoms/scheduleAtoms';
 
 export const useSchedules = () => {
-  const [schedule, setSchedule] = useState<Schedule | undefined>();
-  const [loading, setLoading] = useState(false);
+  const { success, error } = useToast();
+
+  // ===== ESTADOS GLOBAIS =====
+  const [schedule, setSchedule] = useAtom(currentScheduleAtom);
+  const [loading, setLoading] = useAtom(schedulesLoadingAtom);
+  const [createLoading, setCreateLoading] = useAtom(scheduleCreateLoadingAtom);
+  const [updateLoading, setUpdateLoading] = useAtom(scheduleUpdateLoadingAtom);
+  const [deleteLoading, setDeleteLoading] = useAtom(scheduleDeleteLoadingAtom);
+  
+  // ===== AÇÕES =====
+  const incrementUpdateTrigger = useSetAtom(incrementSchedulesUpdateTriggerAtom);
+
+  // ===== FUNÇÕES PRINCIPAIS =====
 
   const fetchSchedules = useCallback(async () => {
     setLoading(true);
@@ -55,6 +76,7 @@ export const useSchedules = () => {
   }, []);
 
   const createSchedule = useCallback(async (scheduleData: CreateScheduleRequest) => {
+    setCreateLoading(true);
     try {
       const response = await fetch('/api/schedules/create', {
         method: 'POST',
@@ -78,14 +100,23 @@ export const useSchedules = () => {
       // Update the state immediately with the created schedule data
       setSchedule(responseData.data);
       
+      // Força atualização global
+      incrementUpdateTrigger();
+      
+      // Toast de sucesso
+      success('Configuração criada com sucesso!');
+      
       return responseData.data;
     } catch (error) {
       console.error('Erro ao criar configuração de horário:', error);
       throw error;
+    } finally {
+      setCreateLoading(false);
     }
-  }, []);
+  }, [setSchedule, incrementUpdateTrigger, success, setCreateLoading]);
 
   const updateSchedule = useCallback(async (scheduleData: UpdateScheduleRequest, id: number) => {
+    setUpdateLoading(true);
     try {
       const response = await fetch(`/api/schedules/update/${id}`, {
         method: 'PATCH',
@@ -110,14 +141,23 @@ export const useSchedules = () => {
       // Update the state immediately with the updated schedule data
       setSchedule(responseData.data);
       
+      // Força atualização global
+      incrementUpdateTrigger();
+      
+      // Toast de sucesso
+      success('Configuração atualizada com sucesso!');
+      
       return responseData.data;
     } catch (error) {
       console.error('Erro ao atualizar configuração de horário:', error);
       throw error;
+    } finally {
+      setUpdateLoading(false);
     }
-  }, []);
+  }, [setSchedule, incrementUpdateTrigger, success, setUpdateLoading]);
 
   const deleteSchedule = useCallback(async (id: number) => {
+    setDeleteLoading(true);
     try {
       const response = await fetch(`/api/schedules/delete/${id}`, {
         method: 'DELETE',
@@ -135,20 +175,32 @@ export const useSchedules = () => {
   
       // Limpar o schedule atual após deletar
       setSchedule(undefined);
+      
+      // Toast de sucesso
+      success('Configuração excluída com sucesso!');
+      
       return responseData.data;
     } catch (error) {
       console.error('Erro ao excluir configuração de horário:', error);
       throw error;
+    } finally {
+      setDeleteLoading(false);
     }
-  }, []);
+  }, [setSchedule, success, setDeleteLoading]);
 
   return {
+    // Estados
+    schedule,
+    loading,
+    createLoading,
+    updateLoading,
+    deleteLoading,
+    
+    // Funções
     fetchSchedules,
     fetchSchedule,
     createSchedule,
     updateSchedule,
     deleteSchedule,
-    schedule,
-    loading,
   };
 }; 

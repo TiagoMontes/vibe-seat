@@ -27,7 +27,7 @@ export async function GET() {
       const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       console.error("Backend error:", errorData);
       return NextResponse.json(
-        { error: errorData.error || "Erro ao buscar dados do dashboard" },
+        { error: errorData.message || "Erro ao buscar dados do dashboard" },
         { status: response.status }
       );
     }

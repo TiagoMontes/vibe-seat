@@ -50,7 +50,7 @@ export const useApprovals = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar aprovações');
+        throw new Error(errorData.message || 'Erro ao buscar aprovações');
       }
 
       const responseData = await response.json();
@@ -82,7 +82,7 @@ export const useApprovals = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar aprovação');
+        throw new Error(errorData.message || 'Erro ao buscar aprovação');
       }
 
       const responseData = await response.json();
@@ -113,7 +113,7 @@ export const useApprovals = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao atualizar aprovação');
+        throw new Error(errorData.message || 'Erro ao atualizar aprovação');
       }
 
       const responseData = await response.json();
