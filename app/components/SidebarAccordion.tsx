@@ -8,6 +8,7 @@ import {
   ChevronRight,
   LogOut,
   User,
+  Settings,
 } from "lucide-react";
 
 interface SidebarAccordionProps {
@@ -21,6 +22,7 @@ interface SidebarAccordionProps {
   userName?: string;
   userRole?: string;
   onLogout?: () => void;
+  onProfileClick?: () => void;
 }
 
 const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
@@ -30,6 +32,7 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
   userName = "Usuário",
   userRole = "Admin",
   onLogout,
+  onProfileClick,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -40,7 +43,7 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
   return (
     <aside
       className={cn(
-        "bg-card border-r border-gray-300 flex flex-col bg-white text-black h-screen transition-all duration-300 ease-in-out",
+        "border-r border-gray-300 flex flex-col bg-white text-black h-screen transition-all duration-300 ease-in-out",
         isExpanded ? "w-64" : "w-16"
       )}
     >
@@ -122,11 +125,11 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
 
       {/* Área do Usuário */}
       <div
-        className="border-t border-gray-300 p-2"
+        className="border-t  border-gray-300 p-2"
       >
         {isExpanded ? (
           <div className="flex flex-col gap-2">
-            <div className="flex items-center">
+            <div className="flex items-center  gap-2">
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                 <User className="h-4 w-4 text-primary-foreground" />
               </div>
@@ -136,7 +139,16 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
               </div>
             </div>
 
-            <div>
+            <div className="space-y-1">
+              <Button
+                onClick={onProfileClick}
+                variant="outline"
+                className="w-full flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Settings className="h-4 w-4" />
+                <span>Meu Perfil</span>
+              </Button>
+              
               <Button
                 onClick={onLogout}
                 className="w-full flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-destructive hover:text-destructive-foreground transition-colors"
@@ -148,9 +160,18 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-full h-10 border  rounded-full flex items-center justify-center">
+            <div className="w-full h-10 border rounded-full flex items-center justify-center">
               {userName.charAt(0).toUpperCase()}
             </div>
+            <Button
+              onClick={onProfileClick}
+              variant="ghost"
+              size="sm"
+              className="h-8 p-0 bg-gray-100 w-full hover:bg-gray-200"
+              title="Meu Perfil"
+            >
+              <Settings className="h-4 w-4 text-gray-700" />
+            </Button>
             <Button
               onClick={onLogout}
               variant="ghost"

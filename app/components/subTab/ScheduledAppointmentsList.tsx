@@ -26,13 +26,18 @@ import {
   appointmentCancelLoadingAtom,
   appointmentConfirmLoadingAtom,
 } from "@/app/atoms/appointmentAtoms";
-import { getStatusVariant } from "@/app/lib/utils";
+import { 
+  getStatusVariant, 
+  getStatusLabel,
+  formatDateTimeRange, 
+  formatCreatedAt
+} from "@/app/lib/utils";
+import { BaseListProps } from "@/app/types/api";
+import { useAppointmentFilters } from "@/app/hooks/useAppointmentFilters";
 import GenericFilter from "@/app/components/GenericFilter";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 
-interface ScheduledAppointmentsListProps {
-  onAppointmentChange?: () => void;
-}
+interface ScheduledAppointmentsListProps extends BaseListProps {}
 
 export const ScheduledAppointmentsList = ({
   onAppointmentChange,
@@ -62,19 +67,17 @@ export const ScheduledAppointmentsList = ({
     sortBy: "newest" as "newest" | "oldest",
   });
 
-  // Status and sort options
-  const statusOptions = [
-    { value: "all", label: "Todos" },
-    { value: "SCHEDULED", label: "Agendado" },
-    { value: "CONFIRMED", label: "Confirmado" },
-    { value: "COMPLETED", label: "Concluído" },
-    { value: "CANCELLED", label: "Cancelado" },
-  ];
-
-  const sortOptions = [
-    { value: "newest", label: "Mais recentes" },
-    { value: "oldest", label: "Mais antigos" },
-  ];
+  // Use custom hook for filter management
+  const {
+    handleSearchChange,
+    handleStatusChange: handleStatusFilterChange,
+    handleSortChange,
+    handleClearFilters,
+    handlePageChange,
+    hasActiveFilters,
+    statusOptions,
+    sortOptions,
+  } = useAppointmentFilters({ filters, setFilters });
 
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
@@ -116,52 +119,9 @@ export const ScheduledAppointmentsList = ({
     handleFetchAppointments();
   }, [filters.status, filters.page, filters.limit, filters.search, filters.sortBy, handleFetchAppointments]);
 
-  const handlePageChange = (page: number) => {
-    setFilters((prev) => ({ ...prev, page }));
-  };
-
-  const handleStatusFilterChange = (status: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      status: status as "all" | "SCHEDULED" | "CONFIRMED" | "CANCELLED",
-      page: 1,
-    }));
-  };
-
-  const handleSearchChange = (search: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      search,
-      page: 1,
-    }));
-  };
-
-  const handleSortChange = (sortBy: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      sortBy: sortBy as "newest" | "oldest",
-      page: 1,
-    }));
-  };
-
-  const handleClearFilters = () => {
-    setFilters((prev) => ({
-      ...prev,
-      search: "",
-      status: "all",
-      sortBy: "newest",
-      page: 1,
-    }));
-  };
-
   const goToPage = (page: number) => {
     handlePageChange(page);
   };
-
-  const hasActiveFilters =
-    (filters.search && filters.search.trim() !== "") ||
-    filters.status !== "all" ||
-    filters.sortBy !== "newest";
 
   const handleConfirmAppointment = async (id: number) => {
     const confirmed = await confirm({
@@ -223,53 +183,7 @@ export const ScheduledAppointmentsList = ({
     }
   };
 
-  const formatDateTime = (datetimeStart: string, datetimeEnd: string) => {
-    // Remove 'Z' and parse as local time to avoid UTC conversion
-    const startDateStr = datetimeStart.replace('Z', '').replace('T', ' ');
-    const endDateStr = datetimeEnd.replace('Z', '').replace('T', ' ');
-    
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-    
-    return {
-      date: startDate.toLocaleDateString("pt-BR", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      timeRange: `${startDate.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })} - ${endDate.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}`,
-    };
-  };
-
-  const formatCreatedAt = (createdAt: string) => {
-    // Remove 'Z' and parse as local time to avoid UTC conversion
-    const dateStr = createdAt.replace('Z', '').replace('T', ' ');
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const getStatusLabel = (status: string) => {
-    const statusMap: Record<string, string> = {
-      SCHEDULED: "Agendado",
-      CONFIRMED: "Confirmado",
-      COMPLETED: "Concluído",
-      CANCELLED: "Cancelado",
-    };
-    return statusMap[status] || status;
-  };
+  // All utility functions are now centralized in utils.tsx
 
   // Use appointments directly since filtering is done on the server
   const filteredAppointments = Array.isArray(appointments) ? appointments : [];
@@ -340,7 +254,7 @@ export const ScheduledAppointmentsList = ({
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {filteredAppointments.map((appointment) => {
-            const { date, timeRange } = formatDateTime(appointment.datetimeStart, appointment.datetimeEnd);
+            const { date, timeRange } = formatDateTimeRange(appointment.datetimeStart, appointment.datetimeEnd);
 
             return (
               <Card

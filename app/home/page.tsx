@@ -7,14 +7,14 @@ import { Dashboard } from "@/app/components/modal/Dashboard";
 
 export default function HomePage() {
   const { logout } = useAuth();
-  const { userName, userRole } = useUserData();
+  const { session } = useUserData();
 
   const handleLogout = () => {
     logout();
   };
 
   return (
-    <Layout userName={userName} userRole={userRole} onLogout={handleLogout}>
+    <Layout userName={session?.user.username} userRole={session?.user.role} onLogout={handleLogout}>
       <Dashboard />
     </Layout>
   );

@@ -2,41 +2,45 @@
 
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useAtomValue, useSetAtom } from 'jotai';
-import { userAtom, userNameAtom, userRoleAtom, userIdAtom, isAuthenticatedAtom } from '@/app/atoms/userAtoms';
+import { useSetAtom } from 'jotai';
+import { userAtom, UserData } from '@/app/atoms/userAtoms';
 
-export function useUserData() {
+export const useUserData = () => {
   const { data: session, status } = useSession();
   const setUser = useSetAtom(userAtom);
-  
-  const user = useAtomValue(userAtom);
-  const userName = useAtomValue(userNameAtom);
-  const userRole = useAtomValue(userRoleAtom);
-  const userId = useAtomValue(userIdAtom);
-  const isAuthenticated = useAtomValue(isAuthenticatedAtom);
 
-  // Sincronizar dados da sessão com o atom
   useEffect(() => {
+    if (status === 'loading') return; // Aguarda carregar
+
+    if (status === 'unauthenticated' || !session?.user) {
+      setUser(null);
+      return;
+    }
+
     if (status === 'authenticated' && session?.user) {
-      const userData = {
-        id: session.user.id || '',
-        username: session.user.username || '',
-        role: session.user.role || ''
+      const sessionUser = session.user as {
+        id: string;
+        username?: string;
+        role?: string;
+        status?: string;
+        name?: string;
       };
 
+      const userData: UserData = {
+        id: sessionUser.id,
+        username: sessionUser.username || sessionUser.name || '',
+        role: (sessionUser.role as UserData['role']) || 'user',
+        status: (sessionUser.status as UserData['status']) || 'pending'
+      };
+
+      console.log('Sincronizando dados da sessão com userAtom:', userData);
       setUser(userData);
-    } else if (status === 'unauthenticated') {
-      setUser(null);
     }
   }, [session, status, setUser]);
 
   return {
-    user,
-    userName,
-    userRole,
-    userId,
-    isAuthenticated,
     session,
-    status
+    status,
+    isLoading: status === 'loading'
   };
-} 
+};

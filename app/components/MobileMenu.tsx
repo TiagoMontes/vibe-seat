@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,7 @@ interface MobileMenuProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onLogout?: () => void;
+  onProfileClick?: () => void;
 }
 
 const MobileMenu: React.FC<MobileMenuProps> = ({
@@ -27,6 +28,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   activeTab,
   onTabChange,
   onLogout,
+  onProfileClick,
 }) => {
   return (
     <DropdownMenu>
@@ -65,8 +67,16 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 
         <DropdownMenuSeparator />
 
-        {/* User Info */}
-        <div className="px-3 py-2">
+        {/* User Actions */}
+        <div className="px-3 py-2 space-y-1">
+          <DropdownMenuItem
+            onClick={onProfileClick}
+            className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="text-sm font-medium">Meu Perfil</span>
+          </DropdownMenuItem>
+          
           <DropdownMenuItem
             onClick={onLogout}
             className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer text-red-600 hover:bg-red-50 transition-colors"

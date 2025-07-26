@@ -200,6 +200,34 @@ export interface AppointmentFilters {
   sortBy?: 'newest' | 'oldest' | 'datetime-asc' | 'datetime-desc';
 }
 
+// ===== SHARED COMPONENT TYPES =====
+export interface BaseListProps {
+  onAppointmentChange?: () => void;
+}
+
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
+export interface FilterState {
+  search: string;
+  status: AppointmentStatus | 'all';
+  sortBy: 'newest' | 'oldest';
+  page: number;
+  limit: number;
+}
+
+// Common filter handlers type
+export interface FilterHandlers {
+  handleSearchChange: (search: string) => void;
+  handleStatusChange: (status: string) => void;
+  handleSortChange: (sortBy: string) => void;
+  handleClearFilters: () => void;
+  handlePageChange: (page: number) => void;
+  hasActiveFilters: boolean;
+}
+
 // ===== APROVAÇÕES =====
 export interface Approval {
   id: number;

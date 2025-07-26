@@ -9,6 +9,8 @@ import { Calendar, Clock, Home, Users } from "lucide-react";
 import ChairManagement from "../components/management/ChairManagement";
 import ScheduleManagement from "../components/management/ScheduleManagement";
 import { AppointmentManagement } from "../components/management/AppointmentManagement";
+import { useRouter } from "next/navigation";
+import { Dashboard } from "../components/modal/Dashboard";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -36,7 +38,7 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
   const [isMobile, setIsMobile] = useState(false);
-
+  const router = useRouter();
   // Detectar se é mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -57,7 +59,7 @@ const Layout: React.FC<LayoutProps> = ({
       key: "dashboard",
       label: "Dashboard",
       icon: <Home className="h-4 w-4" />,
-      component: children,
+      component: <Dashboard />,
     },
     ...(canManageUsers
       ? [
@@ -108,6 +110,10 @@ const Layout: React.FC<LayoutProps> = ({
     setActiveTab(tabKey as TabKey);
   };
 
+  const handleProfileClick = () => {
+    router.push('/user');
+  };
+
   return (
     <div className={cn("h-screen bg-background flex", className)}>
       {/* Sidebar com Accordion - Apenas no Desktop */}
@@ -119,6 +125,7 @@ const Layout: React.FC<LayoutProps> = ({
           userName={userName}
           userRole={userRole}
           onLogout={onLogout}
+          onProfileClick={handleProfileClick}
         />
       )}
 

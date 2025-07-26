@@ -75,11 +75,13 @@ export const authOptions: NextAuthOptions = {
           const result = await loginAPI(credentials.username, credentials.password);
 
           if (result.token) {
-            const user = decode(result.token) as { id: number, username: string, role: string };
+            const user = decode(result.token) as { id: number, username: string, role: string, status: string };
+
             return {
               id: user.id.toString(), // Convert to string
               username: user.username,
               role: user.role,
+              status: user.status,
               token: result.token
             };
           }
@@ -106,10 +108,11 @@ export const authOptions: NextAuthOptions = {
       if (account && user) {
         return {
           ...token,
-          accessToken: user.token,
+          accessToken: (user as any).token,
           id: user.id,
-          username: user.username,
-          role: user.role,
+          username: (user as any).username,
+          role: (user as any).role,
+          status: (user as any).status,
         };
       }
 
@@ -125,6 +128,7 @@ export const authOptions: NextAuthOptions = {
           id: token.id,
           username: token.username,
           role: token.role,
+          status: token.status,
         }
       };
     }
