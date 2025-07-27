@@ -34,6 +34,7 @@ import GenericFilter from "@/app/components/GenericFilter";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 import EmptyState from "@/app/components/EmptyState";
 import { Chair } from "@/app/types/api";
+import { userRoleAtom } from "@/app/atoms/userAtoms";
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc";
 type StatusFilter = "all" | "ACTIVE" | "MAINTENANCE" | "INACTIVE";
@@ -42,6 +43,7 @@ const ChairManagement = () => {
   const [, setIsCreateModalOpen] = useAtom(chairModalOpenAtom);
   const [, setIsEditModalOpen] = useAtom(chairEditModalOpenAtom);
   const [, setSelectedChair] = useAtom(selectedChairAtom);
+  const [role] = useAtom(userRoleAtom);
 
   const [searchInput, setSearchInput] = useState("");
   const [statusInput, setStatusInput] = useState<StatusFilter>("all");
@@ -67,6 +69,7 @@ const ChairManagement = () => {
 
   useEffect(() => {
     fetchChairs(filters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]); // Remove fetchChairs da dependência para evitar loops
 
   useEffect(() => {
@@ -85,8 +88,11 @@ const ChairManagement = () => {
   }, [searchTimeout]);
 
   useEffect(() => {
-    fetchChairsInsights();
-  }, []); // Remove fetchChairsInsights da dependência
+    if (role === "admin" || role === "attendant") {
+      fetchChairsInsights();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]); // Remove fetchChairsInsights da dependência
 
   const handleStatusChange = useCallback(
     (value: StatusFilter) => {
@@ -152,8 +158,7 @@ const ChairManagement = () => {
       title: "Excluir cadeira",
       description:
         "Tem certeza que deseja excluir esta cadeira? Esta ação não pode ser desfeita.",
-      confirmText: "Excluir",
-      destructive: true,
+      confirmText: "Excluir"
     });
 
     if (confirmed) {
@@ -199,76 +204,83 @@ const ChairManagement = () => {
             <p className="text-gray-600">Gerencie suas cadeiras de massagem</p>
           </div>
         </div>
-        <Button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex w-full lg:w-auto items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Nova Cadeira
-        </Button>
+        {role === "admin" && (
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex w-full lg:w-auto items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Nova Cadeira
+          </Button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-        {[
-          {
-            key: "total",
-            label: "Total",
-            value: chairsInsights.total,
-            icon: Armchair,
-            valueColor: "text-black",
-            iconColor: "text-gray-400",
-          },
-          {
-            key: "active",
-            label: getStatusLabel("ACTIVE"),
-            value: chairsInsights.active,
-            icon: Activity,
-            valueColor: "text-green-600",
-            iconColor: "text-green-400",
-          },
-          {
-            key: "maintenance",
-            label: getStatusLabel("MAINTENANCE"),
-            value: chairsInsights.maintenance,
-            icon: Wrench,
-            valueColor: "text-yellow-600",
-            iconColor: "text-yellow-400",
-          },
-          {
-            key: "inactive",
-            label: getStatusLabel("INACTIVE"),
-            value: chairsInsights.inactive,
-            icon: XCircle,
-            valueColor: "text-red-600",
-            iconColor: "text-red-400",
-          },
-        ].map((stat) => {
-          const IconComponent = stat.icon;
-          return (
-            <Card key={stat.key} className="flex-1 border border-gray-200">
-              <CardContent className="p-4 h-[100px] flex items-center">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex flex-col justify-center min-h-[52px]">
-                    <p className="text-sm font-medium text-gray-600 mb-1">
-                      {stat.label}
-                    </p>
-                    <div className="w-16 h-8 flex items-center">
-                      <p
-                        className={`text-2xl font-bold ${stat.valueColor} tabular-nums leading-none`}
-                      >
-                        {stat.value}
-                      </p>
+      {role === "admin" ||
+        (role === "attendant" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            {[
+              {
+                key: "total",
+                label: "Total",
+                value: chairsInsights.total,
+                icon: Armchair,
+                valueColor: "text-black",
+                iconColor: "text-gray-400",
+              },
+              {
+                key: "active",
+                label: getStatusLabel("ACTIVE"),
+                value: chairsInsights.active,
+                icon: Activity,
+                valueColor: "text-green-600",
+                iconColor: "text-green-400",
+              },
+              {
+                key: "maintenance",
+                label: getStatusLabel("MAINTENANCE"),
+                value: chairsInsights.maintenance,
+                icon: Wrench,
+                valueColor: "text-yellow-600",
+                iconColor: "text-yellow-400",
+              },
+              {
+                key: "inactive",
+                label: getStatusLabel("INACTIVE"),
+                value: chairsInsights.inactive,
+                icon: XCircle,
+                valueColor: "text-red-600",
+                iconColor: "text-red-400",
+              },
+            ].map((stat) => {
+              const IconComponent = stat.icon;
+              return (
+                <Card key={stat.key} className="flex-1 border border-gray-200">
+                  <CardContent className="p-4 h-[100px] flex items-center">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-col justify-center min-h-[52px]">
+                        <p className="text-sm font-medium text-gray-600 mb-1">
+                          {stat.label}
+                        </p>
+                        <div className="w-16 h-8 flex items-center">
+                          <p
+                            className={`text-2xl font-bold ${stat.valueColor} tabular-nums leading-none`}
+                          >
+                            {stat.value}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0 ml-4">
+                        <IconComponent
+                          className={`h-8 w-8 ${stat.iconColor}`}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-shrink-0 ml-4">
-                    <IconComponent className={`h-8 w-8 ${stat.iconColor}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ))}
 
       <GenericFilter
         searchPlaceholder="Pesquisar por nome, descrição ou localização..."
@@ -324,68 +336,74 @@ const ChairManagement = () => {
                     key={chair.id}
                     className="border border-gray-200 transition-opacity duration-200"
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
+                    <CardContent className="p-4 flex flex-col justify-between h-full">
+                      <div>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Armchair className="h-5 w-5 text-gray-600" />
+                            <h3 className="font-semibold text-black">
+                              {chair.name}
+                            </h3>
+                          </div>
+                          <Badge
+                            variant={
+                              getStatusVariant(chair.status) as
+                                | "default"
+                                | "secondary"
+                                | "destructive"
+                                | "outline"
+                            }
+                            className="inline-flex items-center gap-1"
+                          >
+                            {getStatusIcon(chair.status)}
+                            {getStatusText(chair.status)}
+                          </Badge>
+                        </div>
+
+                        {chair.description && (
+                          <p className="text-sm text-gray-600 mb-2">
+                            {chair.description}
+                          </p>
+                        )}
+
+                        {chair.location && (
+                          <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
+                            <MapPin className="h-4 w-4" />
+                            {chair.location}
+                          </div>
+                        )}
+
+                        <div className="text-xs text-gray-400 mb-3">
+                          Criada em:{" "}
+                          {new Date(chair.createdAt).toLocaleDateString(
+                            "pt-BR"
+                          )}
+                        </div>
+                      </div>
+
+                      {role === "admin" && (
                         <div className="flex items-center gap-2">
-                          <Armchair className="h-5 w-5 text-gray-600" />
-                          <h3 className="font-semibold text-black">
-                            {chair.name}
-                          </h3>
-                        </div>
-                        <Badge
-                          variant={
-                            getStatusVariant(chair.status) as
-                              | "default"
-                              | "secondary"
-                              | "destructive"
-                              | "outline"
-                          }
-                          className="inline-flex items-center gap-1"
-                        >
-                          {getStatusIcon(chair.status)}
-                          {getStatusText(chair.status)}
-                        </Badge>
-                      </div>
+                          <Button
+                            onClick={() => handleEditChair(chair)}
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
+                          >
+                            <Edit className="h-3 w-3" />
+                            Editar
+                          </Button>
 
-                      {chair.description && (
-                        <p className="text-sm text-gray-600 mb-2">
-                          {chair.description}
-                        </p>
-                      )}
-
-                      {chair.location && (
-                        <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
-                          <MapPin className="h-4 w-4" />
-                          {chair.location}
+                          <Button
+                            onClick={() => handleDeleteChair(chair.id)}
+                            size="sm"
+                            variant="destructive"
+                            className="flex items-center gap-1"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Excluir
+                          </Button>
                         </div>
                       )}
-
-                      <div className="text-xs text-gray-400 mb-3">
-                        Criada em:{" "}
-                        {new Date(chair.createdAt).toLocaleDateString("pt-BR")}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => handleEditChair(chair)}
-                          size="sm"
-                          variant="outline"
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="h-3 w-3" />
-                          Editar
-                        </Button>
-
-                        <Button
-                          onClick={() => handleDeleteChair(chair.id)}
-                          size="sm"
-                          variant="destructive"
-                          className="flex items-center gap-1"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Excluir
-                        </Button>
-                      </div>
                     </CardContent>
                   </Card>
                 ))}

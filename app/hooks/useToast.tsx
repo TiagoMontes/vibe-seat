@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { toast, ToastOptions } from "react-toastify";
 
 // Configurações padrão para os toasts
@@ -16,7 +17,7 @@ export type ToastType = "success" | "error" | "warning" | "info";
 
 // Hook personalizado para gerenciar toasts
 export const useToast = () => {
-  const showToast = (
+  const showToast = useCallback((
     type: ToastType,
     message: string,
     options?: ToastOptions
@@ -40,48 +41,48 @@ export const useToast = () => {
         toast.info(message, toastOptions);
         break;
     }
-  };
+  }, []);
 
   // Métodos específicos para cada tipo
-  const success = (message: string, options?: ToastOptions) => {
+  const success = useCallback((message: string, options?: ToastOptions) => {
     showToast("success", message, options);
-  };
+  }, [showToast]);
 
-  const error = (message: string, options?: ToastOptions) => {
+  const error = useCallback((message: string, options?: ToastOptions) => {
     showToast("error", message, options);
-  };
+  }, [showToast]);
 
-  const warning = (message: string, options?: ToastOptions) => {
+  const warning = useCallback((message: string, options?: ToastOptions) => {
     showToast("warning", message, options);
-  };
+  }, [showToast]);
 
-  const info = (message: string, options?: ToastOptions) => {
+  const info = useCallback((message: string, options?: ToastOptions) => {
     showToast("info", message, options);
-  };
+  }, [showToast]);
 
   // Método para mostrar toasts de agendamento
-  const appointmentSuccess = (message: string) => {
+  const appointmentSuccess = useCallback((message: string) => {
     success(message, {
       autoClose: 4000,
       toastId: "appointment-success",
     });
-  };
+  }, [success]);
 
-  const appointmentError = (message: string) => {
+  const appointmentError = useCallback((message: string) => {
     error(message, {
       autoClose: 6000,
       toastId: "appointment-error",
     });
-  };
+  }, [error]);
 
   // Método para limpar toasts específicos
-  const dismiss = (toastId?: string) => {
+  const dismiss = useCallback((toastId?: string) => {
     if (toastId) {
       toast.dismiss(toastId);
     } else {
       toast.dismiss();
     }
-  };
+  }, []);
 
   return {
     showToast,

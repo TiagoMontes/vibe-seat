@@ -21,7 +21,7 @@ export const useAppointments = () => {
       const filters: AppointmentFilters = {
         page: 1,
         limit: 6,
-        status: "all", // Mudança: começar com "all" para mostrar todos
+        status: "SCHEDULED", // Padrão para admin: mostrar apenas agendamentos pendentes
         ...customFilters,
       };
 
@@ -169,7 +169,7 @@ export const useAppointments = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao criar agendamento');
+        throw new Error(errorData.error || 'Erro ao criar agendamento');
       }
 
       return true;

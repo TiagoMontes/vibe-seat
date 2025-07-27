@@ -34,7 +34,6 @@ export const usePermissions = () => {
   const hasRole = (requiredRole: UserRole): boolean => {
     if (!user) return false;
 
-    console.log(user.role)
     return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
   };
 
@@ -61,19 +60,15 @@ export const usePermissions = () => {
   };
 
   const canAccessRoute = (route: string): PermissionCheck => {
+    // Only check for actual routes that exist in the app
     const routePermissions: Record<string, UserRole> = {
-      '/management': 'attendant',
-      '/admin': 'admin',
-      '/chairs': 'admin',
-      '/schedules': 'admin',
-      '/users': 'attendant',
-      '/approvals': 'attendant',
-      '/dashboard': 'attendant'
+      '/user': 'user', // Profile page - any approved user can access
+      '/home': 'user'  // Main app with tabs - any approved user can access
     };
 
     const requiredRole = routePermissions[route];
     if (!requiredRole) {
-      return { hasPermission: true }; // Rotas públicas
+      return { hasPermission: true }; // Public routes like login
     }
 
     return hasRoleAndApproved(requiredRole);
@@ -86,15 +81,9 @@ export const usePermissions = () => {
       return '/pending-approval';
     }
 
-    switch (user.role) {
-      case 'admin':
-        return '/management';
-      case 'attendant':
-        return '/management';
-      case 'user':
-      default:
-        return '/home';
-    }
+    // All approved users go to /home regardless of role
+    // Role-based access is handled by tab visibility in the layout
+    return '/home';
   };
 
   return {

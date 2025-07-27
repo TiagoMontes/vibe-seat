@@ -19,7 +19,6 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredRole = 'user',
-  requireApproval = true,
   fallbackPath,
   showErrorPage = true
 }) => {

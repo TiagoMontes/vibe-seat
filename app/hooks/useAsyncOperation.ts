@@ -15,10 +15,10 @@ export interface AsyncOperationConfig {
 export interface AsyncOperationState {
   loading: boolean;
   error: string | null;
-  data: any;
+  data: unknown;
 }
 
-export const useAsyncOperation = <T = any>(config: AsyncOperationConfig = {}) => {
+export const useAsyncOperation = <T = unknown>(config: AsyncOperationConfig = {}) => {
   const { success, error: showErrorToast } = useToast();
   
   const [state, setState] = useState<AsyncOperationState>({
@@ -31,7 +31,7 @@ export const useAsyncOperation = <T = any>(config: AsyncOperationConfig = {}) =>
     successMessage,
     errorMessage,
     showSuccessToast = true,
-    showErrorToast = true,
+    showErrorToast: configShowErrorToast = true,
     logErrors = true,
   } = config;
 
@@ -69,13 +69,13 @@ export const useAsyncOperation = <T = any>(config: AsyncOperationConfig = {}) =>
       }
       
       // Show error toast if configured
-      if (customConfig?.showErrorToast ?? showErrorToast) {
+      if (customConfig?.showErrorToast ?? configShowErrorToast) {
         showErrorToast(finalErrorMessage);
       }
       
       return null;
     }
-  }, [success, showErrorToast, successMessage, errorMessage, showSuccessToast, showErrorToast, logErrors]);
+  }, [success, showErrorToast, successMessage, errorMessage, showSuccessToast, configShowErrorToast, logErrors]);
 
   const reset = useCallback(() => {
     setState({

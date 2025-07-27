@@ -3,30 +3,30 @@ import { Pagination } from '@/app/types/api';
 
 export interface BaseListAtoms<T, F> {
   // Data atoms
-  itemsAtom: any;
-  paginationAtom: any;
-  filtersAtom: any;
+  itemsAtom: ReturnType<typeof atom<T[]>>;
+  paginationAtom: ReturnType<typeof atom<Pagination>>;
+  filtersAtom: ReturnType<typeof atom<F>>;
   
   // Loading atoms
-  loadingAtom: any;
-  createLoadingAtom: any;
-  updateLoadingAtom: any;
-  deleteLoadingAtom: any;
+  loadingAtom: ReturnType<typeof atom<boolean>>;
+  createLoadingAtom: ReturnType<typeof atom<boolean>>;
+  updateLoadingAtom: ReturnType<typeof atom<boolean>>;
+  deleteLoadingAtom: ReturnType<typeof atom<boolean>>;
   
   // Error atoms
-  errorAtom: any;
-  successMessageAtom: any;
+  errorAtom: ReturnType<typeof atom<string>>;
+  successMessageAtom: ReturnType<typeof atom<string>>;
   
   // Modal/UI atoms
-  modalOpenAtom: any;
-  selectedItemAtom: any;
+  modalOpenAtom: ReturnType<typeof atom<boolean>>;
+  selectedItemAtom: ReturnType<typeof atom<T | null>>;
   
   // Insights/Stats (optional)
-  insightsAtom?: any;
+  insightsAtom?: ReturnType<typeof atom<unknown>>;
   
   // Update trigger
-  updateTriggerAtom: any;
-  incrementUpdateTriggerAtom: any;
+  updateTriggerAtom: ReturnType<typeof atom<number>>;
+  incrementUpdateTriggerAtom: ReturnType<typeof atom<null, [], void>>;
 }
 
 export const createListAtoms = <T, F>(

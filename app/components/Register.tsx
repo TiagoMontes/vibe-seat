@@ -68,13 +68,14 @@ const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
       } catch (err) {
         error("Erro ao carregar tipos de acesso");
         console.error("Erro ao buscar roles:", err);
+        setRolesError("Erro ao carregar tipos de acesso");
       } finally {
         setRolesLoading(false);
       }
     };
 
     fetchRoles();
-  }, [getRoles]);
+  }, []); // Empty dependency array - only run on mount
 
   const onSubmit = async (data: RegisterZodFormData) => {
     setCreateLoading(true);

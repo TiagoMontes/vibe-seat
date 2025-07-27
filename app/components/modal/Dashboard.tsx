@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { useAtom } from "jotai";
 import { useDashboard } from "@/app/hooks/useDashboard";
-import { useUserData } from "@/app/hooks/useUserData";
+import { userAtom } from "@/app/atoms/userAtoms";
 import { StatCard } from "@/app/components/dashboard/StatCard";
 import { RecentAppointments } from "@/app/components/dashboard/RecentAppointments";
 import { Button } from "@/app/components/ui/button";
@@ -23,7 +24,7 @@ import {
 
 export const Dashboard: React.FC = () => {
   const { getDashboard, data, loading, error } = useDashboard();
-  const { user } = useUserData();
+  const [user] = useAtom(userAtom);
 
   useEffect(() => {
     getDashboard();

@@ -19,38 +19,48 @@ import {
   ClockIcon,
   MapPinIcon,
   ActivityIcon,
-  SettingsIcon,
   LogOutIcon,
   ChevronLeftIcon,
   ShieldCheckIcon,
 } from "lucide-react";
-import { userAtom, userNameAtom, userRoleAtom, userIdAtom, userStatusAtom } from "@/app/atoms/userAtoms";
-import { usePermissions } from "@/app/hooks/usePermissions";
-import { myAppointmentsAtom, upcomingAppointmentsAtom, myAppointmentsLoadingAtom } from "@/app/atoms/appointmentAtoms";
+import {
+  userAtom,
+  userNameAtom,
+  userRoleAtom,
+  userIdAtom,
+  userStatusAtom,
+} from "@/app/atoms/userAtoms";
+import {
+  myAppointmentsAtom,
+  upcomingAppointmentsAtom,
+  myAppointmentsLoadingAtom,
+} from "@/app/atoms/appointmentAtoms";
 import { useAppointments } from "@/app/hooks/useAppointments";
-import { formatDateTimeRange, getStatusLabel, getStatusVariant } from "@/app/lib/utils";
+import {
+  formatDateTimeRange,
+  getStatusLabel,
+  getStatusVariant,
+} from "@/app/lib/utils";
 import { useToast } from "@/app/hooks/useToast";
+import { signOut } from "next-auth/react";
 
 export const UserProfilePage = () => {
   const router = useRouter();
   const { fetchMyAppointments } = useAppointments();
   const { appointmentError } = useToast();
-  
+
   // User data from atoms
   const [user] = useAtom(userAtom);
   const [userName] = useAtom(userNameAtom);
   const [userRole] = useAtom(userRoleAtom);
   const [userId] = useAtom(userIdAtom);
   const [userStatus] = useAtom(userStatusAtom);
-  
-  // Permissions
-  const { canViewDashboard } = usePermissions();
-  
+
   // Appointments data
   const [myAppointments] = useAtom(myAppointmentsAtom);
   const [upcomingAppointments] = useAtom(upcomingAppointmentsAtom);
   const [appointmentsLoading] = useAtom(myAppointmentsLoadingAtom);
-  
+
   const [initialLoading, setInitialLoading] = useState(true);
   const hasLoadedOnceRef = useRef(false);
   const fetchMyAppointmentsRef = useRef(fetchMyAppointments);
@@ -83,7 +93,9 @@ export const UserProfilePage = () => {
       } catch (error) {
         console.error("Erro ao carregar agendamentos:", error);
         if (isMounted) {
-          appointmentErrorRef.current("Erro ao carregar agendamentos do usuário");
+          appointmentErrorRef.current(
+            "Erro ao carregar agendamentos do usuário"
+          );
         }
       } finally {
         if (isMounted) {
@@ -97,7 +109,7 @@ export const UserProfilePage = () => {
     return () => {
       isMounted = false;
     };
-  }, [user?.id]); // Only depend on user.id - functions are stable via refs
+  }, [user?.id, user]); // Only depend on user.id - functions are stable via refs
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -106,14 +118,7 @@ export const UserProfilePage = () => {
     }
   }, [user, initialLoading, router]);
 
-  const handleLogout = () => {
-    // Clear user data and redirect
-    router.push("/");
-  };
-
   const getRoleInfo = (role: string) => {
-    console.log(role)
-
     switch (role?.toLowerCase()) {
       case "admin":
         return {
@@ -140,27 +145,25 @@ export const UserProfilePage = () => {
   };
 
   const getStatusInfo = (status: string) => {
-    console.log(status)
-
     switch (status) {
       case "approved":
         return {
           label: "Aprovado",
           variant: "default" as const,
-          color: "text-green-600"
+          color: "text-green-600",
         };
       case "rejected":
         return {
           label: "Rejeitado",
           variant: "destructive" as const,
-          color: "text-red-600"
+          color: "text-red-600",
         };
       case "pending":
       default:
         return {
           label: "Pendente",
           variant: "secondary" as const,
-          color: "text-yellow-600"
+          color: "text-yellow-600",
         };
     }
   };
@@ -202,7 +205,9 @@ export const UserProfilePage = () => {
                 Voltar
               </Button>
               <Separator orientation="vertical" className="h-6" />
-              <h1 className="text-xl font-semibold text-gray-900">Perfil do Usuário</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                Perfil do Usuário
+              </h1>
             </div>
           </div>
         </div>
@@ -213,7 +218,7 @@ export const UserProfilePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* User Info Card */}
           <div className="lg:col-span-1">
-            <Card>
+            <Card className="bg-transparent flex flex-col gap-2 border  p-4">
               <CardHeader className="text-center pb-4">
                 <div className="flex justify-center mb-4">
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -228,38 +233,35 @@ export const UserProfilePage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Tipo de Conta</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Tipo de Conta
+                  </span>
                   <Badge variant={roleInfo.variant}>{roleInfo.label}</Badge>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">ID do Usuário</span>
-                  <span className="text-sm text-gray-900 font-mono">#{userId}</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    ID do Usuário
+                  </span>
+                  <span className="text-sm text-gray-900 font-mono">
+                    #{userId}
+                  </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Status da Conta</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Status da Conta
+                  </span>
                   <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                 </div>
 
                 <Separator />
 
-                <div className="space-y-3">                  
-                  {canViewDashboard && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => router.push("/management")}
-                    >
-                      <SettingsIcon className="h-4 w-4 mr-2" />
-                      Painel de Gestão
-                    </Button>
-                  )}
-                  
+                <div className="space-y-3">
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-red-600 border-red-300 hover:bg-red-50"
-                    onClick={handleLogout}
+                    className="w-full justify-start text-white bg-black hover:bg-black/80"
+                    onClick={() => signOut()}
                   >
                     <LogOutIcon className="h-4 w-4 mr-2" />
                     Sair da Conta
@@ -280,8 +282,12 @@ export const UserProfilePage = () => {
                       <CalendarIcon className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Total de Agendamentos</p>
-                      <p className="text-2xl font-bold text-gray-900">{myAppointments.length}</p>
+                      <p className="text-sm font-medium text-gray-600">
+                        Total de Agendamentos
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {myAppointments.length}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -294,9 +300,17 @@ export const UserProfilePage = () => {
                       <ClockIcon className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Agendamentos Ativos</p>
+                      <p className="text-sm font-medium text-gray-600">
+                        Agendamentos Ativos
+                      </p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {myAppointments.filter(apt => apt.status === "SCHEDULED" || apt.status === "CONFIRMED").length}
+                        {
+                          myAppointments.filter(
+                            (apt) =>
+                              apt.status === "SCHEDULED" ||
+                              apt.status === "CONFIRMED"
+                          ).length
+                        }
                       </p>
                     </div>
                   </div>
@@ -310,8 +324,12 @@ export const UserProfilePage = () => {
                       <ActivityIcon className="h-5 w-5 text-orange-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Próximos 24h</p>
-                      <p className="text-2xl font-bold text-gray-900">{upcomingAppointments.length}</p>
+                      <p className="text-sm font-medium text-gray-600">
+                        Próximas 24h
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {upcomingAppointments.length}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -319,20 +337,15 @@ export const UserProfilePage = () => {
             </div>
 
             {/* Recent Appointments */}
-            <Card>
+            <Card className="bg-transparent flex flex-col gap-2">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Agendamentos Recentes</CardTitle>
-                    <CardDescription>Seus últimos agendamentos no sistema</CardDescription>
+                    <CardDescription>
+                      Seus últimos agendamentos no sistema
+                    </CardDescription>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push("/home")}
-                  >
-                    Ver Todos
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -359,8 +372,11 @@ export const UserProfilePage = () => {
                 ) : (
                   <div className="space-y-4">
                     {recentAppointments.map((appointment) => {
-                      const { date, timeRange } = formatDateTimeRange(appointment.datetimeStart, appointment.datetimeEnd);
-                      
+                      const { date, timeRange } = formatDateTimeRange(
+                        appointment.datetimeStart,
+                        appointment.datetimeEnd
+                      );
+
                       return (
                         <div
                           key={appointment.id}
@@ -391,7 +407,13 @@ export const UserProfilePage = () => {
                             </div>
                           </div>
                           <Badge
-                            variant={getStatusVariant(appointment.status) as "default" | "secondary" | "destructive" | "outline"}
+                            variant={
+                              getStatusVariant(appointment.status) as
+                                | "default"
+                                | "secondary"
+                                | "destructive"
+                                | "outline"
+                            }
                           >
                             {getStatusLabel(appointment.status)}
                           </Badge>

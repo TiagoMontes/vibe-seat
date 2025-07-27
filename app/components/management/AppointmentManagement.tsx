@@ -21,7 +21,7 @@ import {
   availableTimesLoadingAtom,
   appointmentCreateLoadingAtom,
 } from "@/app/atoms/appointmentAtoms";
-import { Chair } from "@/app/types/api";
+import { Chair, ChairListResponse } from "@/app/types/api";
 import { MyAppointmentsList } from "@/app/components/subTab/MyAppointmentsList";
 import { ScheduledAppointmentsList } from "@/app/components/subTab/ScheduledAppointmentsList";
 import {
@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 import { GenericFilter } from "@/app/components/GenericFilter";
+import { userRoleAtom } from "@/app/atoms/userAtoms";
 
 interface ChairCardProps {
   chair: Chair;
@@ -165,6 +166,7 @@ const ChairCardSkeleton = () => {
 
 export const AppointmentManagement = () => {
   const { user } = useAuth();
+  const [role] = useAtom(userRoleAtom);
   const { fetchChairs, loading: chairsLoading } = useChairs();
   const { fetchSchedules, loading: schedulesLoading } = useSchedules();
   const {
@@ -187,7 +189,7 @@ export const AppointmentManagement = () => {
   );
 
   // New state for chairs loading and availability loading
-  const [chairsData, setChairsData] = useState<any>(null);
+  const [chairsData, setChairsData] = useState<ChairListResponse | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   // Local state
@@ -206,13 +208,20 @@ export const AppointmentManagement = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       if (isFirstLoad) {
-        await Promise.all([fetchChairs(), fetchSchedules()]);
+        if (role === "admin") {
+          await Promise.all([fetchChairs(), fetchSchedules()]);
+        }
+
+        if (role === "attendant") {
+          await fetchChairs();
+        }
         setIsFirstLoad(false);
       }
     };
 
     loadInitialData();
-  }, [isFirstLoad]); // Remove fetchChairs e fetchSchedules da dependência
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFirstLoad, role]); // Remove fetchChairs e fetchSchedules da dependência
 
   // Function to fetch chairs with pagination and filters
   const handleFetchChairs = useCallback(
@@ -259,7 +268,7 @@ export const AppointmentManagement = () => {
         }
 
         // Update chairs data
-        setChairsData((prevData: any) => {
+        setChairsData((prevData: ChairListResponse | null) => {
           if (append && prevData?.chairs) {
             return {
               ...chairsResult,
@@ -272,12 +281,12 @@ export const AppointmentManagement = () => {
 
         // Now fetch availability for these specific chairs
         setAvailabilityLoading(true);
-        const chairIds = chairsResult.chairs.map((chair: any) => chair.id);
+        const chairIds = chairsResult.chairs.map((chair: Chair) => chair.id);
         const availableTimesData = await fetchAvailableTimes(date, chairIds);
 
         // Combine chair data with available times data
         const combinedChairs =
-          chairsResult.chairs?.map((chair: any) => {
+          chairsResult.chairs?.map((chair: Chair) => {
             // Find matching chair in available times data
             const availableTimesChair = availableTimesData.chairs?.find(
               (atChair: {
@@ -348,6 +357,7 @@ export const AppointmentManagement = () => {
       setChairsData(null);
       setAvailableTimesData(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, searchValue, sortValue]); // Add filter dependencies
 
   // Sincronizar estado quando mudar de seção - apenas quando necessário
@@ -356,7 +366,13 @@ export const AppointmentManagement = () => {
     if (activeSection === "my-appointments") {
       fetchMyAppointments();
     } else if (activeSection === "scheduled-list") {
-      fetchAppointments();
+      // Usar filtros padrão para admin: status "SCHEDULED"
+      fetchAppointments({
+        status: "SCHEDULED",
+        page: 1,
+        limit: 6,
+        sortBy: "newest",
+      });
     }
   }, [activeSection, fetchMyAppointments, fetchAppointments]);
 
@@ -406,32 +422,42 @@ export const AppointmentManagement = () => {
         description: `Deseja realmente agendar uma sessão de massagem na ${chairData.chairName} para ${formattedDate} às ${formattedTime}?`,
         confirmText: "Agendar",
         cancelText: "Cancelar",
-        destructive: false,
       });
 
       if (confirmed) {
         setCreateLoading(true);
         try {
-          const success = await createAppointment({
+          await createAppointment({
             chairId,
             datetimeStart: time,
           });
 
-          if (success) {
-            appointmentSuccess("Agendamento criado com sucesso!");
-            // Refresh available times after successful booking
-            const dateStr = selectedDate.toISOString().split("T")[0];
-            await handleFetchChairs(dateStr, 1);
-          }
+          // Se chegou aqui, o agendamento foi criado com sucesso
+          appointmentSuccess("Agendamento criado com sucesso!");
+          // Refresh available times after successful booking
+          const dateStr = selectedDate.toISOString().split("T")[0];
+          await handleFetchChairs(dateStr, 1);
         } catch (error) {
           console.error("Erro ao criar agendamento:", error);
-          appointmentError("Erro ao criar agendamento");
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Erro ao criar agendamento";
+          appointmentError(errorMessage);
         } finally {
           setCreateLoading(false);
         }
       }
     },
-    [selectedDate, availableTimesData, confirm] // Simplifica as dependências
+    [
+      selectedDate,
+      availableTimesData,
+      confirm,
+      createAppointment,
+      appointmentSuccess,
+      appointmentError,
+      handleFetchChairs,
+    ]
   );
 
   // Função para atualizar agendamentos quando houver mudanças em outras seções
@@ -444,7 +470,13 @@ export const AppointmentManagement = () => {
       if (activeSection === "my-appointments") {
         await fetchMyAppointments();
       } else {
-        await fetchAppointments();
+        // Manter filtro "SCHEDULED" por padrão para admin
+        await fetchAppointments({
+          status: "SCHEDULED",
+          page: 1,
+          limit: 6,
+          sortBy: "newest",
+        });
       }
     }
 
@@ -453,6 +485,7 @@ export const AppointmentManagement = () => {
       const dateStr = selectedDate.toISOString().split("T")[0];
       handleFetchChairs(dateStr, 1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedDate,
     activeSection,
@@ -662,11 +695,15 @@ export const AppointmentManagement = () => {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                 {chairsData?.chairs &&
-                  chairsData.chairs.map((chair: any) => {
+                  chairsData.chairs.map((chair: Chair) => {
                     // Check if we have availability data for this chair
                     const chairAvailabilityData =
                       availableTimesData?.chairs?.find(
-                        (chairData: any) => chairData.chairId === chair.id
+                        (chairData: {
+                          chairId: number;
+                          available?: string[];
+                          unavailable?: string[];
+                        }) => chairData.chairId === chair.id
                       );
 
                     if (availabilityLoading || !chairAvailabilityData) {

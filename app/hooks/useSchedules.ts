@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import { Schedule, CreateScheduleRequest, UpdateScheduleRequest } from '@/app/types/api';
 import { useToast } from '@/app/hooks/useToast';
@@ -12,7 +12,7 @@ import {
 } from '@/app/atoms/scheduleAtoms';
 
 export const useSchedules = () => {
-  const { success, error } = useToast();
+  const { success } = useToast();
 
   // ===== ESTADOS GLOBAIS =====
   const [schedule, setSchedule] = useAtom(currentScheduleAtom);
@@ -51,6 +51,7 @@ export const useSchedules = () => {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Removido as dependências para evitar loops
 
   const fetchSchedule = useCallback(async (id: number): Promise<Schedule | null> => {

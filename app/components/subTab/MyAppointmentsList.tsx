@@ -37,11 +37,9 @@ import { useAppointmentFilters } from "@/app/hooks/useAppointmentFilters";
 import GenericFilter from "@/app/components/GenericFilter";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 
-interface MyAppointmentsListProps extends BaseListProps {}
-
 export const MyAppointmentsList = ({
   onAppointmentChange,
-}: MyAppointmentsListProps) => {
+}: BaseListProps) => {
   const { fetchMyAppointments, cancelAppointment } = useAppointments();
   const { appointmentSuccess, appointmentError } = useToast();
   const { confirm, ConfirmComponent } = useConfirm();
@@ -114,8 +112,7 @@ export const MyAppointmentsList = ({
       description:
         "Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.",
       confirmText: "Cancelar Agendamento",
-      cancelText: "Manter Agendamento",
-      destructive: true,
+      cancelText: "Manter Agendamento"
     });
 
     if (confirmed) {
@@ -284,7 +281,7 @@ export const MyAppointmentsList = ({
                     )}
 
                     {/* Actions */}
-                    {canCancelAppointment(appointment) && !isPastAppointment && (
+                    {canCancelAppointment({ datetimeStart: appointment.datetimeStart, status: appointment.status }) && !isPastAppointment && (
                       <div className="pt-2 border-t border-gray-200">
                         <Button
                           onClick={() =>

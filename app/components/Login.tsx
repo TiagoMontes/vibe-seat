@@ -19,12 +19,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { User, Lock, AlertCircle } from "lucide-react";
+import { User, Lock } from "lucide-react";
 import { useAuth } from "@/app/hooks/useAuth";
-import { loginZodSchema, type LoginZodFormData } from "@/app/schemas/loginSchema";
+import {
+  loginZodSchema,
+  type LoginZodFormData,
+} from "@/app/schemas/loginSchema";
 
 const Login = () => {
-  const { login, loading, error } = useAuth();
+  const { login, loading } = useAuth();
 
   const form = useForm<LoginZodFormData>({
     resolver: zodResolver(loginZodSchema),
@@ -53,7 +56,10 @@ const Login = () => {
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+          >
             <div className="flex flex-col gap-2">
               <FormField
                 control={form.control}
@@ -101,13 +107,6 @@ const Login = () => {
                 )}
               />
             </div>
-
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">{error}</span>
-            </div>
-          )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Entrando..." : "Entrar"}

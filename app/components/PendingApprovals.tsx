@@ -3,8 +3,8 @@
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Users, Search, Check, X, Clock, Calendar } from "lucide-react";
-import { type Approval } from "@/app/atoms/userManagementAtoms";
+import { Users, Search, Check, X, Clock } from "lucide-react";
+import { type Approval } from "@/app/types/api";
 import { formatDateTime, getRoleByName } from "@/app/lib/utils";
 import { useApprovals } from "../hooks/useApprovals";
 import { PaginationComponent } from "./PaginationComponent";
@@ -15,20 +15,26 @@ const PendingApprovals = () => {
     pagination,
     stats,
     filters,
-    updateApprovalStatus,
-    updateSearch,
-    goToPage,
+    updateApproval,
+    listApprovals,
+    setFilters,
   } = useApprovals();
 
   const handleApproval = async (
     approvalId: number,
     status: "approved" | "rejected"
   ) => {
-    await updateApprovalStatus(approvalId, status);
+    await updateApproval(approvalId, { status });
+    // Reload approvals after update
+    await listApprovals(filters);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateSearch(e.target.value);
+    setFilters({ ...filters, search: e.target.value, page: 1 });
+  };
+
+  const goToPage = (page: number) => {
+    setFilters({ ...filters, page });
   };
 
   const ApprovalComponent = (approval: Approval) => {
@@ -50,9 +56,9 @@ const PendingApprovals = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
                 <h3
                   className="text-base font-semibold text-gray-900 truncate max-w-[180px] sm:max-w-[200px]"
-                  title={approval.user.username}
+                  title={approval.user?.username}
                 >
-                  {approval.user.username}
+                  {approval.user?.username || 'Usuário não informado'}
                 </h3>
                 <span className="mt-1 sm:mt-0 px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium w-max">
                   Pendente
@@ -62,7 +68,7 @@ const PendingApprovals = () => {
               <p className="text-gray-700 text-sm">
                 Acesso como:{" "}
                 <span className="font-semibold text-blue-600">
-                  {getRoleByName(approval.requestedRole.name)}
+                  {approval.role?.name ? getRoleByName(approval.role.name) : 'Role não informada'}
                 </span>
               </p>
 
@@ -72,7 +78,7 @@ const PendingApprovals = () => {
                 </p>
                 <div className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
-                  <span>ID: {approval.user.id}</span>
+                  <span>ID: {approval.user?.id || approval.userId}</span>
                 </div>
               </div>
             </div>
@@ -147,7 +153,7 @@ const PendingApprovals = () => {
                 Nenhuma aprovação pendente
               </h3>
               <p className="text-gray-600">
-                {filters.search.trim()
+                {filters.search?.trim()
                   ? "Não há aprovações pendentes com os termos de busca aplicados."
                   : "Todas as solicitações foram processadas ou não há novas solicitações pendentes."}
               </p>
@@ -166,8 +172,6 @@ const PendingApprovals = () => {
           hasNextPage={pagination.hasNextPage}
           hasPrevPage={pagination.hasPrevPage}
           currentPage={pagination.currentPage}
-          nextPage={pagination.nextPage || 0}
-          prevPage={pagination.prevPage || 0}
           lastPage={pagination.lastPage}
           goToPage={(_, page) => goToPage(page)}
           selectedDate=""

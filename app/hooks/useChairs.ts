@@ -3,9 +3,6 @@ import { useAtom, useSetAtom } from 'jotai';
 import { 
   CreateChairRequest, 
   UpdateChairRequest, 
-  Chair, 
-  Pagination, 
-  ChairInsights,
   Filters 
 } from '@/app/types/api';
 import { useToast } from '@/app/hooks/useToast';
@@ -91,6 +88,7 @@ export const useChairs = () => {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Removido as dependências para evitar loops
 
   const createChair = useCallback(async (chairData: CreateChairRequest) => {
@@ -133,6 +131,7 @@ export const useChairs = () => {
     } finally {
       setCreateLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchChairs, incrementUpdateTrigger, success, error]);
 
   const updateChair = useCallback(async (id: number, chairData: UpdateChairRequest) => {
@@ -175,6 +174,7 @@ export const useChairs = () => {
     } finally {
       setUpdateLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchChairs, incrementUpdateTrigger, success, error]);
 
   const deleteChair = useCallback(async (id: number) => {
@@ -210,6 +210,7 @@ export const useChairs = () => {
     } finally {
       setDeleteLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchChairs, success, error]);
 
   const fetchChairsInsights = useCallback(async () => {

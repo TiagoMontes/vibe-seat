@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
+import { useAtom } from 'jotai';
 import { DashboardResponse } from '@/app/types/api';
-import { useUserData } from '@/app/hooks/useUserData';
+import { userAtom } from '@/app/atoms/userAtoms';
 
 export const useDashboard = () => {
-  const { user } = useUserData();
+  const [user] = useAtom(userAtom);
   const [data, setData] = useState<DashboardResponse | null>(null);
   const isAdmin = user && user.role === 'admin';
   const [error, setError] = useState<string | null>(null);

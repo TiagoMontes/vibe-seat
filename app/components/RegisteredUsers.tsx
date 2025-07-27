@@ -16,7 +16,7 @@ import {
   usersErrorAtom,
   type RegisteredUser,
 } from "@/app/atoms/userManagementAtoms";
-import { getRoleName } from "@/app/lib/utils";
+import { getRoleNameById } from "@/app/lib/utils";
 
 export const RegisteredUsers = () => {
   const [allUsers] = useAtom(registeredUsersAtom);
@@ -163,7 +163,7 @@ export const RegisteredUsers = () => {
                           <div className="flex items-center gap-4 text-sm text-gray-600">
                             <div className="flex items-center gap-1">
                               <Shield className="h-4 w-4" />
-                              <span>Role: {getRoleName(user.roleId)}</span>
+                              <span>Role: {getRoleNameById(user.roleId)}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Users className="h-4 w-4" />

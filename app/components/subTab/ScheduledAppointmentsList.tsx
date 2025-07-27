@@ -3,10 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/app/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/app/components/ui/card";
+import { Card, CardContent } from "@/app/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   CalendarIcon,
@@ -25,23 +22,23 @@ import {
   appointmentPaginationAtom,
   appointmentCancelLoadingAtom,
   appointmentConfirmLoadingAtom,
+  appointmentFiltersAtom,
+  appointmentsLoadingAtom,
 } from "@/app/atoms/appointmentAtoms";
-import { 
-  getStatusVariant, 
+import {
+  getStatusVariant,
   getStatusLabel,
-  formatDateTimeRange, 
-  formatCreatedAt
+  formatDateTimeRange,
+  formatCreatedAt,
 } from "@/app/lib/utils";
 import { BaseListProps } from "@/app/types/api";
 import { useAppointmentFilters } from "@/app/hooks/useAppointmentFilters";
 import GenericFilter from "@/app/components/GenericFilter";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 
-interface ScheduledAppointmentsListProps extends BaseListProps {}
-
 export const ScheduledAppointmentsList = ({
   onAppointmentChange,
-}: ScheduledAppointmentsListProps) => {
+}: BaseListProps) => {
   const { fetchAppointments, confirmAppointment, cancelAppointment } =
     useAppointments();
   const { appointmentSuccess, appointmentError } = useToast();
@@ -50,6 +47,8 @@ export const ScheduledAppointmentsList = ({
   // Atoms do Jotai
   const [appointments, setAppointments] = useAtom(appointmentsAtom);
   const [pagination] = useAtom(appointmentPaginationAtom);
+  const [filters, setFilters] = useAtom(appointmentFiltersAtom);
+  const [loading] = useAtom(appointmentsLoadingAtom);
   const [cancelLoading, setCancelLoading] = useAtom(
     appointmentCancelLoadingAtom
   );
@@ -57,15 +56,7 @@ export const ScheduledAppointmentsList = ({
     appointmentConfirmLoadingAtom
   );
 
-  const [loading, setLoading] = useState(true); // Começar como true para evitar flash de dados antigos
   const [error, setError] = useState<string>("");
-  const [filters, setFilters] = useState({
-    status: "all" as "all" | "SCHEDULED" | "CONFIRMED" | "CANCELLED",
-    page: 1,
-    limit: 6,
-    search: "",
-    sortBy: "newest" as "newest" | "oldest",
-  });
 
   // Use custom hook for filter management
   const {
@@ -93,13 +84,12 @@ export const ScheduledAppointmentsList = ({
   setAppointmentsRef.current = setAppointments;
 
   const handleFetchAppointments = useCallback(async () => {
-    setLoading(true);
     setError("");
     try {
       await fetchAppointmentsRef.current({
         page: filters.page,
         limit: filters.limit,
-        status: filters.status,
+        status: filters.status || "SCHEDULED", // Garantir que sempre use "SCHEDULED" se não estiver definido
         search: filters.search,
         sortBy: filters.sortBy,
       });
@@ -107,17 +97,28 @@ export const ScheduledAppointmentsList = ({
       console.error("Erro ao buscar agendamentos:", err);
       setError("Erro ao carregar agendamentos");
       appointmentErrorRef.current("Erro ao carregar agendamentos");
-    } finally {
-      setLoading(false);
     }
-  }, [filters.page, filters.limit, filters.status, filters.search, filters.sortBy]);
+  }, [
+    filters.page,
+    filters.limit,
+    filters.status,
+    filters.search,
+    filters.sortBy,
+  ]);
 
   // Fetch appointments on mount and when filters change
   useEffect(() => {
     // Limpar dados antigos e carregar novos
     setAppointmentsRef.current([]);
     handleFetchAppointments();
-  }, [filters.status, filters.page, filters.limit, filters.search, filters.sortBy, handleFetchAppointments]);
+  }, [
+    filters.status,
+    filters.page,
+    filters.limit,
+    filters.search,
+    filters.sortBy,
+    handleFetchAppointments,
+  ]);
 
   const goToPage = (page: number) => {
     handlePageChange(page);
@@ -130,7 +131,6 @@ export const ScheduledAppointmentsList = ({
         "Tem certeza que deseja confirmar este agendamento? O usuário será notificado sobre a confirmação.",
       confirmText: "Confirmar",
       cancelText: "Cancelar",
-      destructive: false,
     });
 
     if (confirmed) {
@@ -160,7 +160,6 @@ export const ScheduledAppointmentsList = ({
         "Tem certeza que deseja cancelar este agendamento? O usuário será notificado sobre o cancelamento.",
       confirmText: "Cancelar Agendamento",
       cancelText: "Manter Agendamento",
-      destructive: true,
     });
 
     if (confirmed) {
@@ -244,7 +243,7 @@ export const ScheduledAppointmentsList = ({
             Nenhum agendamento encontrado
           </h3>
           <p className="text-sm sm:text-base text-gray-600">
-            {filters.status !== "all"
+            {filters.status && filters.status !== "all"
               ? `Não há agendamentos com status "${getStatusLabel(
                   filters.status
                 )}"`
@@ -254,7 +253,10 @@ export const ScheduledAppointmentsList = ({
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {filteredAppointments.map((appointment) => {
-            const { date, timeRange } = formatDateTimeRange(appointment.datetimeStart, appointment.datetimeEnd);
+            const { date, timeRange } = formatDateTimeRange(
+              appointment.datetimeStart,
+              appointment.datetimeEnd
+            );
 
             return (
               <Card
@@ -319,7 +321,9 @@ export const ScheduledAppointmentsList = ({
                               Horário
                             </span>
                           </div>
-                          <p className="text-sm text-gray-900 pl-6">{timeRange}</p>
+                          <p className="text-sm text-gray-900 pl-6">
+                            {timeRange}
+                          </p>
                         </div>
                       </div>
                     </div>

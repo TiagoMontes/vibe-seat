@@ -32,8 +32,7 @@ export const useUserData = () => {
         role: (sessionUser.role as UserData['role']) || 'user',
         status: (sessionUser.status as UserData['status']) || 'pending'
       };
-
-      console.log('Sincronizando dados da sessão com userAtom:', userData);
+      
       setUser(userData);
     }
   }, [session, status, setUser]);

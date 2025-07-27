@@ -20,7 +20,7 @@ interface LayoutProps {
   onLogout?: () => void;
 }
 
-type TabKey = "dashboard" | "users" | "chairs" | "schedules";
+type TabKey = "dashboard" | "users" | "chairs" | "schedules" | "appointments";
 
 interface Tab {
   key: TabKey;
@@ -36,7 +36,7 @@ const Layout: React.FC<LayoutProps> = ({
   userRole = "Admin",
   onLogout,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
+  const [activeTab, setActiveTab] = useState<TabKey>("appointments");
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   // Detectar se é mobile
@@ -50,58 +50,101 @@ const Layout: React.FC<LayoutProps> = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Verificar se o usuário tem permissão para ver a aba de usuários
-  const canManageUsers =
-    userRole === "Admin" || userRole === "admin" || userRole === "attendant";
-
-  const tabs: Tab[] = [
-    {
-      key: "dashboard",
-      label: "Dashboard",
-      icon: <Home className="h-4 w-4" />,
-      component: <Dashboard />,
-    },
-    ...(canManageUsers
-      ? [
-          {
-            key: "users" as TabKey,
-            label: "Usuários",
-            icon: <Users className="h-4 w-4" />,
-            component: <UserManagement />,
-          },
-          {
-            key: "chairs" as TabKey,
-            label: "Cadeiras",
-            icon: <Users className="h-4 w-4" />,
-            component: <ChairManagement />,
-          },
-          {
-            key: "schedules" as TabKey,
-            label: "Gestão de disponibilidade",
-            icon: <Calendar className="h-4 w-4" />,
-            component: <ScheduleManagement />,
-          },
-          {
-            key: "appointments" as TabKey,
-            label: "Agendamentos",
-            icon: <Clock className="h-4 w-4" />,
-            component: <AppointmentManagement />,
-          },
-        ]
-      : []),
-  ];
-
-  // Se o usuário não tem permissão para a aba ativa, voltar para dashboard
-  React.useEffect(() => {
-    if (
-      (activeTab === "users" ||
-        activeTab === "chairs" ||
-        activeTab === "schedules") &&
-      !canManageUsers
-    ) {
-      setActiveTab("dashboard");
+  // Role-based tab access control
+  const getTabsForRole = (): Tab[] => {
+    if (userRole === "admin") {
+      return [
+        {
+          key: "appointments" as TabKey,
+          label: "Agendamentos",
+          icon: <Clock className="h-4 w-4" />,
+          component: <AppointmentManagement />,
+        },
+        {
+          key: "users" as TabKey,
+          label: "Usuários",
+          icon: <Users className="h-4 w-4" />,
+          component: <UserManagement />,
+        },
+        {
+          key: "chairs" as TabKey,
+          label: "Cadeiras",
+          icon: <Users className="h-4 w-4" />,
+          component: <ChairManagement />,
+        },
+        {
+          key: "schedules" as TabKey,
+          label: "Gestão de disponibilidade",
+          icon: <Calendar className="h-4 w-4" />,
+          component: <ScheduleManagement />,
+        },
+        {
+          key: "dashboard" as TabKey,
+          label: "Dashboard",
+          icon: <Home className="h-4 w-4" />,
+          component: <Dashboard />,
+        },
+      ];
     }
-  }, [activeTab, canManageUsers]);
+
+    if (userRole === "attendant") {
+      return [
+        {
+          key: "appointments" as TabKey,
+          label: "Agendamentos",
+          icon: <Clock className="h-4 w-4" />,
+          component: <AppointmentManagement />,
+        },
+        {
+          key: "users" as TabKey,
+          label: "Usuários",
+          icon: <Users className="h-4 w-4" />,
+          component: <UserManagement />,
+        },
+        {
+          key: "chairs" as TabKey,
+          label: "Cadeiras",
+          icon: <Users className="h-4 w-4" />,
+          component: <ChairManagement />,
+        },
+        {
+          key: "dashboard" as TabKey,
+          label: "Dashboard",
+          icon: <Home className="h-4 w-4" />,
+          component: <Dashboard />,
+        },
+      ];
+    }
+
+    if (userRole === "user") {
+      return [
+        {
+          key: "appointments" as TabKey,
+          label: "Agendamentos",
+          icon: <Clock className="h-4 w-4" />,
+          component: <AppointmentManagement />,
+        },
+        {
+          key: "chairs" as TabKey,
+          label: "Cadeiras",
+          icon: <Users className="h-4 w-4" />,
+          component: <ChairManagement />,
+        },
+      ];
+    }
+
+    return [];
+  };
+
+  const tabs: Tab[] = getTabsForRole();
+
+  // Check if user has permission for the active tab
+  React.useEffect(() => {
+    const allowedTabs = tabs.map((tab) => tab.key);
+    if (!allowedTabs.includes(activeTab)) {
+      setActiveTab("appointments");
+    }
+  }, [activeTab, userRole, tabs]);
 
   const activeTabComponent =
     tabs.find((tab) => tab.key === activeTab)?.component || children;
@@ -111,7 +154,7 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   const handleProfileClick = () => {
-    router.push('/user');
+    router.push("/user");
   };
 
   return (

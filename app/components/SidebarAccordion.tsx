@@ -151,7 +151,7 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
               
               <Button
                 onClick={onLogout}
-                className="w-full flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                className="w-full flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-black/80 "
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sair</span>

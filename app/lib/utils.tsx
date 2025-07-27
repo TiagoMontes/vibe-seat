@@ -1,9 +1,9 @@
-import { type ClassValue, clsx } from "clsx"
+import { type ClassValue, clsx } from "clsx";
 import { useEffect, useState } from "react";
-import { twMerge } from "tailwind-merge"
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 // Constantes para os roles (para evitar magic numbers)
@@ -19,20 +19,20 @@ export const ROLE_NAMES = {
   USER: "user",
 } as const;
 
-export type RoleId = typeof ROLES[keyof typeof ROLES];
+export type RoleId = (typeof ROLES)[keyof typeof ROLES];
 
 /**
  * Mapper para converter roleIds em nomes amigáveis
- * 
+ *
  * @param roleId - ID do role (1, 2, 3)
  * @returns Nome amigável do role
- * 
+ *
  * @example
  * ```typescript
- * getRoleName(1) // "Administrador"
- * getRoleName(2) // "Attendant - Operacional"
- * getRoleName(3) // "User - Usuário"
- * getRoleName(null) // "Não definida"
+ * getRoleNameById(1) // "Administrador"
+ * getRoleNameById(2) // "Attendant - Operacional"
+ * getRoleNameById(3) // "User - Usuário"
+ * getRoleNameById(null) // "Não definida"
  * ```
  */
 export const getRoleNameById = (roleId: number): string => {
@@ -63,27 +63,30 @@ export const getRoleByName = (roleName: string): string => {
 
 /**
  * Verifica se um usuário tem um role específico
- * 
+ *
  * @param userRoleId - ID do role do usuário
  * @param requiredRole - ID do role requerido
  * @returns true se o usuário tem o role requerido
- * 
+ *
  * @example
  * ```typescript
  * hasRole(1, ROLES.ADMIN) // true
  * hasRole(2, ROLES.ADMIN) // false
  * ```
  */
-export const hasRole = (userRoleId: number | null | undefined, requiredRole: RoleId): boolean => {
+export const hasRole = (
+  userRoleId: number | null | undefined,
+  requiredRole: RoleId
+): boolean => {
   return userRoleId === requiredRole;
 };
 
 /**
  * Verifica se um usuário é administrador
- * 
+ *
  * @param userRoleId - ID do role do usuário
  * @returns true se o usuário é admin
- * 
+ *
  * @example
  * ```typescript
  * isAdmin(1) // true
@@ -97,10 +100,10 @@ export const isAdmin = (userRoleId: number | null | undefined): boolean => {
 
 /**
  * Verifica se um usuário é attendant/operacional
- * 
+ *
  * @param userRoleId - ID do role do usuário
  * @returns true se o usuário é attendant
- * 
+ *
  * @example
  * ```typescript
  * isAttendant(2) // true
@@ -113,10 +116,10 @@ export const isAttendant = (userRoleId: number | null | undefined): boolean => {
 
 /**
  * Verifica se um usuário é user comum
- * 
+ *
  * @param userRoleId - ID do role do usuário
  * @returns true se o usuário é user comum
- * 
+ *
  * @example
  * ```typescript
  * isUser(3) // true
@@ -126,7 +129,6 @@ export const isAttendant = (userRoleId: number | null | undefined): boolean => {
 export const isUser = (userRoleId: number | null | undefined): boolean => {
   return hasRole(userRoleId, ROLES.USER);
 };
-
 
 export const getStatusColor = (status: string) => {
   switch (status) {
@@ -173,7 +175,7 @@ export const getStatusLabel = (status: string) => {
 
 // Utility to remove UTC timezone and treat as local time
 const parseAsLocalTime = (dateTimeString: string): Date => {
-  const dateStr = dateTimeString.replace('Z', '').replace('T', ' ');
+  const dateStr = dateTimeString.replace("Z", "").replace("T", " ");
   return new Date(dateStr);
 };
 
@@ -190,10 +192,13 @@ export const formatDateTime = (dateTimeString: string) => {
 };
 
 // Format date range with start and end times
-export const formatDateTimeRange = (datetimeStart: string, datetimeEnd: string) => {
+export const formatDateTimeRange = (
+  datetimeStart: string,
+  datetimeEnd: string
+) => {
   const startDate = parseAsLocalTime(datetimeStart);
   const endDate = parseAsLocalTime(datetimeEnd);
-  
+
   return {
     date: startDate.toLocaleDateString("pt-BR", {
       weekday: "long",
@@ -239,10 +244,14 @@ export const isAppointmentPast = (datetime: string): boolean => {
 };
 
 // Check if appointment can be cancelled (3+ hours before)
-export const canCancelAppointment = (appointment: { datetimeStart: string; status: string }): boolean => {
+export const canCancelAppointment = (appointment: {
+  datetimeStart: string;
+  status: string;
+}): boolean => {
   const appointmentDate = parseAsLocalTime(appointment.datetimeStart);
   const now = new Date();
-  const hoursDiff = (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+  const hoursDiff =
+    (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
   return appointment.status === "SCHEDULED" && hoursDiff >= 3;
 };
 

@@ -27,6 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           draggable
           pauseOnHover
           theme="light"
+          style={{ zIndex: 9999 }}
         />
       </SessionProvider>
     </JotaiProvider>

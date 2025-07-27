@@ -18,10 +18,10 @@ export const buildQueryString = (params: QueryParams): string => {
 export interface ApiError {
   message: string;
   code?: string | number;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
@@ -38,7 +38,7 @@ export const handleApiError = (error: unknown, context: string = 'operação'): 
   }
   
   if (error && typeof error === 'object' && 'message' in error) {
-    return (error as any).message;
+    return (error as { message: string }).message;
   }
   
   return `Erro desconhecido durante ${context}`;
@@ -76,7 +76,7 @@ export const createApiErrorHandler = (entityName: string, operation: string) => 
 export const validateApiResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const errorMessage = handleHttpError(response.status, errorData.message);
+    const errorMessage = handleHttpError(response.status, (errorData as { message?: string }).message);
     throw new Error(errorMessage);
   }
 

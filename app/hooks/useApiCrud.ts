@@ -92,7 +92,7 @@ export const useApiCrud = <T, CreateRequest = Partial<T>, UpdateRequest = Partia
       }
       
       // Call success callback
-      config.onSuccess?.(action, responseData.data);
+      config.onSuccess?.(action, responseData.data as T);
       
       return responseData.data || null;
     } catch (err) {

@@ -8,7 +8,6 @@ interface ConfirmOptions {
   description: string
   confirmText?: string
   cancelText?: string
-  destructive?: boolean
 }
 
 export function useConfirm() {
@@ -55,7 +54,6 @@ export function useConfirm() {
       description={options.description}
       confirmText={options.confirmText}
       cancelText={options.cancelText}
-      destructive={options.destructive}
       onConfirm={handleConfirm}
     />
   )

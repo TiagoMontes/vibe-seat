@@ -27,6 +27,7 @@ import {
 } from "@/app/schemas/scheduleSchema";
 import { Schedule } from "@/app/types/api";
 import ScheduleModal from "@/app/components/modal/ScheduleModal";
+import { userRoleAtom } from "@/app/atoms/userAtoms";
 
 const ScheduleHeader: React.FC = () => (
   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -230,14 +231,18 @@ const ScheduleManagement: React.FC = () => {
   const [, setIsEditModalOpen] = useAtom(scheduleEditModalOpenAtom);
   const [, setSelectedSchedule] = useAtom(selectedScheduleAtom);
 
-  const { fetchSchedules, deleteSchedule, schedule, loading, deleteLoading } =
+  const { fetchSchedules, deleteSchedule, schedule, loading } =
     useSchedules();
   const { error: showError } = useToast();
   const { confirm, ConfirmComponent } = useConfirm();
+  const [role] = useAtom(userRoleAtom);
 
   useEffect(() => {
-    fetchSchedules();
-  }, []); // Remove fetchSchedules da dependência para evitar loops
+    if (role === "admin") {
+      fetchSchedules();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]); // Remove fetchSchedules da dependência para evitar loops
 
   const handleEditSchedule = (schedule: Schedule) => {
     setSelectedSchedule(schedule);
@@ -251,7 +256,6 @@ const ScheduleManagement: React.FC = () => {
         "Tem certeza que deseja excluir esta configuração? Esta ação não pode ser desfeita.",
       confirmText: "Excluir",
       cancelText: "Cancelar",
-      destructive: true,
     });
 
     if (confirmed) {
