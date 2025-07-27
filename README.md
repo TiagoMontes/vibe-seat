@@ -88,7 +88,7 @@ Edite o arquivo `.env.local` com suas configurações:
 ```env
 NEXTAUTH_SECRET=your-secret-key
 NEXTAUTH_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=your-sejusp-api-endpoint
+NEXT_PUBLIC_API_URL=API_BACKEND_IPI:3001
 ```
 
 4. **Execute em modo de desenvolvimento:**
@@ -177,17 +177,8 @@ vibe-seat/
 
 ### Variáveis de Ambiente Obrigatórias
 
-```env
-# Autenticação NextAuth
-NEXTAUTH_SECRET=your-jwt-secret-key-here
-NEXTAUTH_URL=http://localhost:3000
-
 # API SEJUSP (Endpoint da API externa)
 NEXT_PUBLIC_API_URL=API_BACKEND_IPI:3001
-
-# Opcional para desenvolvimento
-NODE_ENV=development
-```
 
 ### Integração com API SEJUSP
 
