@@ -174,7 +174,7 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
               </div>
               <div className="flex-1 min-w-0 text-left">
                 <p className="text-sm font-bold truncate">
-                  {userData?.fullName || userName}
+                  {userData?.username}
                 </p>
                 <p className="text-xs text-gray-600 truncate">
                   {getRoleLabel(userRole)}
