@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "./hooks/useAuth";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import { useEffect, useState } from "react";
@@ -8,16 +7,16 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 export default function LoginPage() {
-  const { isAuthenticated } = useAuth();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [showRegister, setShowRegister] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Só redireciona se estiver autenticado e não estiver carregando
+    if (status === "authenticated" && session?.user) {
       router.push("/home");
     }
-  }, [isAuthenticated, router]);
+  }, [status, session, router]);
 
   // Mostrar loading enquanto verifica a autenticação
   if (status === "loading") {

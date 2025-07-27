@@ -49,6 +49,17 @@ export interface CreateUserRequest {
   username: string;
   password: string;
   roleId: number;
+  // RF02 - Campos obrigatórios
+  fullName: string;
+  cpf: string;
+  jobFunction: string;
+  position: string;
+  registration: string;
+  sector: string;
+  email: string;
+  phone: string;
+  gender: 'M' | 'F' | 'Outro';
+  birthDate: string;
 }
 
 export interface UserStats {

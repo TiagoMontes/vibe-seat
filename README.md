@@ -4,48 +4,59 @@ Sistema de agendamento de cadeiras/assentos desenvolvido para a Secretaria de Es
 
 ## 📋 Sobre o Projeto
 
-O VibeSeat é uma aplicação web completa para gerenciamento de agendamentos que permite:
+O VibeSeat é uma aplicação web completa para gerenciamento de agendamentos que oferece:
 
-- **Autenticação e autorização** com controle de acesso baseado em roles
-- **Agendamento de cadeiras/assentos** com slots de tempo configuráveis
-- **Gerenciamento de usuários** com aprovação de cadastros
-- **Dashboard administrativo** para controle completo do sistema
-- **Interface responsiva** para desktop e mobile
+- **Sistema de autenticação completo** com NextAuth.js e JWT
+- **Agendamento inteligente** com slots de tempo configuráveis e verificação de disponibilidade
+- **Gerenciamento completo de usuários** com sistema de aprovação e controle de permissões
+- **Dashboard administrativo** com métricas em tempo real e insights
+- **Interface totalmente responsiva** otimizada para desktop, tablet e mobile
+- **Sistema de notificações** em tempo real para feedback do usuário
+- **Controle de cadeiras** com diferentes status (Ativa, Manutenção, Inativa)
+- **Configuração flexível de horários** com suporte a múltiplos intervalos de tempo
+- **Relatórios e insights** para análise de uso do sistema
 
-### Roles do Sistema
+### Roles e Permissões do Sistema
 
-- **Admin**: Acesso completo ao sistema
-- **Attendant**: Gerenciamento de agendamentos e usuários
-- **User**: Realizar e visualizar próprios agendamentos
+- **Admin**: Acesso completo - gerenciamento de usuários, cadeiras, horários e configurações do sistema
+- **Attendant**: Gerenciamento operacional - aprovação de usuários, gestão de agendamentos e cadeiras
+- **User**: Acesso limitado - criação e visualização de próprios agendamentos
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Stack Tecnológico
 
-### Frontend
-- **Next.js 15** com App Router e Turbopack
-- **React 19** com TypeScript
-- **Tailwind CSS 4** para estilização
-- **Radix UI** para componentes acessíveis
-- **Lucide React** para ícones
+### Core Framework
+- **Next.js 15** com App Router e Turbopack para desenvolvimento otimizado
+- **React 19** com TypeScript para tipagem estática
+- **Node.js 18+** como runtime
 
-### Estado e Dados
-- **Jotai** para gerenciamento de estado global
-- **React Hook Form** com validação Zod/Yup
-- **NextAuth.js** para autenticação JWT
+### Interface e Styling
+- **Tailwind CSS 4** para estilização utilitária
+- **Radix UI** para componentes acessíveis e primitivos
+- **Shadcn/ui** como design system base
+- **Lucide React** para iconografia consistente
+- **Next Themes** para suporte a tema claro/escuro
 
-### UI/UX
-- **Shadcn/ui** para componentes de design system
-- **React Toastify** para notificações
-- **Date-fns** para manipulação de datas
-- **Next Themes** para suporte a tema escuro
+### Estado e Gerenciamento de Dados
+- **Jotai** para gerenciamento de estado global atômico
+- **React Hook Form** para formulários performáticos
+- **Zod/Yup** para validação de schemas
+- **NextAuth.js** para autenticação e sessões JWT
+
+### Experiência do Usuário
+- **React Toastify** para sistema de notificações
+- **Date-fns** para manipulação avançada de datas
+- **React Day Picker** para seleção de datas
+- **Máscaras de input** personalizadas para CPF, telefone, etc.
 
 ## 🚀 Como Executar o Projeto
 
 ### Pré-requisitos
 
-- **Bun** instalado (versão mais recente)
-- **Node.js** 18+ (para compatibilidade)
+- **Node.js 18+** (recomendado v20 LTS)
+- **npm, yarn, pnpm ou bun** como gerenciador de pacotes
+- **Git** para versionamento
 
-### Instalação
+### Instalação e Configuração
 
 1. **Clone o repositório:**
 ```bash
@@ -55,23 +66,34 @@ cd vibe-seat
 
 2. **Instale as dependências:**
 ```bash
+# Usando npm (recomendado)
+npm install
+
+# Ou usando yarn
+yarn install
+
+# Ou usando pnpm
+pnpm install
+
+# Ou usando bun
 bun install
 ```
 
 3. **Configure as variáveis de ambiente:**
 ```bash
 cp .env.example .env.local
-# Edite o arquivo .env.local com suas configurações
 ```
 
-4. **Execute o build:**
-```bash
-bun run build
+Edite o arquivo `.env.local` com suas configurações:
+```env
+NEXTAUTH_SECRET=your-secret-key
+NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=your-sejusp-api-endpoint
 ```
 
-4. **Execute a aplicação de forma otimizada:**
+4. **Execute em modo de desenvolvimento:**
 ```bash
-bun run start
+npm run dev
 ```
 
 5. **Acesse a aplicação:**
@@ -80,95 +102,185 @@ Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
 ### Scripts Disponíveis
 
 ```bash
-# Desenvolvimento com Turbopack
-bun run dev
+# Desenvolvimento com Turbopack (Hot Reload otimizado)
+npm run dev
 
 # Build para produção
-bun run build
+npm run build
 
-# Executar em produção
-bun run start
+# Executar versão de produção
+npm run start
 
-# Linting
-bun run lint
+# Verificação de código (ESLint)
+npm run lint
+```
+
+### Build e Deploy
+
+Para produção, execute:
+```bash
+npm run build
+npm run start
 ```
 
 ## 📁 Estrutura do Projeto
 
 ```
-app/
-├── api/                    # Rotas da API Next.js
-├── atoms/                  # Jotai atoms para estado global
-├── components/             # Componentes React
-│   ├── management/         # Componentes administrativos
-│   ├── modal/             # Modais e diálogos
-│   ├── subTab/            # Componentes de abas
-│   └── ui/                # Componentes UI reutilizáveis
-├── hooks/                  # Custom hooks
-├── layout/                 # Layout principal da aplicação
-├── lib/                    # Utilitários e configurações
-├── schemas/               # Schemas de validação
-└── types/                 # Definições TypeScript
+vibe-seat/
+├── app/                           # App Router do Next.js 15
+│   ├── api/                       # API Routes (Proxy para API SEJUSP)
+│   │   ├── appointments/          # Gerenciamento de agendamentos
+│   │   ├── approvals/            # Sistema de aprovações
+│   │   ├── auth/                 # Autenticação NextAuth
+│   │   ├── chairs/               # Gerenciamento de cadeiras
+│   │   ├── dashboard/            # Métricas e estatísticas
+│   │   ├── schedules/            # Configuração de horários
+│   │   └── users/                # Gerenciamento de usuários
+│   ├── atoms/                     # Estado global com Jotai
+│   │   ├── appointmentAtoms.ts   # Estado de agendamentos
+│   │   ├── chairAtoms.ts         # Estado de cadeiras
+│   │   ├── userAtoms.ts          # Estado do usuário
+│   │   └── ...                   # Outros atoms
+│   ├── components/                # Componentes React organizados
+│   │   ├── management/           # Interfaces administrativas
+│   │   ├── modal/                # Diálogos e popups
+│   │   ├── subTab/               # Conteúdo de abas
+│   │   ├── ui/                   # Primitivos reutilizáveis
+│   │   └── ...                   # Componentes base
+│   ├── hooks/                     # Custom hooks para lógica de negócio
+│   │   ├── useAppointments.ts    # Lógica de agendamentos
+│   │   ├── useAuth.ts            # Lógica de autenticação
+│   │   ├── useChairs.ts          # Lógica de cadeiras
+│   │   └── ...                   # Outros hooks
+│   ├── lib/                       # Utilitários e configurações
+│   │   ├── auth.ts               # Configuração NextAuth
+│   │   ├── utils.tsx             # Funções utilitárias
+│   │   └── apiUtils.ts           # Helpers para API
+│   ├── schemas/                   # Validação de formulários
+│   │   ├── registerSchema.ts     # Schema de cadastro
+│   │   ├── appointmentSchema.ts  # Schema de agendamento
+│   │   └── ...                   # Outros schemas
+│   ├── types/                     # Definições TypeScript
+│   │   ├── api.ts                # Tipos da API SEJUSP
+│   │   └── ...                   # Outros tipos
+│   ├── home/                      # Página principal pós-login
+│   ├── user/                      # Área do usuário comum
+│   └── page.tsx                   # Página de login/registro
+├── components/                    # Componentes UI externos (shadcn)
+│   └── ui/                       # Primitivos do design system
+├── public/                        # Assets estáticos
+├── CLAUDE.md                      # Instruções para desenvolvimento
+└── README.md                      # Documentação do projeto
 ```
 
-## 🔧 Configuração
+## 🔧 Configuração e Integração
 
-### Variáveis de Ambiente
+### Variáveis de Ambiente Obrigatórias
 
 ```env
-NEXTAUTH_SECRET=your-secret-key
+# Autenticação NextAuth
+NEXTAUTH_SECRET=your-jwt-secret-key-here
 NEXTAUTH_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=your-api-endpoint
+
+# API SEJUSP (Endpoint da API externa)
+NEXT_PUBLIC_API_URL=API_BACKEND_IPI:3001
+
+# Opcional para desenvolvimento
+NODE_ENV=development
 ```
 
-### Integração com API Externa
+### Integração com API SEJUSP
 
-O sistema se conecta com a API externa da SEJUSP através de:
-- Autenticação JWT
-- Proxy através das rotas da API Next.js
-- Gerenciamento automático de tokens
+O VibeSeat atua como um **frontend proxy** para a API oficial da SEJUSP:
 
-## 🏗️ Arquitetura
+- **Autenticação JWT**: Tokens gerenciados automaticamente via NextAuth
+- **Proxy Pattern**: Todas as chamadas passam pelas rotas `/api/*` do Next.js
+- **Interceptação automática**: Headers e tokens adicionados transparentemente
+- **Cache inteligente**: Otimização de requisições com estado Jotai
+- **Tratamento de erros**: Sistema robusto de fallbacks e retry
 
-### Padrões Implementados
+## 🏗️ Arquitetura e Padrões
 
-- **Atomic Design** para organização de componentes
-- **Custom Hooks** para lógica de negócio
-- **Proxy API Pattern** para integração externa
-- **Role-Based Access Control** para autorização
+### Design Patterns Implementados
 
-### Fluxo de Dados
+- **Atomic Design**: Organização hierárquica de componentes (Atoms → Molecules → Organisms)
+- **Custom Hooks Pattern**: Separação da lógica de negócio dos componentes UI
+- **Proxy API Pattern**: Camada de abstração para API externa
+- **RBAC (Role-Based Access Control)**: Sistema granular de permissões
+- **Atomic State Management**: Estado dividido em pequenos atoms independentes
+- **Compound Components**: Componentes complexos com sub-componentes relacionados
 
-1. Componentes consomem custom hooks
-2. Hooks gerenciam estado Jotai e chamadas API
-3. Rotas API fazem proxy para API externa SEJUSP
-4. Respostas atualizam atoms, triggering re-renders
+### Fluxo de Dados e Arquitetura
 
-## 📱 Funcionalidades
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Componentes   │───▶│  Custom Hooks    │───▶│  Jotai Atoms    │
+│   React/TSX     │    │  (Lógica)        │    │  (Estado)       │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       ▼                       │
+         │              ┌──────────────────┐              │
+         │              │   API Routes     │              │
+         └──────────────│   (Next.js)      │◀─────────────┘
+                        └──────────────────┘
+                                 │
+                                 ▼
+                        ┌──────────────────┐
+                        │   API SEJUSP     │
+                        │   (Externa)      │
+                        └──────────────────┘
+```
 
-### Para Usuários
-- Login e registro com aprovação
-- Visualização de cadeiras disponíveis
-- Agendamento de slots de tempo
-- Histórico de agendamentos
+## 📱 Funcionalidades Detalhadas
 
-### Para Atendentes/Admins
-- Aprovação de novos usuários
-- Gerenciamento de cadeiras e status
-- Configuração de horários disponíveis
-- Dashboard com métricas do sistema
+### 👤 Para Usuários Comuns
+- **Registro intuitivo** com validação em tempo real de CPF e dados
+- **Dashboard personalizado** com visão geral dos agendamentos
+- **Sistema de agendamento** com calendário visual e slots disponíveis
+- **Histórico completo** de agendamentos com filtros e busca
 
-## 🔒 Segurança
+### 👥 Para Atendentes
+- **Painel de aprovações** para gerenciar novos cadastros
+- **Gestão de agendamentos** com confirmação e cancelamento
+- **Relatórios básicos** de uso e ocupação
 
-- Autenticação JWT segura
-- Validação de entrada com Zod/Yup
-- Proteção de rotas baseada em roles
-- Sanitização de dados
+### 🔧 Para Administradores
+- **Dashboard executivo** com métricas avançadas e insights
+- **Gerenciamento completo de cadeiras** (criação, edição, status)
+- **Configuração de horários** flexível com múltiplos intervalos
+- **Controle total de usuários** e permissões
+- **Relatórios detalhados** de uso do sistema
+- **Configurações do sistema** e parâmetros globais
 
-## 📞 Suporte
+## 🔒 Segurança e Compliance
 
-Para dúvidas ou problemas, entre em contato com a equipe de desenvolvimento da SEJUSP.
+### Medidas de Segurança Implementadas
+- **Autenticação JWT robusta** com renovação automática de tokens
+- **Validação rigorosa** em frontend e backend com Zod/Yup schemas
+- **Sanitização de dados** para prevenção de XSS e injection
+- **Rate limiting** nas rotas de API para prevenção de abuse
+- **CORS configurado** adequadamente para ambiente de produção
+- **Headers de segurança** otimizados (CSP, HSTS, etc.)
+- **Criptografia de dados sensíveis** em trânsito e em repouso
+
+## 🧪 Testes e Qualidade
+
+### Ferramentas de Qualidade
+- **ESLint**: Análise estática de código JavaScript/TypeScript
+- **TypeScript**: Tipagem estática para prevenção de erros
+- **Prettier** (recomendado): Formatação consistente de código
 
 ---
 
+## 📄 Licença e Créditos
+
 **Desenvolvido para SEJUSP - Secretaria de Estado de Justiça e Segurança Pública**
+
+### Tecnologias Principais
+- [Next.js](https://nextjs.org/) - Framework React para produção
+- [React](https://react.dev/) - Biblioteca para interfaces de usuário
+- [TypeScript](https://www.typescriptlang.org/) - JavaScript com tipagem estática
+- [Tailwind CSS](https://tailwindcss.com/) - Framework CSS utilitário
+- [Jotai](https://jotai.org/) - Gerenciamento de estado primitivo e flexível
+
+**Versão**: 1.0.0 | **Última atualização**: 27/07/2025

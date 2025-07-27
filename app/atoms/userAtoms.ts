@@ -4,10 +4,20 @@ export type UserRole = 'user' | 'attendant' | 'admin';
 export type UserStatus = 'pending' | 'approved' | 'rejected';
 
 export interface UserData {
-  id: string;
+  id: number;
   username: string;
   role: UserRole;
   status: UserStatus;
+  fullName: string;
+  cpf: string;
+  jobFunction: string;
+  position: string;
+  registration: string;
+  sector: string;
+  email: string;
+  phone: string;
+  gender: 'M' | 'F' | 'Outro';
+  birthDate: string;
 }
 
 // Atom principal do usuário
@@ -40,31 +50,43 @@ export const isApprovedAtom = atom(
   (get) => get(userAtom)?.status === "approved"
 );
 
-// Atoms derivados para verificações de permissões
+// Atoms derivados para verificações de permissões (usando as permissões computadas)
 export const canManageChairsAtom = atom(
   (get) => {
     const user = get(userAtom);
-    return user?.role === "admin" && user?.status === "approved";
+    if (!user) return false;
+    return computePermissions(user.role, user.status).canManageChairs;
   }
 );
 
 export const canApproveUsersAtom = atom(
   (get) => {
     const user = get(userAtom);
-    return (user?.role === "attendant" || user?.role === "admin") && user?.status === "approved";
+    if (!user) return false;
+    return computePermissions(user.role, user.status).canApproveUsers;
   }
 );
 
 export const canViewDashboardAtom = atom(
   (get) => {
     const user = get(userAtom);
-    return (user?.role === "attendant" || user?.role === "admin") && user?.status === "approved";
+    if (!user) return false;
+    return computePermissions(user.role, user.status).canViewDashboard;
   }
 );
 
-export const canManageAppointmentsAtom = atom(
+export const canCreateAppointmentsAtom = atom(
   (get) => {
     const user = get(userAtom);
-    return (user?.role === "attendant" || user?.role === "admin") && user?.status === "approved";
+    if (!user) return false;
+    return computePermissions(user.role, user.status).canCreateAppointments;
   }
-); 
+);
+
+// Função utilitária para computar permissões
+export const computePermissions = (role: UserRole, status: UserStatus) => ({
+  canManageChairs: role === 'admin' && status === 'approved',
+  canApproveUsers: ['attendant', 'admin'].includes(role) && status === 'approved',
+  canViewDashboard: ['attendant', 'admin'].includes(role) && status === 'approved',
+  canCreateAppointments: ['user', 'attendant', 'admin'].includes(role) && status === 'approved',
+}); 

@@ -11,12 +11,14 @@ import ScheduleManagement from "../components/management/ScheduleManagement";
 import { AppointmentManagement } from "../components/management/AppointmentManagement";
 import { useRouter } from "next/navigation";
 import { Dashboard } from "../components/modal/Dashboard";
+import { UserData } from "@/app/atoms/userAtoms";
 
 interface LayoutProps {
   children: React.ReactNode;
   className?: string;
   userName?: string;
   userRole?: string;
+  userData?: UserData | null;
   onLogout?: () => void;
 }
 
@@ -34,11 +36,13 @@ const Layout: React.FC<LayoutProps> = ({
   className,
   userName = "Usuário",
   userRole = "Admin",
+  userData,
   onLogout,
 }) => {
   const [activeTab, setActiveTab] = useState<TabKey>("appointments");
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+
   // Detectar se é mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -49,6 +53,24 @@ const Layout: React.FC<LayoutProps> = ({
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Garantir que as tabs sejam renderizadas corretamente
+  useEffect(() => {
+    console.log("Layout - userRole mudou:", userRole);
+    console.log(
+      "Layout - tabs disponíveis:",
+      getTabsForRole().map((t) => t.key)
+    );
+
+    // Reset para a primeira tab disponível quando o role mudar
+    const availableTabs = getTabsForRole();
+    if (
+      availableTabs.length > 0 &&
+      !availableTabs.find((tab) => tab.key === activeTab)
+    ) {
+      setActiveTab(availableTabs[0].key);
+    }
+  }, [userRole, activeTab]);
 
   // Role-based tab access control
   const getTabsForRole = (): Tab[] => {
@@ -167,6 +189,7 @@ const Layout: React.FC<LayoutProps> = ({
           onTabChange={handleTabChange}
           userName={userName}
           userRole={userRole}
+          userData={userData}
           onLogout={onLogout}
           onProfileClick={handleProfileClick}
         />
@@ -177,7 +200,9 @@ const Layout: React.FC<LayoutProps> = ({
         {/* Header mobile com menu dropdown */}
         {isMobile && (
           <div className="sticky top-0 z-30 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-            <h1 className="text-lg font-bold">{userName}</h1>
+            <h1 className="text-lg font-bold">
+              {userData?.fullName || userName}
+            </h1>
 
             <MobileMenu
               tabs={tabs}

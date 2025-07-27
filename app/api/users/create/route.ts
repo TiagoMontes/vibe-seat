@@ -4,6 +4,16 @@ interface CreateUserBody {
   username: string;
   password: string;
   roleId: number;
+  fullName: string;
+  cpf: string;
+  jobFunction: string;
+  position: string;
+  registration: string;
+  sector: string;
+  email: string;
+  phone: string;
+  gender: string;
+  birthDate: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -28,7 +38,17 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         username: body.username,
         password: body.password,
-        roleId: body.roleId
+        roleId: body.roleId,
+        fullName: body.fullName,
+        cpf: body.cpf,
+        jobFunction: body.jobFunction,
+        position: body.position,
+        registration: body.registration,
+        sector: body.sector,
+        email: body.email,
+        phone: body.phone,
+        gender: body.gender,
+        birthDate: body.birthDate
       })
     });
 

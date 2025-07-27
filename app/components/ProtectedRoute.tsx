@@ -110,7 +110,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => router.back()}
+                onClick={() => router.push("/home")}
               >
                 Voltar
               </Button>

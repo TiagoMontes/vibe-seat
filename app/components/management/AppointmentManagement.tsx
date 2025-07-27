@@ -457,6 +457,7 @@ export const AppointmentManagement = () => {
       appointmentSuccess,
       appointmentError,
       handleFetchChairs,
+      setCreateLoading,
     ]
   );
 

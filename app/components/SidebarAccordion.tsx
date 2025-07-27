@@ -10,6 +10,7 @@ import {
   User,
   Settings,
 } from "lucide-react";
+import { UserData } from "@/app/atoms/userAtoms";
 
 interface SidebarAccordionProps {
   tabs: Array<{
@@ -21,6 +22,7 @@ interface SidebarAccordionProps {
   onTabChange: (tab: string) => void;
   userName?: string;
   userRole?: string;
+  userData?: UserData | null;
   onLogout?: () => void;
   onProfileClick?: () => void;
 }
@@ -31,6 +33,7 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
   onTabChange,
   userName = "Usuário",
   userRole = "Admin",
+  userData,
   onLogout,
   onProfileClick,
 }) => {
@@ -38,6 +41,45 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role?.toLowerCase()) {
+      case "admin":
+        return "Administrador";
+      case "attendant":
+        return "Atendente";
+      case "user":
+        return "Usuário";
+      default:
+        return role;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "Aprovado";
+      case "pending":
+        return "Pendente";
+      case "rejected":
+        return "Rejeitado";
+      default:
+        return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "text-green-600";
+      case "pending":
+        return "text-yellow-600";
+      case "rejected":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
+    }
   };
 
   return (
@@ -81,9 +123,7 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
       </div>
 
       {/* Menu de Opções com Accordion */}
-      <div
-        className="flex-1 p-2 flex flex-col"
-      >
+      <div className="flex-1 p-2 flex flex-col">
         {isExpanded ? (
           <div className="flex flex-col gap-2">
             {tabs.map((tab) => (
@@ -124,22 +164,34 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
       </div>
 
       {/* Área do Usuário */}
-      <div
-        className="border-t  border-gray-300 p-2"
-      >
+      <div className="border-t border-gray-300 p-2">
         {isExpanded ? (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center  gap-2">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="h-4 w-4 text-primary-foreground" />
+          <div className="flex flex-col gap-3">
+            {/* Informações básicas do usuário */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="h-5 w-5 text-primary-foreground" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-lg font-bold truncate">{userName}</p>
-                <p className="text-xs truncate">{userRole}</p>
+                <p className="text-sm font-bold truncate">
+                  {userData?.fullName || userName}
+                </p>
+                <p className="text-xs text-gray-600 truncate">
+                  {getRoleLabel(userRole)}
+                </p>
+                <p
+                  className={cn(
+                    "text-xs font-medium",
+                    getStatusColor(userData?.status || "pending")
+                  )}
+                >
+                  {getStatusLabel(userData?.status || "pending")}
+                </p>
               </div>
             </div>
 
-            <div className="space-y-1">
+            {/* Botões de ação */}
+            <div className="space-y-2">
               <Button
                 onClick={onProfileClick}
                 variant="outline"
@@ -148,10 +200,10 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
                 <Settings className="h-4 w-4" />
                 <span>Meu Perfil</span>
               </Button>
-              
+
               <Button
                 onClick={onLogout}
-                className="w-full flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-black/80 "
+                className="w-full flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-black/80"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sair</span>
@@ -161,7 +213,7 @@ const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
         ) : (
           <div className="flex flex-col items-center gap-2">
             <div className="w-full h-10 border rounded-full flex items-center justify-center">
-              {userName.charAt(0).toUpperCase()}
+              {(userData?.fullName || userName).charAt(0).toUpperCase()}
             </div>
             <Button
               onClick={onProfileClick}

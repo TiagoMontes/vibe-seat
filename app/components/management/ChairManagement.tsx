@@ -28,7 +28,7 @@ import {
   getStatusLabel,
   getStatusOptions,
 } from "@/app/schemas/chairSchema";
-import { getStatusVariant } from "@/app/lib/utils";
+import { getChairStatusColor } from "@/app/lib/utils";
 import ChairModal from "@/app/components/modal/ChairModal";
 import GenericFilter from "@/app/components/GenericFilter";
 import { PaginationComponent } from "@/app/components/PaginationComponent";
@@ -158,7 +158,7 @@ const ChairManagement = () => {
       title: "Excluir cadeira",
       description:
         "Tem certeza que deseja excluir esta cadeira? Esta ação não pode ser desfeita.",
-      confirmText: "Excluir"
+      confirmText: "Excluir",
     });
 
     if (confirmed) {
@@ -345,16 +345,7 @@ const ChairManagement = () => {
                               {chair.name}
                             </h3>
                           </div>
-                          <Badge
-                            variant={
-                              getStatusVariant(chair.status) as
-                                | "default"
-                                | "secondary"
-                                | "destructive"
-                                | "outline"
-                            }
-                            className="inline-flex items-center gap-1"
-                          >
+                          <Badge className={`${getChairStatusColor(chair.status)}`}>
                             {getStatusIcon(chair.status)}
                             {getStatusText(chair.status)}
                           </Badge>

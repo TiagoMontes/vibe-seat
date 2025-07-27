@@ -7,7 +7,6 @@ import {
   canManageChairsAtom,
   canApproveUsersAtom,
   canViewDashboardAtom,
-  canManageAppointmentsAtom,
   UserRole
 } from '@/app/atoms/userAtoms';
 
@@ -22,7 +21,6 @@ export const usePermissions = () => {
   const [canManageChairs] = useAtom(canManageChairsAtom);
   const [canApproveUsers] = useAtom(canApproveUsersAtom);
   const [canViewDashboard] = useAtom(canViewDashboardAtom);
-  const [canManageAppointments] = useAtom(canManageAppointmentsAtom);
 
   // Hierarquia de roles: user < attendant < admin
   const roleHierarchy: Record<UserRole, number> = {
@@ -78,11 +76,11 @@ export const usePermissions = () => {
     if (!user) return '/';
     
     if (user.status !== 'approved') {
-      return '/pending-approval';
+      return '/';
     }
 
-    // All approved users go to /home regardless of role
-    // Role-based access is handled by tab visibility in the layout
+    // Se o usuário está aprovado e está tentando acessar /user, permitir
+    // Caso contrário, redirecionar para /home
     return '/home';
   };
 
@@ -101,7 +99,6 @@ export const usePermissions = () => {
     canManageChairs,
     canApproveUsers,
     canViewDashboard,
-    canManageAppointments,
 
     // Derived permissions
     canCreateAppointments: user?.status === 'approved',
@@ -109,8 +106,6 @@ export const usePermissions = () => {
     canCancelAppointments: user?.status === 'approved',
     canViewChairs: user?.status === 'approved',
     canViewSchedules: user?.status === 'approved',
-    canConfirmAppointments: canManageAppointments,
-    canViewAllAppointments: canManageAppointments,
     canManageSchedules: canManageChairs, // Admin only
     canDeleteUsers: canManageChairs, // Admin only
 

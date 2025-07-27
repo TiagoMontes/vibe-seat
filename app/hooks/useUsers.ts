@@ -59,7 +59,7 @@ export const useUsers = () => {
 
   const getUser = useCallback(async (id: number) => {
     try {
-      const response = await fetch(`/api/users/getAll?id=${id}`);
+      const response = await fetch(`/api/users/getUser/${id}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -71,8 +71,10 @@ export const useUsers = () => {
       if (!responseData.success) {
         throw new Error(responseData.message || 'Erro ao buscar usuário');
       }
-      
-      return responseData.data;
+
+      // A resposta está em responseData.data
+      // setUser(responseData.data); // This line was commented out in the original file, so it's not added here.
+      return responseData.data.data;
     } catch (error) {
       console.error('Erro ao buscar usuário:', error);
       return null;

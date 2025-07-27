@@ -22,22 +22,25 @@ import {
   LogOutIcon,
   ChevronLeftIcon,
   ShieldCheckIcon,
+  MailIcon,
+  PhoneIcon,
+  BuildingIcon,
+  BriefcaseIcon,
+  MapPin,
+  CreditCardIcon,
+  CakeIcon,
 } from "lucide-react";
-import {
-  userAtom,
-  userNameAtom,
-  userRoleAtom,
-  userIdAtom,
-  userStatusAtom,
-} from "@/app/atoms/userAtoms";
+import { userAtom } from "@/app/atoms/userAtoms";
 import {
   myAppointmentsAtom,
   upcomingAppointmentsAtom,
   myAppointmentsLoadingAtom,
 } from "@/app/atoms/appointmentAtoms";
 import { useAppointments } from "@/app/hooks/useAppointments";
+import { useUsers } from "@/app/hooks/useUsers";
 import {
   formatDateTimeRange,
+  getStatusColor,
   getStatusLabel,
   getStatusVariant,
 } from "@/app/lib/utils";
@@ -47,14 +50,11 @@ import { signOut } from "next-auth/react";
 export const UserProfilePage = () => {
   const router = useRouter();
   const { fetchMyAppointments } = useAppointments();
+  const { getUser } = useUsers();
   const { appointmentError } = useToast();
 
   // User data from atoms
-  const [user] = useAtom(userAtom);
-  const [userName] = useAtom(userNameAtom);
-  const [userRole] = useAtom(userRoleAtom);
-  const [userId] = useAtom(userIdAtom);
-  const [userStatus] = useAtom(userStatusAtom);
+  const [user, setUser] = useAtom(userAtom);
 
   // Appointments data
   const [myAppointments] = useAtom(myAppointmentsAtom);
@@ -62,6 +62,7 @@ export const UserProfilePage = () => {
   const [appointmentsLoading] = useAtom(myAppointmentsLoadingAtom);
 
   const [initialLoading, setInitialLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const hasLoadedOnceRef = useRef(false);
   const fetchMyAppointmentsRef = useRef(fetchMyAppointments);
   const appointmentErrorRef = useRef(appointmentError);
@@ -69,6 +70,44 @@ export const UserProfilePage = () => {
   // Update refs
   fetchMyAppointmentsRef.current = fetchMyAppointments;
   appointmentErrorRef.current = appointmentError;
+
+  // Buscar dados completos do usuário quando a página for carregada
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!user?.id) {
+        setProfileLoading(false);
+        return;
+      }
+
+      try {
+        setProfileLoading(true);
+        const userData = await getUser(user.id);
+        console.log(userData);
+        if (userData) {
+          // Atualizar o userAtom com os dados completos, mantendo os dados básicos existentes
+          setUser({
+            ...user, // Mantém id, username, role, status
+            fullName: userData.fullName,
+            cpf: userData.cpf,
+            jobFunction: userData.jobFunction,
+            position: userData.position,
+            registration: userData.registration,
+            sector: userData.sector,
+            email: userData.email,
+            phone: userData.phone,
+            gender: userData.gender,
+            birthDate: userData.birthDate,
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados do usuário:", error);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, [user?.id, getUser, setUser]);
 
   // Fetch user appointments on mount - using useEffect with minimal dependencies
   useEffect(() => {
@@ -113,10 +152,11 @@ export const UserProfilePage = () => {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!initialLoading && !user) {
+    // Só redireciona se não estiver carregando e não houver usuário
+    if (!initialLoading && !profileLoading && !user) {
       router.push("/");
     }
-  }, [user, initialLoading, router]);
+  }, [user, initialLoading, profileLoading, router]);
 
   const getRoleInfo = (role: string) => {
     switch (role?.toLowerCase()) {
@@ -169,11 +209,12 @@ export const UserProfilePage = () => {
   };
 
   const recentAppointments = myAppointments.slice(0, 3);
-  const roleInfo = getRoleInfo(userRole);
-  const statusInfo = getStatusInfo(userStatus);
+  const roleInfo = getRoleInfo(user?.role ?? "");
+  const statusInfo = getStatusInfo(user?.status ?? "");
   const RoleIcon = roleInfo.icon;
 
-  if (initialLoading) {
+  // Loading state
+  if (initialLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-600">
@@ -217,15 +258,18 @@ export const UserProfilePage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* User Info Card */}
-          <div className="lg:col-span-1">
-            <Card className="bg-transparent flex flex-col gap-2 border  p-4">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Profile Header */}
+            <Card className="bg-transparent flex flex-col gap-2 border p-4">
               <CardHeader className="text-center pb-4">
                 <div className="flex justify-center mb-4">
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                     <UserIcon className="h-10 w-10 text-white" />
                   </div>
                 </div>
-                <CardTitle className="text-xl">{userName}</CardTitle>
+                <CardTitle className="text-xl">
+                  {user.username}
+                </CardTitle>
                 <CardDescription className="flex items-center justify-center gap-2 mt-2">
                   <RoleIcon className="h-4 w-4" />
                   {roleInfo.description}
@@ -244,7 +288,7 @@ export const UserProfilePage = () => {
                     ID do Usuário
                   </span>
                   <span className="text-sm text-gray-900 font-mono">
-                    #{userId}
+                    #{user.id}
                   </span>
                 </div>
 
@@ -254,6 +298,153 @@ export const UserProfilePage = () => {
                   </span>
                   <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                 </div>
+
+                {/* Personal Information */}
+                <Card className="bg-transparent">
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      Informações Pessoais
+                    </CardTitle>
+                    <CardDescription>
+                      Dados pessoais e de contato
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <UserIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Nome
+                        </p>
+                        <p className="text-sm text-gray-600">{user.fullName}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <MailIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Email
+                        </p>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <PhoneIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Telefone
+                        </p>
+                        <p className="text-sm text-gray-600">{user.phone}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <CakeIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Data de Nascimento
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {user.birthDate
+                            ? new Date(user.birthDate).toLocaleDateString(
+                                "pt-BR"
+                              )
+                            : "Não informado"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <UserIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Gênero
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {user.gender === "M"
+                            ? "Masculino"
+                            : user.gender === "F"
+                            ? "Feminino"
+                            : user.gender === "Outro"
+                            ? "Outro"
+                            : "Não informado"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <CreditCardIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">CPF</p>
+                        <p className="text-sm text-gray-600">
+                          {user.cpf || "Não informado"}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Professional Information */}
+                <Card className="bg-transparent">
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      Informações Profissionais
+                    </CardTitle>
+                    <CardDescription>
+                      Dados relacionados ao trabalho
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <BuildingIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Setor
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {user.sector || "Não informado"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <BriefcaseIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Cargo
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {user.position || "Não informado"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <UserIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Função
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {user.jobFunction || "Não informado"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Matrícula
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {user.registration || "Não informado"}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 <Separator />
 
@@ -407,6 +598,7 @@ export const UserProfilePage = () => {
                             </div>
                           </div>
                           <Badge
+                            className={`${getStatusColor(appointment.status)}`}
                             variant={
                               getStatusVariant(appointment.status) as
                                 | "default"

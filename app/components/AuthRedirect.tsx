@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { usePermissions } from '@/app/hooks/usePermissions';
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { usePermissions } from "@/app/hooks/usePermissions";
 
 export const AuthRedirect = () => {
   const router = useRouter();
@@ -10,26 +10,27 @@ export const AuthRedirect = () => {
   const { user, getRedirectPath, isAuthenticated } = usePermissions();
 
   useEffect(() => {
-    // Não redireciona durante o carregamento ou se não há mudança de autenticação
-    if (!isAuthenticated || !user) return;
+    // Se não está autenticado, não faz nada (deixa o sistema de auth lidar)
+    if (!isAuthenticated) return;
+
+    // Se está autenticado mas não tem dados do usuário, aguarda
+    if (!user) return;
 
     // Se está na página de login e está autenticado, redireciona
-    if (pathname === '/' && isAuthenticated) {
+    if (pathname === "/" && isAuthenticated) {
       const redirectPath = getRedirectPath();
       router.push(redirectPath);
       return;
     }
 
-    // Se o usuário não está aprovado e não está na página de pending
-    if (user.status !== 'approved' && pathname !== '/pending-approval') {
-      router.push('/');
-      return;
-    }
-
-    // Se o usuário está aprovado mas está na página de pending
-    if (user.status === 'approved' && pathname === '/pending-approval') {
-      const redirectPath = getRedirectPath();
-      router.push(redirectPath);
+    // Se o usuário não está aprovado, redireciona para a página principal
+    // EXCETO se estiver na página de perfil (/user) - permitir acesso
+    if (
+      user.status !== "approved" &&
+      pathname !== "/" &&
+      pathname !== "/user"
+    ) {
+      router.push("/");
       return;
     }
   }, [user, pathname, router, isAuthenticated, getRedirectPath]);

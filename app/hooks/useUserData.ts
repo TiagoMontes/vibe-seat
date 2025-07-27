@@ -10,9 +10,12 @@ export const useUserData = () => {
   const setUser = useSetAtom(userAtom);
 
   useEffect(() => {
+    console.log('useUserData - Status:', status, 'Session:', session?.user);
+    
     if (status === 'loading') return; // Aguarda carregar
 
     if (status === 'unauthenticated' || !session?.user) {
+      console.log('useUserData - Usuário não autenticado, limpando userAtom');
       setUser(null);
       return;
     }
@@ -27,10 +30,21 @@ export const useUserData = () => {
       };
 
       const userData: UserData = {
-        id: sessionUser.id,
+        id: Number(sessionUser.id),
         username: sessionUser.username || sessionUser.name || '',
         role: (sessionUser.role as UserData['role']) || 'user',
-        status: (sessionUser.status as UserData['status']) || 'pending'
+        status: (sessionUser.status as UserData['status']) || 'pending',
+        // Valores padrão para campos obrigatórios que não estão na sessão
+        fullName: sessionUser.username || sessionUser.name || '',
+        cpf: '',
+        jobFunction: '',
+        position: '',
+        registration: '',
+        sector: '',
+        email: '',
+        phone: '',
+        gender: 'M',
+        birthDate: ''
       };
       
       setUser(userData);
