@@ -36,10 +36,8 @@ interface CustomToken {
 }
 
 async function loginAPI(username: string, password: string): Promise<LoginResponse> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
   try {
-    const response = await fetch(`${apiUrl}/auth/login`, {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
