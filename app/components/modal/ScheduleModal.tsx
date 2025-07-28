@@ -194,9 +194,6 @@ const ScheduleModal = () => {
 
   const onSubmit = async (data: ApiScheduleZodFormData) => {
     try {
-      console.log("Dados do formulário:", JSON.stringify(data, null, 2));
-      console.log("Dias selecionados:", selectedDayIds);
-
       const scheduleData = {
         timeRanges: data.timeRanges,
         validFrom: data.validFrom
@@ -207,11 +204,6 @@ const ScheduleModal = () => {
           : undefined,
         dayIds: selectedDayIds,
       };
-
-      console.log(
-        "Dados que serão enviados:",
-        JSON.stringify(scheduleData, null, 2)
-      );
 
       if (isEdit && selectedSchedule) {
         await updateSchedule(scheduleData, selectedSchedule.id);
@@ -234,20 +226,17 @@ const ScheduleModal = () => {
 
       handleClose();
     } catch (err) {
-      console.error("Error saving schedule:", err);
-
       // Extrair mensagem de erro mais específica
       let errorMessage = "Erro ao salvar configuração";
-
+      
       if (err instanceof Error) {
         errorMessage = err.message;
-        console.error("Mensagem de erro detalhada:", err.message);
-      } else if (typeof err === "string") {
+      } else if (typeof err === 'string') {
         errorMessage = err;
-      } else if (err && typeof err === "object" && "message" in err) {
+      } else if (err && typeof err === 'object' && 'message' in err) {
         errorMessage = String(err.message);
       }
-
+      
       error(errorMessage);
     }
   };

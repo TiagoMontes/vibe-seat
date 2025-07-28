@@ -28,9 +28,6 @@ export async function DELETE(
       );
     }
 
-    console.log(`Deletando schedule ID ${id}`);
-    console.log("URL do backend:", `${API_BACKEND}/schedules/${id}`);
-
     // Call backend API
     const backendResponse = await fetch(`${API_BACKEND}/schedules/${id}`, {
       method: "DELETE",
@@ -42,16 +39,11 @@ export async function DELETE(
       },
     });
 
-    console.log("Status da resposta do backend:", backendResponse.status);
-    console.log("Headers da resposta:", Object.fromEntries(backendResponse.headers.entries()));
-
     if (!backendResponse.ok) {
       let errorData;
       try {
         errorData = await backendResponse.json();
-        console.log("Erro detalhado do backend:", JSON.stringify(errorData, null, 2));
       } catch (parseError) {
-        console.log("Erro ao fazer parse da resposta de erro:", parseError);
         errorData = { error: "Erro desconhecido", status: backendResponse.status };
       }
 
@@ -66,7 +58,6 @@ export async function DELETE(
       );
     }
     
-    console.log("Schedule deletado com sucesso");
     return NextResponse.json({
       success: true,
       message: "Configuração excluída com sucesso",
@@ -74,7 +65,6 @@ export async function DELETE(
     }, { status: 200 });
 
   } catch (error) {
-    console.error("Erro interno ao deletar schedule:", error);
     return NextResponse.json(
       { 
         success: false,

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
+const API_BACKEND = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -20,9 +22,7 @@ export async function GET() {
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
-    const backendResponse = await fetch(`${apiUrl}/schedules`, {
+    const backendResponse = await fetch(`${API_BACKEND}/schedules`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -39,10 +39,16 @@ export async function GET() {
     }
 
     const schedules = await backendResponse.json();
-    return NextResponse.json(schedules, { status: 200 });
+    return NextResponse.json(
+      { 
+        success: true, 
+        data: schedules,
+        message: "Configurações carregadas com sucesso"
+      }, 
+      { status: 200 }
+    );
 
   } catch (error) {
-    console.error("Error fetching schedules:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }

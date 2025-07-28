@@ -38,15 +38,13 @@ export const useSchedules = () => {
 
       const responseData = await response.json();
       
-      if (!responseData.success) {
-        throw new Error(responseData.message || 'Erro ao buscar configurações de horário');
-      }
+      // Verificar se a resposta tem a estrutura esperada
+      const schedules = responseData.data || responseData;
       
-      setSchedule(responseData.data);
+      setSchedule(schedules);
       
-      return responseData.data;
+      return schedules;
     } catch (error) {
-      console.error('Erro ao buscar configurações de horário:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -79,8 +77,6 @@ export const useSchedules = () => {
   const createSchedule = useCallback(async (scheduleData: CreateScheduleRequest) => {
     setCreateLoading(true);
     try {
-      console.log('Enviando dados para criar schedule:', JSON.stringify(scheduleData, null, 2));
-      
       const response = await fetch('/api/schedules/create', {
         method: 'POST',
         headers: {
@@ -89,12 +85,8 @@ export const useSchedules = () => {
         body: JSON.stringify(scheduleData),
       });
 
-      console.log('Status da resposta:', response.status);
-      console.log('Headers da resposta:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Erro detalhado da API:', JSON.stringify(errorData, null, 2));
         
         // Extrair a mensagem de erro mais específica
         const errorMessage = errorData.error || errorData.message || 'Erro ao criar configuração de horário';
@@ -104,14 +96,12 @@ export const useSchedules = () => {
       }
 
       const responseData = await response.json();
-      console.log('Resposta de sucesso:', JSON.stringify(responseData, null, 2));
       
-      if (!responseData.success) {
-        throw new Error(responseData.message || 'Erro ao criar configuração de horário');
-      }
+      // Verificar se a resposta tem a estrutura esperada
+      const createdSchedule = responseData.data || responseData;
       
       // Update the state immediately with the created schedule data
-      setSchedule(responseData.data);
+      setSchedule(createdSchedule);
       
       // Força atualização global
       incrementUpdateTrigger();
@@ -119,9 +109,8 @@ export const useSchedules = () => {
       // Toast de sucesso
       success('Configuração criada com sucesso!');
       
-      return responseData.data;
+      return createdSchedule;
     } catch (error) {
-      console.error('Erro completo ao criar configuração de horário:', error);
       throw error;
     } finally {
       setCreateLoading(false);
@@ -131,8 +120,6 @@ export const useSchedules = () => {
   const updateSchedule = useCallback(async (scheduleData: UpdateScheduleRequest, id: number) => {
     setUpdateLoading(true);
     try {
-      console.log(`Enviando dados para atualizar schedule ID ${id}:`, JSON.stringify(scheduleData, null, 2));
-      
       const response = await fetch(`/api/schedules/update/${id}`, {
         method: 'PATCH',
         headers: {
@@ -141,12 +128,8 @@ export const useSchedules = () => {
         body: JSON.stringify(scheduleData),
       });
 
-      console.log('Status da resposta:', response.status);
-      console.log('Headers da resposta:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Erro detalhado da API:', JSON.stringify(errorData, null, 2));
         
         // Extrair a mensagem de erro mais específica
         const errorMessage = errorData.error || errorData.message || 'Erro ao atualizar configuração de horário';
@@ -156,14 +139,12 @@ export const useSchedules = () => {
       }
 
       const responseData = await response.json();
-      console.log('Resposta de sucesso:', JSON.stringify(responseData, null, 2));
       
-      if (!responseData.success) {
-        throw new Error(responseData.message || 'Erro ao atualizar configuração de horário');
-      }
+      // Verificar se a resposta tem a estrutura esperada
+      const updatedSchedule = responseData.data || responseData;
 
       // Update the state immediately with the updated schedule data
-      setSchedule(responseData.data);
+      setSchedule(updatedSchedule);
       
       // Força atualização global
       incrementUpdateTrigger();
@@ -171,9 +152,8 @@ export const useSchedules = () => {
       // Toast de sucesso
       success('Configuração atualizada com sucesso!');
       
-      return responseData.data;
+      return updatedSchedule;
     } catch (error) {
-      console.error('Erro completo ao atualizar configuração de horário:', error);
       throw error;
     } finally {
       setUpdateLoading(false);
@@ -205,7 +185,6 @@ export const useSchedules = () => {
       
       return responseData.data;
     } catch (error) {
-      console.error('Erro ao excluir configuração de horário:', error);
       throw error;
     } finally {
       setDeleteLoading(false);

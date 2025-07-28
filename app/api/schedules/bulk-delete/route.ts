@@ -49,6 +49,8 @@ export async function DELETE(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
+        "User-Agent": "Vibe-Seat-Frontend/1.0",
+        "Accept": "application/json",
       },
       body: JSON.stringify({ ids }),
     });

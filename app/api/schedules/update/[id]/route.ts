@@ -29,9 +29,6 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    
-    console.log(`Enviando dados para atualizar schedule ID ${id}:`, JSON.stringify(body, null, 2));
-    console.log("URL do backend:", `${API_BACKEND}/schedules/${id}`);
 
     // Call backend API
     const backendResponse = await fetch(`${API_BACKEND}/schedules/${id}`, {
@@ -45,20 +42,14 @@ export async function PATCH(
       body: JSON.stringify(body),
     });
 
-    console.log("Status da resposta do backend:", backendResponse.status);
-    console.log("Headers da resposta:", Object.fromEntries(backendResponse.headers.entries()));
-
     if (!backendResponse.ok) {
       let errorData;
       try {
         errorData = await backendResponse.json();
-        console.log("Erro detalhado do backend:", JSON.stringify(errorData, null, 2));
       } catch (parseError) {
-        console.log("Erro ao fazer parse da resposta de erro:", parseError);
         errorData = { error: "Erro desconhecido", status: backendResponse.status };
       }
 
-      // Retorna o erro exato do backend
       return NextResponse.json(
         { 
           error: errorData.message || errorData.error || "Erro ao atualizar configuração",
@@ -70,7 +61,6 @@ export async function PATCH(
     }
 
     const updatedSchedule = await backendResponse.json();
-    console.log("Resposta de sucesso do backend:", JSON.stringify(updatedSchedule, null, 2));
     
     return NextResponse.json(
       { 
@@ -82,7 +72,6 @@ export async function PATCH(
     );
 
   } catch (error) {
-    console.error("Erro interno ao atualizar schedule:", error);
     return NextResponse.json(
       { 
         error: "Erro interno do servidor",
