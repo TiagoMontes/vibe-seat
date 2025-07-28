@@ -62,6 +62,18 @@ export interface CreateUserRequest {
   birthDate: string;
 }
 
+export interface CreateUserResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    id: number;
+    username: string;
+    status: UserStatus;
+    fullName: string;
+    createdAt: string;
+  };
+}
+
 export interface UserStats {
   total: number;
   pending: number;

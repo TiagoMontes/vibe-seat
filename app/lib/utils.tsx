@@ -131,7 +131,6 @@ export const isUser = (userRoleId: number | null | undefined): boolean => {
 };
 
 export const getStatusColor = (status: string) => {
-  console.log(status);
   switch (status) {
     case "SCHEDULED":
       return "bg-blue-100 text-blue-800";

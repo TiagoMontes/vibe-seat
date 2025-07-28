@@ -28,7 +28,6 @@ import {
   CalendarIcon,
   ClockIcon,
   MapPinIcon,
-  XIcon,
   ListIcon,
   UsersIcon,
 } from "lucide-react";
@@ -551,37 +550,58 @@ export const AppointmentManagement = () => {
           </p>
         </div>
 
-        {/* Navigation Buttons - Mobile First Design */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
-          <Button
-            variant={activeSection === "schedule" ? "default" : "outline"}
-            onClick={() => setActiveSection("schedule")}
-            className="flex items-center justify-center gap-2 text-xs sm:text-sm h-9 sm:h-10 w-full sm:w-auto"
-          >
-            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-            Agendar
-          </Button>
-          <Button
-            variant={
-              activeSection === "my-appointments" ? "default" : "outline"
-            }
-            onClick={() => setActiveSection("my-appointments")}
-            className="flex items-center justify-center gap-2 text-xs sm:text-sm h-9 sm:h-10 w-full sm:w-auto"
-          >
-            <ListIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-            Meus Agendamentos
-          </Button>
-          {session?.user.role === "admin" && (
+        <div className="flex justify-between flex-col gap-4 lg:flex-row">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
             <Button
-              variant={
-                activeSection === "scheduled-list" ? "default" : "outline"
-              }
-              onClick={() => setActiveSection("scheduled-list")}
+              variant={activeSection === "schedule" ? "default" : "outline"}
+              onClick={() => setActiveSection("schedule")}
               className="flex items-center justify-center gap-2 text-xs sm:text-sm h-9 sm:h-10 w-full sm:w-auto"
             >
-              <UsersIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-              Lista de Agendamentos
+              <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              Agendar
             </Button>
+            <Button
+              variant={
+                activeSection === "my-appointments" ? "default" : "outline"
+              }
+              onClick={() => setActiveSection("my-appointments")}
+              className="flex items-center justify-center gap-2 text-xs sm:text-sm h-9 sm:h-10 w-full sm:w-auto"
+            >
+              <ListIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              Meus Agendamentos
+            </Button>
+            {session?.user.role === "admin" && (
+              <Button
+                variant={
+                  activeSection === "scheduled-list" ? "default" : "outline"
+                }
+                onClick={() => setActiveSection("scheduled-list")}
+                className="flex items-center justify-center gap-2 text-xs sm:text-sm h-9 sm:h-10 w-full sm:w-auto"
+              >
+                <UsersIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                Lista de Agendamentos
+              </Button>
+            )}
+          </div>
+          {activeSection === "schedule" && (
+            <Card>
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg lg:text-end">
+                  Selecionar data para agendamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 justify-end">
+                  <DatePicker
+                    date={selectedDate}
+                    onDateChange={setSelectedDate}
+                    placeholder="Selecionar data"
+                    disablePastDates={true}
+                    className="w-full sm:w-auto"
+                  />
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
@@ -589,36 +609,6 @@ export const AppointmentManagement = () => {
       {/* Render appropriate section based on activeSection */}
       {activeSection === "schedule" ? (
         <>
-          {/* Date Filter */}
-          <Card>
-            <CardHeader className="pb-3 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg">
-                Selecionar Data
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
-                <DatePicker
-                  date={selectedDate}
-                  onDateChange={setSelectedDate}
-                  placeholder="Selecionar data"
-                  disablePastDates={true}
-                  className="w-full sm:w-auto"
-                />
-                {selectedDate && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedDate(undefined)}
-                    className="text-red-600 hover:text-red-700 flex items-center justify-center gap-2 text-xs sm:text-sm h-9 sm:h-10 w-full sm:w-auto"
-                  >
-                    <XIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Limpar
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Filter Component */}
           {selectedDate && (
             <GenericFilter
@@ -638,7 +628,7 @@ export const AppointmentManagement = () => {
 
           {/* Chairs Grid */}
           {!selectedDate ? (
-            <div className="text-center py-8 sm:py-12">
+            <div className="text-center py-8 sm:py-12 border">
               {isInitialLoading ? (
                 <div className="flex items-center justify-center gap-2 text-gray-600">
                   <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-blue-600"></div>

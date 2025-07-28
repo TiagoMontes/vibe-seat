@@ -19,27 +19,10 @@ export default function HomePage() {
   useEffect(() => {
     // Se não está carregando e não há sessão, redirecionar para login
     if (status === "unauthenticated" || (!session && status !== "loading")) {
-      console.log(
-        "HomePage - Usuário não autenticado, redirecionando para login"
-      );
       router.push("/");
       return;
     }
 
-    // Se não há dados do usuário mas há sessão, aguardar carregamento
-    if (status === "authenticated" && session?.user && !user) {
-      console.log(
-        "HomePage - Sessão existe mas dados do usuário ainda não carregaram"
-      );
-      return;
-    }
-
-    // Se há sessão mas não há dados do usuário após um tempo, pode ser um problema
-    if (status === "authenticated" && session?.user && !user) {
-      console.log(
-        "HomePage - Problema: sessão existe mas sem dados do usuário"
-      );
-    }
   }, [session, status, user, router]);
 
   // Mostrar loading enquanto verifica autenticação
@@ -58,8 +41,6 @@ export default function HomePage() {
   if (status === "unauthenticated" || !session?.user) {
     return null;
   }
-
-  console.log("HomePage - user:", user);
 
   const handleLogout = () => {
     logout();

@@ -25,7 +25,11 @@ export async function POST(request: NextRequest) {
     // Validações básicas
     if (!body.username || !body.password || !body.roleId) {
       return NextResponse.json(
-        { error: 'Username, password e roleId são obrigatórios' },
+        { 
+          success: false,
+          message: 'Username, password e roleId são obrigatórios',
+          error: true
+        },
         { status: 400 }
       );
     }
@@ -52,21 +56,34 @@ export async function POST(request: NextRequest) {
       })
     });
 
+    const responseData = await response.json();
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       return NextResponse.json(
-        { error: errorData.message || `Erro ao criar usuário: ${response.status}` },
+        { 
+          success: false,
+          message: responseData.message || `Erro ao criar usuário: ${response.status}`,
+          error: true
+        },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
+    // Se chegou aqui, foi sucesso
+    return NextResponse.json({
+      success: true,
+      message: responseData.message || "Usuário criado com sucesso. Aguarde aprovação.",
+      data: responseData.data
+    });
     
-    return NextResponse.json(data);
   } catch (error) {
     console.error('Erro ao criar usuário:', error);
     return NextResponse.json(
-      { error: 'Erro de conexão com o servidor' },
+      { 
+        success: false,
+        message: 'Erro de conexão com o servidor',
+        error: true
+      },
       { status: 500 }
     );
   }

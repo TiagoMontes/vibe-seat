@@ -98,9 +98,8 @@ const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
 
   const onSubmit = async (data: RegisterZodFormData) => {
     setCreateLoading(true);
-    console.log(data);
     try {
-      const response = await createUser({
+      const result = await createUser({
         username: data.username,
         password: data.password,
         roleId: data.roleId,
@@ -116,29 +115,34 @@ const Register: React.FC<RegisterProps> = ({ onBackToLogin }) => {
         birthDate: data.birthDate,
       });
 
-      if (response) {
-        success("Usuário criado com sucesso");
+      if (result.success) {
+        success(result.message || "Usuário criado com sucesso");
         form.reset();
         onBackToLogin();
+      } else {
+        const errorMessages: Record<string, string> = {
+          "Username já está em uso": "Este nome de usuário já está em uso",
+          "CPF já está cadastrado": "Este CPF já está em uso",
+          "E-mail já está cadastrado": "Este e-mail já está em uso",
+          "Matrícula já está cadastrada": "Esta matrícula já está em uso",
+          "E-mail inválido": "Formato de e-mail inválido",
+          "CPF deve estar no formato XXX.XXX.XXX-XX ou apenas números":
+            "CPF deve ter formato válido",
+          "Campo obrigatório ausente: fullName": "Nome completo é obrigatório",
+          "Campo obrigatório ausente: username":
+            "Nome de usuário é obrigatório",
+          "Campo obrigatório ausente: password": "Senha é obrigatória",
+          "Campo obrigatório ausente: roleId": "Tipo de acesso é obrigatório",
+        };
+
+        const finalMessage = errorMessages[result.message] || result.message;
+        error(finalMessage);
       }
     } catch (err: unknown) {
-      // Tratamento de erros específicos
+      // Tratamento de erros de rede ou outros erros
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao criar usuário";
-
-      const errorMessages: Record<string, string> = {
-        "Username já está em uso": "Este nome de usuário já existe",
-        "CPF já está cadastrado": "Este CPF já está em uso",
-        "E-mail já está cadastrado": "Este e-mail já está em uso",
-        "Matrícula já está cadastrada": "Esta matrícula já está em uso",
-        "E-mail inválido": "Formato de e-mail inválido",
-        "CPF deve estar no formato XXX.XXX.XXX-XX":
-          "CPF deve ter formato válido",
-      };
-
-      const finalMessage = errorMessages[errorMessage] || errorMessage;
-      error(finalMessage);
-      console.error("Erro ao criar usuário:", err);
+      error(errorMessage);
     } finally {
       setCreateLoading(false);
     }

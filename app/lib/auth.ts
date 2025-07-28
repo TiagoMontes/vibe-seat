@@ -38,9 +38,7 @@ interface CustomToken {
 async function loginAPI(username: string, password: string): Promise<LoginResponse> {
   // Usar a URL da API configurada no ambiente
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.100.210:3001';
-  
-  console.log('Login API URL:', apiUrl); // Debug log
-  
+
   try {
     const response = await fetch(`${apiUrl}/auth/login`, {
       method: 'POST',
@@ -53,8 +51,6 @@ async function loginAPI(username: string, password: string): Promise<LoginRespon
         password
       })
     });
-
-    console.log('Response status:', response.status); // Debug log
 
     if (!response.ok) {
       let errorMessage = `Erro na autenticação: ${response.status}`;
@@ -70,7 +66,6 @@ async function loginAPI(username: string, password: string): Promise<LoginRespon
     }
 
     const data: LoginResponse = await response.json();
-    console.log('Login response received:', !!data.token); // Debug log
 
     if (!data.token) {
       throw new Error('Token não recebido do servidor');
@@ -106,12 +101,7 @@ export const authOptions: NextAuthOptions = {
         }
       },
 
-      async authorize(credentials, req) {
-        console.log('Authorize called with:', { 
-          hasUsername: !!credentials?.username, 
-          hasPassword: !!credentials?.password 
-        });
-
+      async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
           console.error('Missing credentials');
           return null;
@@ -119,11 +109,9 @@ export const authOptions: NextAuthOptions = {
 
         try {
           const result = await loginAPI(credentials.username, credentials.password);
-          console.log('Login API result:', !!result.token);
 
           if (result.token) {
             const decoded = decode(result.token) as DecodedUser;
-            console.log('Token decoded successfully');
 
             const user: CustomUser = {
               id: decoded.id.toString(),
@@ -186,9 +174,6 @@ export const authOptions: NextAuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      // Garantir que sempre redireciona para a página correta
-      console.log('Redirect callback:', { url, baseUrl });
-      
       // Se for uma URL relativa, usar baseUrl
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`;

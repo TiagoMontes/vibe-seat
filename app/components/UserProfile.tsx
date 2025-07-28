@@ -82,7 +82,6 @@ export const UserProfilePage = () => {
       try {
         setProfileLoading(true);
         const userData = await getUser(user.id);
-        console.log(userData);
         if (userData) {
           // Atualizar o userAtom com os dados completos, mantendo os dados básicos existentes
           setUser({

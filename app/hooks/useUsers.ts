@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback } from 'react';
-import { CreateUserRequest, UserListResponse, UserFilters } from '@/app/types/api';
+import { CreateUserRequest, UserListResponse, UserFilters, CreateUserResponse } from '@/app/types/api';
 
 export const useUsers = () => {
-  const createUser = useCallback(async (userData: CreateUserRequest): Promise<boolean> => {
+  const createUser = useCallback(async (userData: CreateUserRequest): Promise<CreateUserResponse> => {
     try {
       const response = await fetch('/api/users/create', {
         method: 'POST',
@@ -14,15 +14,24 @@ export const useUsers = () => {
         body: JSON.stringify(userData),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao criar usuário');
+        throw new Error(responseData.message || 'Erro ao criar usuário');
       }
 
-      return true;
+      return {
+        success: responseData.success,
+        message: responseData.message,
+        data: responseData.data
+      };
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
-      return false;
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao criar usuário';
+      return {
+        success: false,
+        message: errorMessage
+      };
     }
   }, []);
 

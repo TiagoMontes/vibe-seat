@@ -56,12 +56,6 @@ const Layout: React.FC<LayoutProps> = ({
 
   // Garantir que as tabs sejam renderizadas corretamente
   useEffect(() => {
-    console.log("Layout - userRole mudou:", userRole);
-    console.log(
-      "Layout - tabs disponíveis:",
-      getTabsForRole().map((t) => t.key)
-    );
-
     // Reset para a primeira tab disponível quando o role mudar
     const availableTabs = getTabsForRole();
     if (

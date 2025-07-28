@@ -10,12 +10,9 @@ export const useUserData = () => {
   const setUser = useSetAtom(userAtom);
 
   useEffect(() => {
-    console.log('useUserData - Status:', status, 'Session:', session?.user);
-    
     if (status === 'loading') return; // Aguarda carregar
 
     if (status === 'unauthenticated' || !session?.user) {
-      console.log('useUserData - Usuário não autenticado, limpando userAtom');
       setUser(null);
       return;
     }

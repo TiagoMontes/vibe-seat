@@ -17,15 +17,11 @@ export const useAuth = () => {
     setLoading(true);
     
     try {
-      console.log('Starting login process...');
-      
       const result = await signIn('credentials', {
         username: credentials.username,
         password: credentials.password,
         redirect: false, // Importante: não redirecionar automaticamente
       });
-
-      console.log('SignIn result:', result);
 
       if (result?.error) {
         console.error('Login error:', result.error);
@@ -38,7 +34,6 @@ export const useAuth = () => {
       }
 
       if (result?.ok) {
-        console.log('Login successful, redirecting...');
         // Pequeno delay para garantir que a sessão seja atualizada
         setTimeout(() => {
           router.push('/home'); // ou sua rota pós-login
@@ -58,7 +53,6 @@ export const useAuth = () => {
         success: false,
         error: error instanceof Error ? error.message : 'Erro inesperado'
       };
-    } finally {
       setLoading(false);
     }
   };

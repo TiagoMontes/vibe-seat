@@ -20,8 +20,6 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  console.log("ID recebido:", id);
-
   try {
     const session = await getServerSession(authOptions);
     
@@ -53,9 +51,7 @@ export async function GET(
     }
     
     const responseData = await backendResponse.json();
-    
-    console.log("Resposta do backend:", responseData);
-    
+
     return NextResponse.json({
       success: true,
       message: "Dados do usuário carregados com sucesso",
