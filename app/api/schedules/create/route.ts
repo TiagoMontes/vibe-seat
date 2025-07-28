@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    
+    console.log("Enviando dados para o backend:", JSON.stringify(body, null, 2));
 
     // Call backend API
     const backendResponse = await fetch(`${API_BACKEND}/schedules/`, {
@@ -35,21 +37,49 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
+    console.log("Status da resposta do backend:", backendResponse.status);
+    console.log("Headers da resposta:", Object.fromEntries(backendResponse.headers.entries()));
+
     if (!backendResponse.ok) {
-      const errorData = await backendResponse.json().catch(() => ({ error: "Erro desconhecido" }));
+      let errorData;
+      try {
+        errorData = await backendResponse.json();
+        console.log("Erro detalhado do backend:", JSON.stringify(errorData, null, 2));
+      } catch (parseError) {
+        console.log("Erro ao fazer parse da resposta de erro:", parseError);
+        errorData = { error: "Erro desconhecido", status: backendResponse.status };
+      }
+
+      // Retorna o erro exato do backend
       return NextResponse.json(
-        { error: errorData.message || errorData.message || "Erro ao criar configuração" },
+        { 
+          error: errorData.message || errorData.error || "Erro ao criar configuração",
+          details: errorData,
+          status: backendResponse.status
+        },
         { status: backendResponse.status }
       );
     }
 
     const schedules = await backendResponse.json();
-    return NextResponse.json(schedules, { status: 201 });
+    console.log("Resposta de sucesso do backend:", JSON.stringify(schedules, null, 2));
+    
+    return NextResponse.json(
+      { 
+        success: true, 
+        data: schedules,
+        message: "Configuração criada com sucesso"
+      }, 
+      { status: 201 }
+    );
 
   } catch (error) {
-    console.error("Error creating schedule:", error);
+    console.error("Erro interno ao criar schedule:", error);
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      { 
+        error: "Erro interno do servidor",
+        details: error instanceof Error ? error.message : "Erro desconhecido"
+      },
       { status: 500 }
     );
   }
