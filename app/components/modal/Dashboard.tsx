@@ -21,6 +21,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { formatDateTime } from "@/app/lib/utils";
 
 export const Dashboard: React.FC = () => {
   const { getDashboard, data, loading, error } = useDashboard();
@@ -42,7 +43,7 @@ export const Dashboard: React.FC = () => {
           Visão geral do sistema
           {!isLoading &&
             data?.lastUpdated &&
-            ` • Última atualização: ${data.lastUpdated}`}
+            ` • Última atualização: ${formatDateTime(data.lastUpdated).date} ${formatDateTime(data.lastUpdated).time}`}
         </p>
       </div>
       <Button

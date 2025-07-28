@@ -187,8 +187,13 @@ export const getStatusLabel = (status: string) => {
 };
 
 // Utility to remove UTC timezone and treat as local time
-const parseAsLocalTime = (dateTimeString: string): Date => {
-  const dateStr = dateTimeString.replace("Z", "").replace("T", " ");
+export const parseAsLocalTime = (dateTimeString: string): Date => {
+  // Se a string tem Z, é UTC, então criamos a data e convertemos para local
+  if (dateTimeString.includes("Z")) {
+    return new Date(dateTimeString);
+  }
+  // Se não tem Z, já é local
+  const dateStr = dateTimeString.replace("T", " ");
   return new Date(dateStr);
 };
 

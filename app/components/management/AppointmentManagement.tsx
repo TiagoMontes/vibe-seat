@@ -85,21 +85,20 @@ const ChairCard = ({
 }: ChairCardProps) => {
   return (
     <Card className="h-full border border-gray-200 p-2 sm:p-4 flex flex-col justify-between">
-      <CardHeader className="pb-2 sm:pb-3 px-0 sm:px-6">
+      <CardHeader className="pb-2 sm:pb-3 px-0 sm:px-6 flex fle-col gap-1">
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           {chair.name}
         </CardTitle>
         {chair.location && (
           <p className="text-xs sm:text-sm text-gray-600">{chair.location}</p>
         )}
+        <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700">
+          <ClockIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+          Horários disponíveis
+        </div>
       </CardHeader>
       <CardContent className="px-0 sm:px-6">
         <div className="space-y-2 sm:space-y-3">
-          <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700">
-            <ClockIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-            Horários disponíveis
-          </div>
-
           {availableTimes.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-2">
               {availableTimes.map((timeSlot) => {
