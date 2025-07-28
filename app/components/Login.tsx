@@ -25,9 +25,11 @@ import {
   loginZodSchema,
   type LoginZodFormData,
 } from "@/app/schemas/loginSchema";
+import { useToast } from "@/app/hooks/useToast";
 
 const Login = () => {
-  const { login, loading } = useAuth();
+  const { login, loading, setLoading } = useAuth();
+  const { success, error } = useToast();
 
   const form = useForm<LoginZodFormData>({
     resolver: zodResolver(loginZodSchema),
@@ -41,7 +43,11 @@ const Login = () => {
     const result = await login(data);
 
     if (result.success) {
+      success("Login realizado com sucesso!");
       form.reset(); // Limpar formulário após sucesso
+    } else {
+      setLoading(false);
+      error(result.error || "Erro ao fazer login");
     }
   };
 

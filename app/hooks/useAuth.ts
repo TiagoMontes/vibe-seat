@@ -41,7 +41,7 @@ export const useAuth = () => {
         
         return { success: true };
       }
-
+      
       return {
         success: false,
         error: 'Erro desconhecido durante o login'
@@ -53,7 +53,6 @@ export const useAuth = () => {
         success: false,
         error: error instanceof Error ? error.message : 'Erro inesperado'
       };
-      setLoading(false);
     }
   };
 
@@ -71,6 +70,7 @@ export const useAuth = () => {
   return {
     login,
     logout,
+    setLoading,
     loading,
     session,
     isAuthenticated: status === 'authenticated',
