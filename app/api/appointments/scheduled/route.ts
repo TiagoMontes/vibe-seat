@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const apiUrl = process.env.API_BACKEND;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     
     if (!apiUrl) {
       return NextResponse.json(

@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
-const API_BACKEND = process.env.API_BACKEND || "http://localhost:3001";
+const API_BACKEND = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("Variáveis de ambiente:");
+    console.log("NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+    console.log("API_BACKEND (fallback):", process.env.API_BACKEND);
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
@@ -26,13 +30,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     console.log("Enviando dados para o backend:", JSON.stringify(body, null, 2));
+    console.log("URL do backend:", `${API_BACKEND}/schedules`);
+    console.log("Token de autorização:", session.accessToken ? "Presente" : "Ausente");
 
     // Call backend API
-    const backendResponse = await fetch(`${API_BACKEND}/schedules/`, {
+    const backendResponse = await fetch(`${API_BACKEND}/schedules`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
+        "User-Agent": "Vibe-Seat-Frontend/1.0",
+        "Accept": "application/json",
       },
       body: JSON.stringify(body),
     });

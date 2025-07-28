@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
-const API_BACKEND = process.env.API_BACKEND || "http://localhost:3001";
+const API_BACKEND = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export async function PATCH(
   request: NextRequest,
@@ -31,6 +31,7 @@ export async function PATCH(
     const body = await request.json();
     
     console.log(`Enviando dados para atualizar schedule ID ${id}:`, JSON.stringify(body, null, 2));
+    console.log("URL do backend:", `${API_BACKEND}/schedules/${id}`);
 
     // Call backend API
     const backendResponse = await fetch(`${API_BACKEND}/schedules/${id}`, {
@@ -38,6 +39,8 @@ export async function PATCH(
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.accessToken}`,
+        "User-Agent": "Vibe-Seat-Frontend/1.0",
+        "Accept": "application/json",
       },
       body: JSON.stringify(body),
     });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
-const API_BACKEND = process.env.API_BACKEND || "http://localhost:3001";
+const API_BACKEND = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 interface CustomSession {
   accessToken?: string;
