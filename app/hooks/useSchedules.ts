@@ -12,7 +12,7 @@ import {
 } from '@/app/atoms/scheduleAtoms';
 
 export const useSchedules = () => {
-  const { success } = useToast();
+  const { success, error } = useToast();
 
   // ===== ESTADOS GLOBAIS =====
   const [schedule, setSchedule] = useAtom(currentScheduleAtom);
@@ -39,7 +39,7 @@ export const useSchedules = () => {
       const responseData = await response.json();
       
       // Verificar se a resposta tem a estrutura esperada
-      const schedules = responseData.data || responseData;
+      const schedules = responseData.data.data || responseData;
       
       setSchedule(schedules);
       
@@ -67,7 +67,7 @@ export const useSchedules = () => {
         throw new Error(responseData.message || 'Erro ao buscar configuração de horário');
       }
       
-      return responseData.data;
+      return responseData.data.data;
     } catch (error) {
       console.error('Erro ao buscar configuração de horário:', error);
       throw error;
@@ -98,7 +98,7 @@ export const useSchedules = () => {
       const responseData = await response.json();
       
       // Verificar se a resposta tem a estrutura esperada
-      const createdSchedule = responseData.data || responseData;
+      const createdSchedule = responseData.data.data || responseData;
       
       // Update the state immediately with the created schedule data
       setSchedule(createdSchedule);
@@ -141,7 +141,7 @@ export const useSchedules = () => {
       const responseData = await response.json();
       
       // Verificar se a resposta tem a estrutura esperada
-      const updatedSchedule = responseData.data || responseData;
+      const updatedSchedule = responseData.data.data || responseData;
 
       // Update the state immediately with the updated schedule data
       setSchedule(updatedSchedule);
@@ -180,16 +180,19 @@ export const useSchedules = () => {
       // Limpar o schedule atual após deletar
       setSchedule(undefined);
       
-      // Toast de sucesso
+      // Toast de sucesso - só mostra se chegou até aqui (sucesso confirmado)
       success('Configuração excluída com sucesso!');
       
-      return responseData.data;
-    } catch (error) {
-      throw error;
+      return responseData.data?.data || null;
+    } catch (err) {
+      // Mostrar toast de erro
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir configuração';
+      error(errorMessage);
+      throw err;
     } finally {
       setDeleteLoading(false);
     }
-  }, [setSchedule, success, setDeleteLoading]);
+  }, [setSchedule, success, error, setDeleteLoading]);
 
   return {
     // Estados

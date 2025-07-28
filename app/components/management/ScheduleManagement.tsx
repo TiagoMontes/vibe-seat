@@ -231,8 +231,7 @@ const ScheduleManagement: React.FC = () => {
   const [, setIsEditModalOpen] = useAtom(scheduleEditModalOpenAtom);
   const [, setSelectedSchedule] = useAtom(selectedScheduleAtom);
 
-  const { fetchSchedules, deleteSchedule, schedule, loading } =
-    useSchedules();
+  const { fetchSchedules, deleteSchedule, schedule, loading } = useSchedules();
   const { error: showError } = useToast();
   const { confirm, ConfirmComponent } = useConfirm();
   const [role] = useAtom(userRoleAtom);
@@ -259,13 +258,7 @@ const ScheduleManagement: React.FC = () => {
     });
 
     if (confirmed) {
-      try {
-        await deleteSchedule(id);
-        // Toast já é gerenciado pelo hook useSchedules
-      } catch (err) {
-        console.error(err);
-        showError("Erro ao excluir configuração");
-      }
+      await deleteSchedule(id);
     }
   };
 

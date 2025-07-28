@@ -172,26 +172,17 @@ export const apiScheduleZodSchema = z.object({
     .min(1, "Adicione pelo menos um intervalo de horário"),
   validFrom: z
     .string()
-    .optional()
-    .refine((value) => {
-      if (!value) return true;
-      return !isNaN(Date.parse(value));
-    }, "Data inválida"),
+    .min(1, "Data de início é obrigatória"),
   validTo: z
     .string()
-    .optional()
-    .refine((value) => {
-      if (!value) return true;
-      return !isNaN(Date.parse(value));
-    }, "Data inválida"),
+    .min(1, "Data de fim é obrigatória"),
   dayIds: z
     .array(z.number().min(1))
     .min(1, "Selecione pelo menos um dia da semana"),
 }).refine((data) => {
-  if (!data.validFrom || !data.validTo) return true;
-  return new Date(data.validTo) >= new Date(data.validFrom);
+  return new Date(data.validTo) > new Date(data.validFrom);
 }, {
-  message: "Data fim deve ser após data início",
+  message: "Data fim deve ser maior que data início",
   path: ["validTo"],
 });
 
@@ -207,8 +198,8 @@ export interface Schedule {
   dayOfWeek: number;
   timeStart: string;
   timeEnd: string;
-  validFrom: string | null;
-  validTo: string | null;
+  validFrom: string;
+  validTo: string;
   createdAt: string;
   updatedAt: string;
 }

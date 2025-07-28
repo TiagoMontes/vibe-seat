@@ -228,15 +228,15 @@ const ScheduleModal = () => {
     } catch (err) {
       // Extrair mensagem de erro mais específica
       let errorMessage = "Erro ao salvar configuração";
-      
+
       if (err instanceof Error) {
         errorMessage = err.message;
-      } else if (typeof err === 'string') {
+      } else if (typeof err === "string") {
         errorMessage = err;
-      } else if (err && typeof err === 'object' && 'message' in err) {
+      } else if (err && typeof err === "object" && "message" in err) {
         errorMessage = String(err.message);
       }
-      
+
       error(errorMessage);
     }
   };
@@ -410,7 +410,7 @@ const ScheduleModal = () => {
               {/* Período de Validade */}
               <div className="space-y-4">
                 <Label className="text-base font-medium text-gray-900">
-                  Período de Validade (opcional)
+                  Período de Validade
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
@@ -446,7 +446,8 @@ const ScheduleModal = () => {
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  Se não informado, a configuração será válida indefinidamente.
+                  As datas devem ser maiores que hoje e a data de fim deve ser
+                  maior que a data de início.
                 </p>
               </div>
 
