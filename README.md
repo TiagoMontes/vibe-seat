@@ -91,6 +91,8 @@ NEXTAUTH_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=API_BACKEND_IPI:3001
 ```
 
+gere uma secret-key usando o seguinte comando: **node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"**
+
 4. **Execute em modo de desenvolvimento:**
 ```bash
 npm run dev

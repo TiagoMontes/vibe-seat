@@ -36,17 +36,25 @@ interface CustomToken {
 }
 
 async function loginAPI(username: string, password: string): Promise<LoginResponse> {
+  // Usar a URL da API configurada no ambiente
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.100.210:3001';
+  
+  console.log('Login API URL:', apiUrl); // Debug log
+  
   try {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(`${apiUrl}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         username,
         password
       })
     });
+
+    console.log('Response status:', response.status); // Debug log
 
     if (!response.ok) {
       let errorMessage = `Erro na autenticação: ${response.status}`;
@@ -62,6 +70,7 @@ async function loginAPI(username: string, password: string): Promise<LoginRespon
     }
 
     const data: LoginResponse = await response.json();
+    console.log('Login response received:', !!data.token); // Debug log
 
     if (!data.token) {
       throw new Error('Token não recebido do servidor');
@@ -83,46 +92,65 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       id: 'credentials',
       name: 'Credentials',
+      type: 'credentials',
       credentials: {
-        username: { label: 'Username', type: 'text' },
-        password: { label: 'Password', type: 'password' }
+        username: { 
+          label: 'Username', 
+          type: 'text',
+          placeholder: 'Digite seu usuário'
+        },
+        password: { 
+          label: 'Password', 
+          type: 'password',
+          placeholder: 'Digite sua senha'
+        }
       },
 
-      async authorize(credentials) {
+      async authorize(credentials, req) {
+        console.log('Authorize called with:', { 
+          hasUsername: !!credentials?.username, 
+          hasPassword: !!credentials?.password 
+        });
+
         if (!credentials?.username || !credentials?.password) {
-          throw new Error('Username e password são obrigatórios');
+          console.error('Missing credentials');
+          return null;
         }
 
         try {
           const result = await loginAPI(credentials.username, credentials.password);
+          console.log('Login API result:', !!result.token);
 
           if (result.token) {
-            const user = decode(result.token) as DecodedUser;
+            const decoded = decode(result.token) as DecodedUser;
+            console.log('Token decoded successfully');
 
-            return {
-              id: user.id.toString(), // Convert to string
-              username: user.username,
-              role: user.role,
-              status: user.status,
+            const user: CustomUser = {
+              id: decoded.id.toString(),
+              username: decoded.username,
+              role: decoded.role,
+              status: decoded.status,
               token: result.token
-            } as CustomUser;
+            };
+
+            return user;
           }
 
           return null;
         } catch (error) {
           console.error('Authorization error:', error);
-          throw new Error(error instanceof Error ? error.message : 'Erro de autenticação');
+          // Não fazer throw aqui para evitar redirect para callback
+          return null;
         }
       }
     })
   ],
 
-  secret: process.env.JWT_SECRET || 'your-secret-key',
+  secret: process.env.NEXTAUTH_SECRET,
 
   pages: {
     signIn: '/',
-    signOut: '/',
-    error: '/'
+    error: '/',
   },
 
   callbacks: {
@@ -132,7 +160,7 @@ export const authOptions: NextAuthOptions = {
         return {
           ...token,
           accessToken: customUser.token,
-          id: user.id,
+          id: customUser.id,
           username: customUser.username,
           role: customUser.role,
           status: customUser.status,
@@ -155,6 +183,24 @@ export const authOptions: NextAuthOptions = {
           status: customToken.status,
         }
       };
+    },
+
+    async redirect({ url, baseUrl }) {
+      // Garantir que sempre redireciona para a página correta
+      console.log('Redirect callback:', { url, baseUrl });
+      
+      // Se for uma URL relativa, usar baseUrl
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      
+      // Se for a mesma origem, permitir
+      if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      
+      // Por padrão, redirecionar para home
+      return baseUrl;
     }
   },
 
@@ -164,4 +210,18 @@ export const authOptions: NextAuthOptions = {
   },
 
   debug: process.env.NODE_ENV === 'development',
-}; 
+  
+  // Configurações adicionais para Windows
+  useSecureCookies: process.env.NODE_ENV === 'production',
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
+};

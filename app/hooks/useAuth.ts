@@ -1,97 +1,76 @@
-"use client";
-
 import { useState } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useSetAtom } from 'jotai';
-import { userAtom } from '@/app/atoms/userAtoms';
-import { LoginRequest } from '@/app/types/api';
-import { toast } from 'react-toastify';
+import type { LoginZodFormData } from '@/app/schemas/loginSchema';
+
+interface LoginResult {
+  success: boolean;
+  error?: string;
+}
 
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const { data: session } = useSession();
-  const setUser = useSetAtom(userAtom);
 
-  const login = async (loginData: LoginRequest): Promise<{ success: boolean; user?: { id: number; username: string; role: string; } }> => {
+  const login = async (credentials: LoginZodFormData): Promise<LoginResult> => {
     setLoading(true);
-    setError(null);
     
     try {
+      console.log('Starting login process...');
+      
       const result = await signIn('credentials', {
-        username: loginData.username,
-        password: loginData.password,
-        redirect: false,
+        username: credentials.username,
+        password: credentials.password,
+        redirect: false, // Importante: não redirecionar automaticamente
       });
 
+      console.log('SignIn result:', result);
+
       if (result?.error) {
-        let errorMessage = 'Erro de autenticação';
-        
-        // Handle specific error types
-        if (result.error.includes('CLIENT_FETCH_ERROR')) {
-          errorMessage = 'Erro de conexão com o servidor. Verifique sua conexão.';
-        } else if (result.error.includes('CredentialsSignin')) {
-          errorMessage = 'Credenciais inválidas';
-        } else if (result.error.includes('JSON')) {
-          errorMessage = 'Erro de comunicação com o servidor';
-        } else {
-          errorMessage = result.error;
-        }
-        
-        toast.error(errorMessage);
-        setError(errorMessage);
-        return { success: false };
+        console.error('Login error:', result.error);
+        return {
+          success: false,
+          error: result.error === 'CredentialsSignin' 
+            ? 'Credenciais inválidas' 
+            : result.error
+        };
       }
 
-      if (!result?.ok) {
-        const errorMessage = 'Falha na autenticação';
-        toast.error(errorMessage);
-        setError(errorMessage);
-        return { success: false };
+      if (result?.ok) {
+        console.log('Login successful, redirecting...');
+        // Pequeno delay para garantir que a sessão seja atualizada
+        setTimeout(() => {
+          router.push('/home'); // ou sua rota pós-login
+        }, 100);
+        
+        return { success: true };
       }
 
-      // Se chegou aqui, o login foi bem-sucedido
-      toast.success('Login realizado com sucesso!');
-      // O useUserData irá sincronizar automaticamente os dados da sessão
-      router.push('/home');
-
-      return { 
-        success: true, 
-        user: session?.user ? {
-          id: Number(session.user.id),
-          username: session.user.username || '',
-          role: session.user.role || ''
-        } : undefined
+      return {
+        success: false,
+        error: 'Erro desconhecido durante o login'
       };
-      
+
     } catch (error) {
-      console.error('Erro no login:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      toast.error(errorMessage);
-      setError(errorMessage);
-      return { success: false };
+      console.error('Login catch error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro inesperado'
+      };
     } finally {
       setLoading(false);
     }
   };
 
   const logout = async () => {
-    setLoading(true);
-    setError(null);
-    
     try {
-      setUser(null); // Limpar dados do usuário
-      toast.success('Logout realizado com sucesso!');
-      await signOut({ redirect: true, callbackUrl: '/' });
+      await signOut({ 
+        callbackUrl: '/',
+        redirect: true 
+      });
     } catch (error) {
-      console.error('Erro no logout:', error);
-      const errorMessage = 'Erro ao fazer logout';
-      toast.error(errorMessage);
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
+      console.error('Logout error:', error);
     }
   };
 
@@ -99,9 +78,8 @@ export const useAuth = () => {
     login,
     logout,
     loading,
-    error,
-    clearError: () => setError(null),
-    user: session?.user,
-    isAuthenticated: !!session?.user
+    session,
+    isAuthenticated: status === 'authenticated',
+    isLoading: status === 'loading',
   };
 };
