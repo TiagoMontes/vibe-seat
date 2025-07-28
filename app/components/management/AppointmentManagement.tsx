@@ -165,7 +165,7 @@ const ChairCardSkeleton = () => {
 };
 
 export const AppointmentManagement = () => {
-  const { user } = useAuth();
+  const { session } = useAuth();
   const [role] = useAtom(userRoleAtom);
   const { fetchChairs, loading: chairsLoading } = useChairs();
   const { fetchSchedules, loading: schedulesLoading } = useSchedules();
@@ -571,7 +571,7 @@ export const AppointmentManagement = () => {
             <ListIcon className="h-3 w-3 sm:h-4 sm:w-4" />
             Meus Agendamentos
           </Button>
-          {user?.role === "admin" && (
+          {session?.user.role === "admin" && (
             <Button
               variant={
                 activeSection === "scheduled-list" ? "default" : "outline"
