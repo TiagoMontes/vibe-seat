@@ -49,6 +49,7 @@ export const Dashboard: React.FC = () => {
         onClick={refreshData}
         variant={isLoading ? "default" : "outline"}
         disabled={isLoading}
+        className="w-full sm:w-auto"
       >
         <RefreshCw
           className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
