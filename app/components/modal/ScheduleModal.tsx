@@ -38,6 +38,7 @@ import {
 } from "@/app/schemas/scheduleSchema";
 import { CreateScheduleRequest } from "@/app/types/api";
 import { Plus, Trash2 } from "lucide-react";
+import { extractDateFromISO, formatDateStringToStartOfDay, formatDateStringToEndOfDay } from "@/app/utils/dateUtils";
 
 const ScheduleModal = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useAtom(
@@ -114,12 +115,12 @@ const ScheduleModal = () => {
       form.setValue(
         "validFrom",
         selectedSchedule.validFrom
-          ? selectedSchedule.validFrom.split("T")[0]
+          ? extractDateFromISO(selectedSchedule.validFrom)
           : ""
       );
       form.setValue(
         "validTo",
-        selectedSchedule.validTo ? selectedSchedule.validTo.split("T")[0] : ""
+        selectedSchedule.validTo ? extractDateFromISO(selectedSchedule.validTo) : ""
       );
 
       // Carregar dayIds - support both new (days array) and old (dayIds array) formats
@@ -197,10 +198,10 @@ const ScheduleModal = () => {
       const scheduleData = {
         timeRanges: data.timeRanges,
         validFrom: data.validFrom
-          ? new Date(`${data.validFrom}T00:00:00`).toISOString()
+          ? formatDateStringToStartOfDay(data.validFrom)
           : undefined,
         validTo: data.validTo
-          ? new Date(`${data.validTo}T23:59:59.999`).toISOString()
+          ? formatDateStringToEndOfDay(data.validTo)
           : undefined,
         dayIds: selectedDayIds,
       };
@@ -213,10 +214,10 @@ const ScheduleModal = () => {
         const createData: CreateScheduleRequest = {
           timeRanges: data.timeRanges,
           validFrom: data.validFrom
-            ? new Date(`${data.validFrom}T00:00:00`).toISOString()
+            ? formatDateStringToStartOfDay(data.validFrom)
             : "",
           validTo: data.validTo
-            ? new Date(`${data.validTo}T23:59:59.999`).toISOString()
+            ? formatDateStringToEndOfDay(data.validTo)
             : "",
           dayIds: selectedDayIds,
         };

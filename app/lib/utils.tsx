@@ -186,92 +186,14 @@ export const getStatusLabel = (status: string) => {
   }
 };
 
-// Utility to remove UTC timezone and treat as local time
-export const parseAsLocalTime = (dateTimeString: string): Date => {
-  // Se a string tem Z, é UTC, então criamos a data e convertemos para local
-  if (dateTimeString.includes("Z")) {
-    return new Date(dateTimeString);
-  }
-  // Se não tem Z, já é local
-  const dateStr = dateTimeString.replace("T", " ");
-  return new Date(dateStr);
-};
-
-// Enhanced formatDateTime that handles UTC properly and supports time ranges
-export const formatDateTime = (dateTimeString: string) => {
-  const date = parseAsLocalTime(dateTimeString);
-  return {
-    date: date.toLocaleDateString("pt-BR"),
-    time: date.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  };
-};
-
-// Format date range with start and end times
-export const formatDateTimeRange = (
-  datetimeStart: string,
-  datetimeEnd: string
-) => {
-  const startDate = parseAsLocalTime(datetimeStart);
-  const endDate = parseAsLocalTime(datetimeEnd);
-
-  return {
-    date: startDate.toLocaleDateString("pt-BR", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }),
-    timeRange: `${startDate.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })} - ${endDate.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`,
-    startTime: startDate.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    endTime: endDate.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  };
-};
-
-// Format creation timestamp
-export const formatCreatedAt = (createdAt: string) => {
-  const date = parseAsLocalTime(createdAt);
-  return date.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-// Check if appointment date is in the past
-export const isAppointmentPast = (datetime: string): boolean => {
-  const appointmentDate = parseAsLocalTime(datetime);
-  const now = new Date();
-  return appointmentDate < now;
-};
-
-// Check if appointment can be cancelled (3+ hours before)
-export const canCancelAppointment = (appointment: {
-  datetimeStart: string;
-  status: string;
-}): boolean => {
-  const appointmentDate = parseAsLocalTime(appointment.datetimeStart);
-  const now = new Date();
-  const hoursDiff =
-    (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-  return appointment.status === "SCHEDULED" && hoursDiff >= 3;
-};
+// Re-export date utilities from centralized location
+export {
+  formatDateTime,
+  formatDateTimeRange,
+  formatCreatedAt,
+  isAppointmentPast,
+  canCancelAppointment,
+} from "@/app/utils/dateUtils";
 
 // Appointment status and filter constants
 export const APPOINTMENT_STATUS_OPTIONS = [

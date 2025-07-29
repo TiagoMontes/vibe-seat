@@ -34,6 +34,7 @@ import {
 import { PaginationComponent } from "@/app/components/PaginationComponent";
 import { GenericFilter } from "@/app/components/GenericFilter";
 import { userRoleAtom } from "@/app/atoms/userAtoms";
+import { formatDateToString, formatDateTimeToLocalISO, formatDateToBR } from "@/app/utils/dateUtils";
 
 interface ChairCardProps {
   chair: Chair;
@@ -43,39 +44,6 @@ interface ChairCardProps {
   selectedDate?: Date | undefined;
 }
 
-// Função utilitária para separar data e hora de uma string ISO
-const formatDateTime = (
-  dateTimeString: string
-): { date: string; time: string } => {
-  try {
-    const date = new Date(dateTimeString);
-
-    // Formata a data para dd/mm/aaaa
-    const formattedDate = date.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-
-    // Formata o horário para hh:mm - tratando como UTC
-    const formattedTime = date.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC", // Força o uso de UTC
-    });
-
-    return {
-      date: formattedDate,
-      time: formattedTime,
-    };
-  } catch (error) {
-    console.error("Erro ao formatar data e hora:", error);
-    return {
-      date: "Data inválida",
-      time: "Horário inválido",
-    };
-  }
-};
 
 const ChairCard = ({
   chair,
@@ -102,9 +70,6 @@ const ChairCard = ({
           {availableTimes.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-2">
               {availableTimes.map((timeSlot) => {
-                // Usa a função para formatar o datetime
-                const { time } = formatDateTime(timeSlot.time);
-
                 return (
                   <button
                     key={timeSlot.time}
@@ -121,7 +86,7 @@ const ChairCard = ({
                     }
                   >
                     <div className="text-center">
-                      <div className="font-medium">{time}</div>
+                      <div className="font-medium">{timeSlot.time}</div>
                     </div>
                   </button>
                 );
@@ -345,8 +310,8 @@ export const AppointmentManagement = () => {
   // Fetch chairs and available times when date is selected
   useEffect(() => {
     if (selectedDate) {
-      // Convert Date to ISO string format for API
-      const dateStr = selectedDate.toISOString().split("T")[0];
+      // Convert Date to string format for API (avoiding timezone issues)
+      const dateStr = formatDateToString(selectedDate);
       handleFetchChairs(dateStr, 1, false, {
         search: searchValue,
         sortBy: sortValue,
@@ -396,7 +361,7 @@ export const AppointmentManagement = () => {
       reason: "Ocupado",
     }));
 
-    // Combina e ordena por horário
+    // Combina e ordena por horário (times are already in HH:MM format)
     return [...availableTimes, ...unavailableTimes].sort((a, b) =>
       a.time.localeCompare(b.time)
     );
@@ -411,13 +376,12 @@ export const AppointmentManagement = () => {
       );
       if (!chairData) return;
 
-      // Formatar a data e hora para exibição
-      const { time: formattedTime } = formatDateTime(time);
-      const formattedDate = selectedDate.toLocaleDateString("pt-BR");
+      // Formatar a data para exibição
+      const formattedDate = formatDateToBR(selectedDate);
 
       const confirmed = await confirm({
         title: "Confirmar Agendamento",
-        description: `Deseja realmente agendar uma sessão de massagem na ${chairData.chairName} para ${formattedDate} às ${formattedTime}?`,
+        description: `Deseja realmente agendar uma sessão de massagem na ${chairData.chairName} para ${formattedDate} às ${time}?`,
         confirmText: "Agendar",
         cancelText: "Cancelar",
       });
@@ -425,15 +389,18 @@ export const AppointmentManagement = () => {
       if (confirmed) {
         setCreateLoading(true);
         try {
+          // Convert HH:MM time format to ISO datetime string for API (preserving local timezone)
+          const localISOString = formatDateTimeToLocalISO(selectedDate, time);
+          
           await createAppointment({
             chairId,
-            datetimeStart: time,
+            datetimeStart: localISOString,
           });
 
           // Se chegou aqui, o agendamento foi criado com sucesso
           appointmentSuccess("Agendamento criado com sucesso!");
           // Refresh available times after successful booking
-          const dateStr = selectedDate.toISOString().split("T")[0];
+          const dateStr = formatDateToString(selectedDate);
           await handleFetchChairs(dateStr, 1);
         } catch (error) {
           console.error("Erro ao criar agendamento:", error);
@@ -481,7 +448,7 @@ export const AppointmentManagement = () => {
 
     // Se há uma data selecionada, atualizar também as cadeiras disponíveis
     if (selectedDate) {
-      const dateStr = selectedDate.toISOString().split("T")[0];
+      const dateStr = formatDateToString(selectedDate);
       handleFetchChairs(dateStr, 1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -497,7 +464,7 @@ export const AppointmentManagement = () => {
   ]);
 
   const formatSelectedDate = (date: Date) => {
-    return date.toLocaleDateString("pt-BR");
+    return formatDateToBR(date);
   };
 
   // Filter handlers
@@ -775,7 +742,7 @@ export const AppointmentManagement = () => {
                     goToPage={handleFetchChairs}
                     selectedDate={
                       selectedDate
-                        ? selectedDate.toISOString().split("T")[0]
+                        ? formatDateToString(selectedDate)
                         : ""
                     }
                   />
