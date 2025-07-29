@@ -46,7 +46,7 @@ export async function PATCH(
       let errorData;
       try {
         errorData = await backendResponse.json();
-      } catch (parseError) {
+      } catch {
         errorData = { error: "Erro desconhecido", status: backendResponse.status };
       }
 

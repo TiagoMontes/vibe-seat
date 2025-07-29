@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       let errorData;
       try {
         errorData = await backendResponse.json();
-      } catch (parseError) {
+      } catch {
         errorData = { error: "Erro desconhecido", status: backendResponse.status };
       }
 

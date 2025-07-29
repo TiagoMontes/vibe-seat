@@ -232,7 +232,6 @@ const ScheduleManagement: React.FC = () => {
   const [, setSelectedSchedule] = useAtom(selectedScheduleAtom);
 
   const { fetchSchedules, deleteSchedule, schedule, loading } = useSchedules();
-  const { error: showError } = useToast();
   const { confirm, ConfirmComponent } = useConfirm();
   const [role] = useAtom(userRoleAtom);
 
