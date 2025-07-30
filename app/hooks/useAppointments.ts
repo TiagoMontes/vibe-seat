@@ -24,7 +24,7 @@ export const useAppointments = () => {
       const filters: AppointmentFilters = {
         page: 1,
         limit: 6,
-        status: "SCHEDULED", // Padrão para admin: mostrar apenas agendamentos pendentes
+        status: "all", // Padrão para admin: mostrar todos os agendamentos
         ...customFilters,
       };
 

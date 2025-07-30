@@ -45,7 +45,7 @@ export const useAppointmentFilters = ({ filters, setFilters }: UseAppointmentFil
     setFilters((prev: AppointmentFiltersType) => ({
       ...prev,
       search: "",
-      status: "SCHEDULED", // Padrão para admin: manter "SCHEDULED" em vez de "all"
+      status: "all", // Padrão para admin: mostrar todos os agendamentos
       sortBy: "newest",
       page: 1,
     }));
@@ -57,7 +57,7 @@ export const useAppointmentFilters = ({ filters, setFilters }: UseAppointmentFil
 
   const hasActiveFilters = 
     (filters.search && filters.search.trim() !== "") ||
-    (filters.status !== "all" && filters.status !== "SCHEDULED") || // "SCHEDULED" não é considerado filtro ativo para admin
+    (filters.status !== "all") || // "all" não é considerado filtro ativo
     filters.sortBy !== "newest";
 
   return {

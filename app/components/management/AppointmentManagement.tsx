@@ -329,9 +329,9 @@ export const AppointmentManagement = () => {
     if (activeSection === "my-appointments") {
       fetchMyAppointments();
     } else if (activeSection === "scheduled-list") {
-      // Usar filtros padrão para admin: status "SCHEDULED"
+      // Usar filtros padrão para admin: mostrar todos os agendamentos
       fetchAppointments({
-        status: "SCHEDULED",
+        status: "all",
         page: 1,
         limit: 6,
         sortBy: "newest",
@@ -436,7 +436,7 @@ export const AppointmentManagement = () => {
       if (activeSection === "my-appointments") {
         await fetchMyAppointments();
       } else {
-        // Manter filtro "SCHEDULED" por padrão para admin
+        // Manter filtro "all" por padrão para admin
         await fetchAppointments({
           status: "all",
           page: 1,

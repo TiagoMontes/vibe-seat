@@ -147,17 +147,8 @@ export const formatDateTimeRange = (
   datetimeStart: string,
   datetimeEnd: string
 ) => {
-  console.log({
-    datetimeStart,
-    datetimeEnd,
-  });
   const startDate = parseAsLocalTimeComponents(datetimeStart);
   const endDate = parseAsLocalTimeComponents(datetimeEnd);
-
-  console.log({
-    startDate,
-    endDate,
-  });
 
   return {
     date: startDate.toLocaleDateString("pt-BR", {
