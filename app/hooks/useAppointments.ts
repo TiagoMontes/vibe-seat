@@ -5,7 +5,8 @@ import {
   myAppointmentsAtom, 
   appointmentPaginationAtom,
   myAppointmentPaginationAtom,
-  myAppointmentsLoadingAtom
+  myAppointmentsLoadingAtom,
+  appointmentsLoadingAtom
 } from '@/app/atoms/appointmentAtoms';
 import { AppointmentFilters, CreateAppointmentRequest } from '@/app/types/api';
 
@@ -15,8 +16,10 @@ export const useAppointments = () => {
   const setPagination = useSetAtom(appointmentPaginationAtom);
   const setMyPagination = useSetAtom(myAppointmentPaginationAtom);
   const setMyLoading = useSetAtom(myAppointmentsLoadingAtom);
+  const setLoading = useSetAtom(appointmentsLoadingAtom);
 
   const fetchAppointments = useCallback(async (customFilters?: Partial<AppointmentFilters>) => {
+    setLoading(true);
     try {
       const filters: AppointmentFilters = {
         page: 1,
@@ -29,7 +32,7 @@ export const useAppointments = () => {
       
       if (filters.page) queryParams.set('page', filters.page.toString());
       if (filters.limit) queryParams.set('limit', filters.limit.toString());
-      if (filters.status && filters.status !== "all") queryParams.set('status', filters.status);
+      if (filters.status) queryParams.set('status', filters.status);
       if (filters.search) queryParams.set('search', filters.search);
       if (filters.sortBy) queryParams.set('sortBy', filters.sortBy);
 
@@ -65,8 +68,10 @@ export const useAppointments = () => {
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
-  }, [setAppointments, setPagination]);
+  }, [setAppointments, setPagination, setLoading]);
 
   const fetchMyAppointments = useCallback(async (customFilters?: Partial<AppointmentFilters>) => {
     setMyLoading(true);
@@ -82,7 +87,7 @@ export const useAppointments = () => {
       
       if (filters.page) queryParams.set('page', filters.page.toString());
       if (filters.limit) queryParams.set('limit', filters.limit.toString());
-      if (filters.status && filters.status !== "all") queryParams.set('status', filters.status);
+      if (filters.status) queryParams.set('status', filters.status);
       if (filters.search) queryParams.set('search', filters.search);
       if (filters.sortBy) queryParams.set('sortBy', filters.sortBy);
 

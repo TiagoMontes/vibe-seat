@@ -438,7 +438,7 @@ export const AppointmentManagement = () => {
       } else {
         // Manter filtro "SCHEDULED" por padrão para admin
         await fetchAppointments({
-          status: "SCHEDULED",
+          status: "all",
           page: 1,
           limit: 6,
           sortBy: "newest",
@@ -758,7 +758,7 @@ export const AppointmentManagement = () => {
           onAppointmentChange={handleAppointmentChange}
         />
       )}
-
+ 
       <ConfirmComponent />
     </div>
   );

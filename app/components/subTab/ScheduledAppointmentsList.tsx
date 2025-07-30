@@ -72,6 +72,7 @@ export const ScheduledAppointmentsList = ({
 
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [refetching, setRefetching] = useState<boolean>(false);
 
   // Use refs to avoid dependency issues
   const fetchAppointmentsRef = useRef(fetchAppointments);
@@ -89,7 +90,7 @@ export const ScheduledAppointmentsList = ({
       await fetchAppointmentsRef.current({
         page: filters.page,
         limit: filters.limit,
-        status: filters.status || "SCHEDULED", // Garantir que sempre use "SCHEDULED" se não estiver definido
+        status: filters.status || "SCHEDULED",
         search: filters.search,
         sortBy: filters.sortBy,
       });
@@ -140,7 +141,9 @@ export const ScheduledAppointmentsList = ({
         await confirmAppointment(id);
         appointmentSuccess("Agendamento confirmado com sucesso!");
         // Recarregar a lista para garantir sincronização
+        setRefetching(true);
         await handleFetchAppointments();
+        setRefetching(false);
         // Notificar o componente pai sobre a mudança
         onAppointmentChange?.();
       } catch (error) {
@@ -149,6 +152,7 @@ export const ScheduledAppointmentsList = ({
       } finally {
         setConfirmingId(null);
         setConfirmLoading(false);
+        setRefetching(false);
       }
     }
   };
@@ -169,7 +173,9 @@ export const ScheduledAppointmentsList = ({
         await cancelAppointment(id);
         appointmentSuccess("Agendamento cancelado com sucesso!");
         // Recarregar a lista para garantir sincronização
+        setRefetching(true);
         await handleFetchAppointments();
+        setRefetching(false);
         // Notificar o componente pai sobre a mudança
         onAppointmentChange?.();
       } catch (error) {
@@ -178,6 +184,7 @@ export const ScheduledAppointmentsList = ({
       } finally {
         setCancellingId(null);
         setCancelLoading(false);
+        setRefetching(false);
       }
     }
   };
@@ -227,7 +234,7 @@ export const ScheduledAppointmentsList = ({
       />
 
       {/* Appointments List */}
-      {loading ? (
+      {loading || refetching ? (
         <div className="flex items-center justify-center py-8 sm:py-12">
           <div className="flex items-center gap-2 text-gray-600">
             <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-blue-600"></div>
