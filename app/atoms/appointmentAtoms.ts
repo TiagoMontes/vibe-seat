@@ -43,7 +43,7 @@ export const myAppointmentPaginationAtom = atom<Pagination>({
 export const appointmentFiltersAtom = atom<AppointmentFilters>({
   page: 1,
   limit: 6,
-  status: "SCHEDULED",
+  status: "all",
 });
 
 // Filtros para MyAppointmentsList (usuário logado)

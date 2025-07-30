@@ -90,7 +90,7 @@ export const ScheduledAppointmentsList = ({
       await fetchAppointmentsRef.current({
         page: filters.page,
         limit: filters.limit,
-        status: filters.status || "SCHEDULED",
+        status: filters.status,
         search: filters.search,
         sortBy: filters.sortBy,
       });
